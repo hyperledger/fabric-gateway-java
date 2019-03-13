@@ -3,6 +3,7 @@ package scenario;
 import static org.junit.Assert.assertEquals;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -32,6 +33,7 @@ public class ScenarioSteps implements En {
 	public ScenarioSteps() {
 		Given("I have deployed a (.+?) Fabric network", (String tlsType) -> {
 		    if (!fabricRunning) {
+		    	createCryptoMaterial();
 		    	Path dockerCompose = Paths.get("src", "test", "fixtures", "docker-compose", "docker-compose.yaml");
 		    	exec(String.format("docker-compose -f %s -p node up -d", dockerCompose.toAbsolutePath().toString()));
 		    	fabricRunning = true;
@@ -106,7 +108,7 @@ public class ScenarioSteps implements En {
 		});
 	}
 
-	static private void exec(String command) throws Exception {
+	private static void exec(String command) throws Exception {
     	System.out.println(command);
     	Process process = Runtime.getRuntime().exec(command);
     	int exitCode = process.waitFor();
@@ -121,13 +123,18 @@ public class ScenarioSteps implements En {
             System.out.println(line);
         }
 
-        exitCode = process.waitFor();
-
     	assertEquals(exitCode, 0);
 
 	}
 
-	static private Wallet createWallet() throws IOException, GatewayException {
+	private static void createCryptoMaterial() throws Exception {
+		File fixtures = Paths.get("src", "test", "fixtures").toFile();
+		Process process = Runtime.getRuntime().exec("sh generate.sh", null, fixtures);
+    	int exitCode = process.waitFor();
+    	assertEquals(exitCode, 0);
+	}
+
+	private static Wallet createWallet() throws IOException, GatewayException {
 		Path credentialPath = Paths.get("src", "test", "fixtures", "crypto-material", "crypto-config", "peerOrganizations", "org1.example.com", "users", "User1@org1.example.com", "msp");
 		String certificatePem = readFile(credentialPath.resolve(Paths.get("signcerts", "User1@org1.example.com-cert.pem")));
 		PrivateKey privateKey = readPrivateKey(credentialPath.resolve(Paths.get("keystore", "key.pem")));
@@ -136,7 +143,7 @@ public class ScenarioSteps implements En {
 		return wallet;
 	}
 
-	static private String readFile(Path file) throws IOException {
+	private static String readFile(Path file) throws IOException {
 		StringBuilder contents = new StringBuilder();
 		if (Files.exists(file)) {
 			try (BufferedReader fr = Files.newBufferedReader(file)) {
@@ -151,7 +158,7 @@ public class ScenarioSteps implements En {
 		return null;
 	}
 
-	static PrivateKey readPrivateKey(Path pemFile) throws IOException {
+	private static PrivateKey readPrivateKey(Path pemFile) throws IOException {
 		if (Files.exists(pemFile)) {
 			try (PEMParser parser = new PEMParser(Files.newBufferedReader(pemFile))) {
 				Object key = parser.readObject();

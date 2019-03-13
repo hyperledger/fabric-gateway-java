@@ -1,3 +1,8 @@
+rm crypto-material/channel.tx
+rm crypto-material/core.yaml
+rm crypto-material/genesis.block
+rm crypto-material/mychannel.block
+rm -rf crypto-material/crypto-config  
 cd docker-compose
 docker-compose -f docker-compose-cli.yaml up -d 
 docker exec cli cryptogen generate --config=/etc/hyperledger/config/crypto-config.yaml --output /etc/hyperledger/config/crypto-config
