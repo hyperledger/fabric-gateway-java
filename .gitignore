@@ -1,4 +1,5 @@
 .classpath
+.idea/
 .project
 .settings/
 target/
@@ -7,4 +8,3 @@ src/test/fixtures/crypto-material/genesis.block
 src/test/fixtures/crypto-material/mychannel.block
 src/test/fixtures/crypto-material/channel.tx
 src/test/fixtures/crypto-material/core.yaml
-
