@@ -13,7 +13,7 @@ import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.sdk.Channel;
 
-public final class NetworkImpl implements Network {
+public class NetworkImpl implements Network {
   private final Channel channel;
   private final GatewayImpl gateway;
   private final Map<String, Contract> contracts = new HashMap<>();

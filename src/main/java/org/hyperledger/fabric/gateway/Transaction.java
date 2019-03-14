@@ -28,12 +28,6 @@ public interface Transaction {
 	String getName();
 
 	/**
-	 * Get the ID that will be used for this transaction invocation.
-	 * @return Transaction ID.
-	 */
-	String getTransactionId();
-
-	/**
 	 * Set transient data that will be passed to the transaction function
 	 * but will not be stored on the ledger. This can be used to pass
 	 * private data to a transaction function.

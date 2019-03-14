@@ -6,139 +6,131 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
+import org.hamcrest.CoreMatchers;
+import org.hyperledger.fabric.gateway.Contract;
+import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
+import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
-import org.hyperledger.fabric.gateway.Transaction;
+import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.ChaincodeResponse;
 import org.hyperledger.fabric.sdk.Channel;
+import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.ProposalResponse;
 import org.hyperledger.fabric.sdk.TransactionProposalRequest;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentMatchers;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 
 public class TransactionTest {
-  TransactionProposalRequest request = null;
-  Channel channel = null;
-  Transaction transaction = null;
+    TransactionProposalRequest request;
+    Channel channel;
+    Contract contract;
 
-  @Before
-  public void setup() throws Exception {
-    request = mock(TransactionProposalRequest.class);
-    channel = mock(Channel.class);
-    transaction = new TransactionImpl(request, channel);
-  }
+    @Before
+    public void setup() throws Exception {
+        channel = mock(Channel.class);
+        when(channel.sendTransaction(ArgumentMatchers.anyCollection(), ArgumentMatchers.any(Channel.TransactionOptions.class)))
+                .thenReturn(CompletableFuture.completedFuture(null));
 
-  @Test
-  public void testGetName() {
-    when(request.getFcn()).thenReturn("txn");
-    String name = transaction.getName();
-    Assert.assertEquals(name, "txn");
-  }
+        HFClient client = mock(HFClient.class);
+        when(client.getChannel(ArgumentMatchers.anyString())).thenReturn(channel);
+        when(client.newTransactionProposalRequest()).thenReturn(HFClient.createNewInstance().newTransactionProposalRequest());
 
-  @Test
-  public void testGetTransactionId() {
-    String txid = transaction.getTransactionId();
-    Assert.assertNull(txid);
-  }
+        request = mock(TransactionProposalRequest.class);
 
-  @Test
-  public void testSetTransient() {
-    transaction.setTransient(null);
-    // TODO
-  }
-
-  @Test
-  public void testEvaluateNoResponses() throws Exception {
-    try {
-      List<ProposalResponse> responses = new ArrayList<>();
-      when(channel.sendTransactionProposal(request)).thenReturn(responses);
-
-      transaction.evaluate("arg1");
-      Assert.fail("Should have thrown GatewayException");
-    } catch (GatewayException e) {
-      Assert.assertEquals(e.getMessage(), "No valid proposal responses received.");
+        Gateway gateway = TestUtils.instance().newGatewayBuilder()
+                .client(client)
+                .commitHandler(DefaultCommitHandlers.NONE)
+                .connect();
+        contract = gateway.getNetwork("network").getContract("contract");
     }
-  }
 
-  @Test
-  public void testEvaluateUnsuccessfulResponse() throws Exception {
-    try {
-      List<ProposalResponse> responses = new ArrayList<>();
-      ProposalResponse response = mock(ProposalResponse.class);
-      when(response.getStatus()).thenReturn(ChaincodeResponse.Status.FAILURE);
-      responses.add(response);
-      when(channel.sendTransactionProposal(request)).thenReturn(responses);
-
-      transaction.evaluate("arg1");
-      Assert.fail("should have thrown GatewayException");
-    } catch (GatewayException e) {
-      Assert.assertEquals(e.getMessage(), "No valid proposal responses received.");
+    @Test
+    public void testGetName() {
+        String name = "txn";
+        String result = contract.createTransaction(name).getName();
+        Assert.assertThat(result, CoreMatchers.equalTo(name));
     }
-  }
 
-  @Test
-  public void testEvaluateSuccess() throws Exception {
-    List<ProposalResponse> responses = new ArrayList<>();
-    ProposalResponse response = mock(ProposalResponse.class);
-    when(response.getStatus()).thenReturn(ChaincodeResponse.Status.SUCCESS);
-    when(response.getChaincodeActionResponsePayload()).thenReturn("successful result".getBytes());
-    responses.add(response);
-    when(channel.sendTransactionProposal(request)).thenReturn(responses);
-    when(channel.sendTransaction(responses)).thenReturn(CompletableFuture.completedFuture(null));
-
-    byte[] result = transaction.evaluate("arg1");
-    Assert.assertEquals(new String(result), "successful result");
-  }
-
-  @Test
-  public void testSubmitNoResponses() throws Exception {
-    try {
-      List<ProposalResponse> responses = new ArrayList<>();
-      when(channel.sendTransactionProposal(request)).thenReturn(responses);
-
-      transaction.submit("arg1");
-      Assert.fail("should have thrown GatewayException");
-    } catch (GatewayException e) {
-      Assert.assertEquals(e.getMessage(), "No valid proposal responses received.");
+    @Test
+    public void testSetTransient() {
+        contract.createTransaction("txn").setTransient(null);
+        // TODO
     }
-  }
 
-  @Test
-  public void testSubmitUnsuccessfulResponse() throws Exception {
-    try {
-      List<ProposalResponse> responses = new ArrayList<>();
-      ProposalResponse response = mock(ProposalResponse.class);
-      when(response.getStatus()).thenReturn(ChaincodeResponse.Status.FAILURE);
-      responses.add(response);
-      when(channel.sendTransactionProposal(request)).thenReturn(responses);
+    @Test(expected = GatewayException.class)
+    public void testEvaluateNoResponses() throws Exception {
+        List<ProposalResponse> responses = new ArrayList<>();
+        when(channel.sendTransactionProposal(request)).thenReturn(responses);
 
-      transaction.submit("arg1");
-      Assert.fail("should have thrown GatewayException");
-    } catch (GatewayException e) {
-      Assert.assertEquals(e.getMessage(), "No valid proposal responses received.");
+        contract.evaluateTransaction("txn", "arg1");
     }
-  }
 
-  @Test
-  public void testSubmitSuccess() throws Exception {
-    List<ProposalResponse> responses = new ArrayList<>();
-    ProposalResponse response = mock(ProposalResponse.class);
-    when(response.getStatus()).thenReturn(ChaincodeResponse.Status.SUCCESS);
-    when(response.getChaincodeActionResponsePayload()).thenReturn("successful result".getBytes());
-    responses.add(response);
-    when(channel.sendTransactionProposal(request)).thenReturn(responses);
-    when(channel.sendTransaction(responses)).thenReturn(CompletableFuture.completedFuture(null));
+    @Test(expected = GatewayException.class)
+    public void testEvaluateUnsuccessfulResponse() throws Exception {
+        List<ProposalResponse> responses = new ArrayList<>();
+        ProposalResponse response = mock(ProposalResponse.class);
+        when(response.getStatus()).thenReturn(ChaincodeResponse.Status.FAILURE);
+        responses.add(response);
+        when(channel.sendTransactionProposal(request)).thenReturn(responses);
 
-    byte[] result = transaction.submit("arg1");
-    Assert.assertEquals(new String(result), "successful result");
-  }
+        contract.evaluateTransaction("txn", "arg1");
+    }
+
+    @Test
+    public void testEvaluateSuccess() throws Exception {
+        String expected = "successful result";
+        List<ProposalResponse> responses = new ArrayList<>();
+        ProposalResponse response = mock(ProposalResponse.class);
+        when(response.getStatus()).thenReturn(ChaincodeResponse.Status.SUCCESS);
+        when(response.getChaincodeActionResponsePayload()).thenReturn(expected.getBytes());
+        responses.add(response);
+        when(channel.sendTransactionProposal(ArgumentMatchers.any())).thenReturn(responses);
+
+        byte[] result = contract.evaluateTransaction("txn", "arg1");
+        Assert.assertThat(new String(result), CoreMatchers.equalTo(expected));
+    }
+
+    @Test(expected = GatewayException.class)
+    public void testSubmitNoResponses() throws Exception {
+        List<ProposalResponse> responses = new ArrayList<>();
+        when(channel.sendTransactionProposal(request)).thenReturn(responses);
+
+        contract.submitTransaction("txn", "arg1");
+    }
+
+    @Test(expected = GatewayException.class)
+    public void testSubmitUnsuccessfulResponse() throws Exception {
+        List<ProposalResponse> responses = new ArrayList<>();
+        ProposalResponse response = mock(ProposalResponse.class);
+        when(response.getStatus()).thenReturn(ChaincodeResponse.Status.FAILURE);
+        responses.add(response);
+        when(channel.sendTransactionProposal(request)).thenReturn(responses);
+
+        contract.submitTransaction("txn", "arg1");
+    }
+
+    @Test
+    public void testSubmitSuccess() throws Exception {
+        String expected = "successful result";
+        List<ProposalResponse> responses = new ArrayList<>();
+        ProposalResponse response = mock(ProposalResponse.class);
+        when(response.getStatus()).thenReturn(ChaincodeResponse.Status.SUCCESS);
+        when(response.getChaincodeActionResponsePayload()).thenReturn(expected.getBytes());
+        responses.add(response);
+        when(channel.sendTransactionProposal(ArgumentMatchers.any())).thenReturn(responses);
+
+        byte[] result = contract.submitTransaction("txn", "arg1");
+        Assert.assertThat(new String(result), CoreMatchers.equalTo(expected));
+    }
 
 }

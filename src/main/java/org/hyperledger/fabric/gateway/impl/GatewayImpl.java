@@ -34,157 +34,174 @@ import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.hyperledger.fabric.sdk.security.CryptoSuiteFactory;
 
 public class GatewayImpl implements Gateway {
-  private HFClient client;
-  private NetworkConfig networkConfig;
-  private Identity identity;
-  private Map<String, Network> networks = new HashMap<>();
+    private HFClient client;
+    private NetworkConfig networkConfig;
+    private Identity identity;
+    private Map<String, Network> networks = new HashMap<>();
+    private CommitHandlerFactory commitHandlerFactory;
 
-  private GatewayImpl() {
-  }
-
-  public static class Builder implements Gateway.Builder {
-    private CommitHandlerFactory commitHandler = null;
-    private Path ccp = null;
-    private Identity identity = null;
-    private User user = null;
-
-    public Builder() { }
-
-    @Override
-    public Builder networkConfig(Path config) {
-      this.ccp = config;
-      return this;
+    private GatewayImpl() {
     }
 
-    @Override
-    public Builder identity(Wallet wallet, String id) throws GatewayException {
-      this.identity = wallet.get(id);
-      return this;
-    }
+    public static class Builder implements Gateway.Builder {
+        private CommitHandlerFactory commitHandlerFactory = null;
+        private Path ccp = null;
+        private Identity identity = null;
+        private User user = null;
+        private HFClient client;
 
-    @Override
-    public Builder commitHandler(CommitHandlerFactory commitHandler) {
-      this.commitHandler = commitHandler;
-      return this;
-    }
-
-    @Override
-    public Gateway connect() throws GatewayException {
-    	if(identity == null) {
-    		throw new GatewayException("The gateway identity must be set");
-    	}
-    	if(ccp == null) {
-    		throw new GatewayException("The network configuration must be specified");
-    	}
-        try {
-          GatewayImpl gw = new GatewayImpl();
-          gw.client = HFClient.createNewInstance();
-          CryptoSuite cryptoSuite;
-          cryptoSuite = CryptoSuiteFactory.getDefault().getCryptoSuite();
-          gw.client.setCryptoSuite(cryptoSuite);
-		  gw.networkConfig = NetworkConfig.fromJsonFile(this.ccp.toFile());
-	      gw.identity = this.identity;
-	      gw.client.setUserContext(createUser());
-	      return gw;
-		} catch (InvalidArgumentException | NetworkConfigurationException | IOException | CryptoException | ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException  e) {
-		  throw new GatewayException(e);
-		}
-    }
-
-    private User createUser() {
-      if (user != null) {
-        return user;
-      } else if (identity != null) {
-    	  Enrollment enrollment = new X509Enrollment(identity.getPrivateKey(), identity.getCertificate());
-        return new User() {
-
-          @Override
-          public String getName() {
-            return "gateway";
-          }
-
-          @Override
-          public Set<String> getRoles() {
-            return Collections.emptySet();
-          }
-
-          @Override
-          public String getAccount() {
-            return "";
-          }
-
-          @Override
-          public String getAffiliation() {
-            return "";
-          }
-
-          @Override
-          public Enrollment getEnrollment() {
-            return enrollment;
-          }
-
-          @Override
-          public String getMspId() {
-            return identity.getMspId();
-          }
-        };
-      }
-      return null;
-    }
-  }
-
-  @Override
-  public void close() {
-  }
-
-  /**
-   * Get a network.
-   * @param networkName The name of the network (channel).
-   * @return network
-   * @throws GatewayException
-   * @throws Exception
-   */
-  @Override
-  public synchronized Network getNetwork(String networkName) throws GatewayException {
-    if (networkName == null || networkName.isEmpty()) {
-      throw new IllegalArgumentException("Channel name must be a non-empty string");
-    }
-    Network network = networks.get(networkName);
-    if (network == null) {
-      Channel channel = null;
-      channel = client.getChannel(networkName);
-      if (channel == null && networkConfig != null) {
-        try {
-        channel = client.loadChannelFromConfig(networkName, networkConfig);
-        } catch (InvalidArgumentException | NetworkConfigurationException ex) {
-          // ignore
+        public Builder() {
         }
-      }
-      if (channel == null) {
-        try {
-          channel = client.newChannel(networkName);
-        } catch (InvalidArgumentException e) {
-          // we've already checked the channel status
+
+        @Override
+        public Builder networkConfig(Path config) {
+            this.ccp = config;
+            return this;
         }
-      }
-      try {
-        channel.initialize();
-      } catch (InvalidArgumentException | TransactionException e) {
-        throw new GatewayException(e);
-      }
-      network = new NetworkImpl(channel, this);
-      networks.put(networkName, network);
+
+        @Override
+        public Builder identity(Wallet wallet, String id) throws GatewayException {
+            this.identity = wallet.get(id);
+            return this;
+        }
+
+        @Override
+        public Builder commitHandler(CommitHandlerFactory commitHandlerFactory) {
+            this.commitHandlerFactory = commitHandlerFactory;
+            return this;
+        }
+
+        Builder client(HFClient client) {
+            this.client = client;
+            return this;
+        }
+
+        @Override
+        public Gateway connect() throws GatewayException {
+            try {
+                GatewayImpl gw = new GatewayImpl();
+                if (client != null) {
+                    gw.client = client;
+                } else {
+                    if (identity == null) {
+                        throw new GatewayException("The gateway identity must be set");
+                    }
+                    if (ccp == null) {
+                        throw new GatewayException("The network configuration must be specified");
+                    }
+                    gw.client = HFClient.createNewInstance();
+                    CryptoSuite cryptoSuite;
+                    cryptoSuite = CryptoSuiteFactory.getDefault().getCryptoSuite();
+                    gw.client.setCryptoSuite(cryptoSuite);
+                    gw.networkConfig = NetworkConfig.fromJsonFile(this.ccp.toFile());
+                    gw.identity = this.identity;
+                    gw.client.setUserContext(createUser());
+                }
+                gw.commitHandlerFactory = this.commitHandlerFactory;
+                return gw;
+            } catch (InvalidArgumentException | NetworkConfigurationException | IOException | CryptoException | ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
+                throw new GatewayException(e);
+            }
+        }
+
+        private User createUser() {
+            if (user != null) {
+                return user;
+            } else if (identity != null) {
+                Enrollment enrollment = new X509Enrollment(identity.getPrivateKey(), identity.getCertificate());
+                return new User() {
+
+                    @Override
+                    public String getName() {
+                        return "gateway";
+                    }
+
+                    @Override
+                    public Set<String> getRoles() {
+                        return Collections.emptySet();
+                    }
+
+                    @Override
+                    public String getAccount() {
+                        return "";
+                    }
+
+                    @Override
+                    public String getAffiliation() {
+                        return "";
+                    }
+
+                    @Override
+                    public Enrollment getEnrollment() {
+                        return enrollment;
+                    }
+
+                    @Override
+                    public String getMspId() {
+                        return identity.getMspId();
+                    }
+                };
+            }
+            return null;
+        }
     }
-    return network;
-  }
 
-  @Override
-  public Wallet.Identity getIdentity() {
-    return identity;
-  }
+    @Override
+    public void close() {
+    }
 
-  HFClient getClient() {
-    return client;
-  }
+    /**
+     * Get a network.
+     *
+     * @param networkName The name of the network (channel).
+     * @return network
+     * @throws GatewayException
+     * @throws Exception
+     */
+    @Override
+    public synchronized Network getNetwork(String networkName) throws GatewayException {
+        if (networkName == null || networkName.isEmpty()) {
+            throw new IllegalArgumentException("Channel name must be a non-empty string");
+        }
+        Network network = networks.get(networkName);
+        if (network == null) {
+            Channel channel = client.getChannel(networkName);
+            if (channel == null && networkConfig != null) {
+                try {
+                    channel = client.loadChannelFromConfig(networkName, networkConfig);
+                } catch (InvalidArgumentException | NetworkConfigurationException ex) {
+                    // ignore
+                }
+            }
+            if (channel == null) {
+                try {
+                    channel = client.newChannel(networkName);
+                } catch (InvalidArgumentException e) {
+                    // we've already checked the channel status
+                }
+            }
+            try {
+                channel.initialize();
+            } catch (InvalidArgumentException | TransactionException e) {
+                throw new GatewayException(e);
+            }
+            network = new NetworkImpl(channel, this);
+            networks.put(networkName, network);
+        }
+        return network;
+    }
+
+    @Override
+    public Wallet.Identity getIdentity() {
+        return identity;
+    }
+
+    HFClient getClient() {
+        return client;
+    }
+
+    CommitHandlerFactory getCommitHandlerFactory() {
+        return commitHandlerFactory;
+    }
 
 }

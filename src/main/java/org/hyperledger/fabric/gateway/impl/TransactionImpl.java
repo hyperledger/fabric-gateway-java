@@ -9,6 +9,7 @@ package org.hyperledger.fabric.gateway.impl;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -16,7 +17,11 @@ import java.util.concurrent.TimeoutException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hyperledger.fabric.gateway.GatewayException;
+import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.Transaction;
+import org.hyperledger.fabric.gateway.spi.CommitHandler;
+import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
+import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.ChaincodeResponse;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.ProposalResponse;
@@ -25,89 +30,104 @@ import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
 
 public final class TransactionImpl implements Transaction {
-  private static final Log logger = LogFactory.getLog(TransactionImpl.class);
-  private final TransactionProposalRequest request;
-  private final Channel channel;
-  private String transactionId = null;
+    private static final Log logger = LogFactory.getLog(TransactionImpl.class);
+    private final TransactionProposalRequest request;
+    private final NetworkImpl network;
+    private final CommitHandlerFactory commitHandlerFactory;
 
-  TransactionImpl(TransactionProposalRequest request, Channel channel) {
-    this.request = request;
-    this.channel = channel;
-  }
-
-  @Override
-  public String getName() {
-    return request.getFcn();
-  }
-
-  @Override
-  public String getTransactionId() {
-    return transactionId;
-  }
-
-  @Override
-  public void setTransient(Map<String, byte[]> transientData) {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public byte[] submit(String... args)  throws GatewayException, TimeoutException {
-    try {
-      request.setArgs(args);
-      Collection<ProposalResponse> proposalResponses = channel.sendTransactionProposal(request);
-
-      // Validate the proposal responses.
-      Collection<ProposalResponse> validResponses = validatePeerResponses(proposalResponses);
-
-      if (validResponses.size() < 1) {
-          logger.error("No valid proposal responses received.");
-          throw new GatewayException("No valid proposal responses received.");
-      }
-      ProposalResponse proposalResponse = validResponses.iterator().next();
-      transactionId = proposalResponse.getTransactionID();
-      byte[] result = proposalResponse.getChaincodeActionResponsePayload();
-      channel.sendTransaction(proposalResponses).get(60, TimeUnit.SECONDS);
-      return result;
-    } catch (InvalidArgumentException | InterruptedException | ExecutionException | ProposalException e) {
-      throw new GatewayException(e);
+    TransactionImpl(TransactionProposalRequest request, NetworkImpl network) {
+        this.request = request;
+        this.network = network;
+        this.commitHandlerFactory = network.getGateway().getCommitHandlerFactory();
     }
-  }
 
-  private Collection<ProposalResponse> validatePeerResponses(Collection<ProposalResponse> proposalResponses) {
-    final Collection<ProposalResponse> validResponses = new ArrayList<>();
-    proposalResponses.forEach(response -> {
-      String peerUrl = response.getPeer() != null ? response.getPeer().getUrl() : "<unknown>";
-      if (response.getStatus().equals(ChaincodeResponse.Status.SUCCESS)) {
-        logger.debug(String.format("validatePeerResponses: valid response from peer %s", peerUrl));
-        validResponses.add(response);
-      } else {
-        logger.warn(String.format("validatePeerResponses: invalid response from peer %s, message %s", peerUrl, response.getMessage()));
-      }
-    });
-
-    return validResponses;
-  }
-
-  @Override
-  public byte[] evaluate(String... args) throws GatewayException {
-    try {
-    request.setArgs(args);
-    Collection<ProposalResponse> proposalResponses = channel.sendTransactionProposal(request);
-
-    // Validate the proposal responses.
-    Collection<ProposalResponse> validResponses = validatePeerResponses(proposalResponses);
-
-    if (validResponses.size() < 1) {
-        logger.error("No valid proposal responses received.");
-        throw new GatewayException("No valid proposal responses received.");
+    @Override
+    public String getName() {
+        return request.getFcn();
     }
-    ProposalResponse proposalResponse = validResponses.iterator().next();
-    transactionId = proposalResponse.getTransactionID();
-    return proposalResponse.getChaincodeActionResponsePayload();
-    } catch (InvalidArgumentException | ProposalException e) {
-      throw new GatewayException(e);
+
+    @Override
+    public void setTransient(Map<String, byte[]> transientData) {
+        // TODO Auto-generated method stub
+
     }
-  }
+
+    @Override
+    public byte[] submit(String... args) throws GatewayException, TimeoutException {
+        try {
+            Channel channel = network.getChannel();
+            request.setArgs(args);
+            Collection<ProposalResponse> proposalResponses = channel.sendTransactionProposal(request);
+
+            // Validate the proposal responses.
+            Collection<ProposalResponse> validResponses = validatePeerResponses(proposalResponses);
+
+            if (validResponses.size() < 1) {
+                logger.error("No valid proposal responses received.");
+                throw new GatewayException("No valid proposal responses received.");
+            }
+            ProposalResponse proposalResponse = validResponses.iterator().next();
+            byte[] result = proposalResponse.getChaincodeActionResponsePayload();
+            String transactionId = proposalResponse.getTransactionID();
+
+            Channel.TransactionOptions transactionOptions = Channel.TransactionOptions.createTransactionOptions()
+                    .nOfEvents(Channel.NOfEvents.createNoEvents());
+
+            CommitHandler commitHandler = commitHandlerFactory.create(transactionId, network);
+            commitHandler.startListening();
+
+            try {
+                channel.sendTransaction(proposalResponses, transactionOptions).get(60, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                commitHandler.cancelListening();
+                throw e;
+            } catch (Exception e) {
+                commitHandler.cancelListening();
+                throw new GatewayException("Failed to send transaction to the orderer", e);
+            }
+
+            commitHandler.waitForEvents();
+
+            return result;
+        } catch (InvalidArgumentException | ProposalException e) {
+            throw new GatewayException(e);
+        }
+    }
+
+    private Collection<ProposalResponse> validatePeerResponses(Collection<ProposalResponse> proposalResponses) {
+        final Collection<ProposalResponse> validResponses = new ArrayList<>();
+        proposalResponses.forEach(response -> {
+            String peerUrl = response.getPeer() != null ? response.getPeer().getUrl() : "<unknown>";
+            if (response.getStatus().equals(ChaincodeResponse.Status.SUCCESS)) {
+                logger.debug(String.format("validatePeerResponses: valid response from peer %s", peerUrl));
+                validResponses.add(response);
+            } else {
+                logger.warn(String.format("validatePeerResponses: invalid response from peer %s, message %s", peerUrl, response.getMessage()));
+            }
+        });
+
+        return validResponses;
+    }
+
+    @Override
+    public byte[] evaluate(String... args) throws GatewayException {
+        try {
+            Channel channel = network.getChannel();
+            request.setArgs(args);
+            Collection<ProposalResponse> proposalResponses = channel.sendTransactionProposal(request);
+
+            // Validate the proposal responses.
+            Collection<ProposalResponse> validResponses = validatePeerResponses(proposalResponses);
+
+            if (validResponses.size() < 1) {
+                logger.error("No valid proposal responses received.");
+                throw new GatewayException("No valid proposal responses received.");
+            }
+            ProposalResponse proposalResponse = validResponses.iterator().next();
+            return proposalResponse.getChaincodeActionResponsePayload();
+        } catch (InvalidArgumentException | ProposalException e) {
+            throw new GatewayException(e);
+        }
+    }
 
 }
