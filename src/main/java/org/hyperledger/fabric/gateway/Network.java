@@ -6,10 +6,34 @@
 
 package org.hyperledger.fabric.gateway;
 
+/**
+ * A Network object represents the set of peers in a Fabric network (channel).
+ * Applications should get a Network instance from a Gateway using the
+ * {@link Gateway#getNetwork(String)} method.
+ *
+ * @see <a href="https://hyperledger-fabric.readthedocs.io/en/release-1.4/developapps/application.html#network-channel">Developing Fabric Applications - Network Channel</a>
+ */
 public interface Network {
-  Contract getContract(String chaincodeId);
+	/**
+	 * Get an instance of a contract on the current network.
+	 * @param chaincodeId The name of the chaincode that implements the smart contract.
+	 * @return The contract object.
+	 */
+	Contract getContract(String chaincodeId);
 
-  Contract getContract(String chaincodeId, String name);
+	/**
+	 * Get an instance of a contract on the current network.  If the chaincode instance contains more
+	 * than one smart contract class (available using the latest chaincode programming model), then an
+	 * individual class can be selected.
+	 * @param chaincodeId The name of the chaincode that implements the smart contract.
+	 * @param name The class name of the smart contract within the chaincode.
+	 * @return The contract object.
+	 */
+	Contract getContract(String chaincodeId, String name);
 
-  Gateway getGateway();
+	/**
+	 * Get a reference to the owning Gateway connection.
+	 * @return The owning gateway.
+	 */
+	Gateway getGateway();
 }
