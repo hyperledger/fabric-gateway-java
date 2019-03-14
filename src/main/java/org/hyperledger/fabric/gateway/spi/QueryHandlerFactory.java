@@ -6,7 +6,7 @@
 
 package org.hyperledger.fabric.gateway.spi;
 
-import org.hyperledger.fabric.network.Network;
+import org.hyperledger.fabric.gateway.Network;
 
 public interface QueryHandlerFactory {
   QueryHandler create(Network network);

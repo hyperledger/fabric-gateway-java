@@ -1,0 +1,59 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+  <head>
+    <title>API Overview</title>
+  </head>
+  <body>
+	<p>
+	The Fabric Gateway SDK allows applications to interact with a Fabric blockchain network. 
+	It provides a simple API to submit transactions to a ledger or query the contents of a ledger with minimal code.
+	 The Gateway SDK implements the Fabric programming model as described in the
+	 <a href="https://hyperledger-fabric.readthedocs.io/en/release-1.4/developapps/developing_applications.html">Developing Applications</a>
+	 chapter of the Fabric documentation.</p>
+	 <p>The following shows a complete code sample of how to connect to a fabric network,
+	 submit a transaction and query the ledger state using an instantiated smart contract (fabcar sample).
+	 </p>
+
+ <pre><code>
+package org.example;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import org.hyperledger.fabric.gateway.Contract;
+import org.hyperledger.fabric.gateway.Gateway;
+import org.hyperledger.fabric.gateway.Network;
+import org.hyperledger.fabric.gateway.Wallet;
+
+public interface Sample {
+  static void main(String[] args) throws Exception {
+
+    // Create a new file system based wallet for managing identities.
+    Path walletPath = Paths.get("wallet");
+    Wallet wallet = Wallet.createFileSystemWallet(walletPath);
+
+    // load a CCP
+    Path networkConfigPath = Paths.get("..", "..", "basic-network", "connection.json");
+
+    Gateway.Builder builder = Gateway.createBuilder();
+    builder.identity(wallet, "user1").networkConfig(networkConfigPath);
+
+    // create a gateway connection
+    try (Gateway gateway = builder.connect()) {
+      // get the network and contract
+      Network network = gateway.getNetwork("mychannel");
+      Contract contract = network.getContract("fabcar");
+
+      byte[] result = contract.submitTransaction("createCar", "CAR10", "VW", "Polo", "Grey", "Mary");
+      System.out.println(result);
+
+      result = contract.evaluateTransaction("queryAllCars");
+      System.out.println(new String(result));
+
+    } catch (Exception ex) {
+      ex.printStackTrace();
+    }
+  }
+}
+</code></pre>
+  </body>
+</html>
