@@ -6,30 +6,28 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import org.hyperledger.fabric.gateway.Wallet;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
 import java.nio.file.Path;
 
-import org.hyperledger.fabric.gateway.Wallet;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-
 public class FileSystemWalletTest extends WalletTest {
-
-  @Rule
-  public TemporaryFolder basePath = new TemporaryFolder();
+  @TempDir
+  public Path basePath;
 
   @Override
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setup();
-    wallet = Wallet.createFileSystemWallet(basePath.getRoot().toPath());
+    wallet = Wallet.createFileSystemWallet(basePath);
   }
 
   @Test
   public void testCreateFolder() throws Exception {
-    // create a wallet instance for non-existing folder
-    Path tempDir = basePath.getRoot().toPath().resolve("temp");
+    // create a wallet getInstance for non-existing folder
+    Path tempDir = basePath.resolve("temp");
     Wallet existing = Wallet.createFileSystemWallet(tempDir);
   }
 

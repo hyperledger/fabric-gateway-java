@@ -8,18 +8,18 @@ package org.hyperledger.fabric.gateway.impl;
 
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
+import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.gateway.Transaction;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ContractTest {
     private Network network;
 
-    @Before
+    @BeforeEach
     public void beforeEach() throws Exception {
-        Gateway gateway = TestUtils.instance().newGatewayBuilder().connect();
+        Gateway gateway = TestUtils.getInstance().newGatewayBuilder().connect();
         network = gateway.getNetwork("ch1");
     }
 

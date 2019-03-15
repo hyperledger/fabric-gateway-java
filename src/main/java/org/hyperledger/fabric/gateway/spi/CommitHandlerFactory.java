@@ -8,6 +8,9 @@ package org.hyperledger.fabric.gateway.spi;
 
 import org.hyperledger.fabric.gateway.Network;
 
+/**
+ * Functional interface describing a factory method for constructing commit handler instances.
+ */
 public interface CommitHandlerFactory {
-  CommitHandler create(String transactionId, Network network);
+    CommitHandler create(String transactionId, Network network);
 }

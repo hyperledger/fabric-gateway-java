@@ -11,15 +11,14 @@ import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
-import org.hyperledger.fabric.sdk.BlockEvent;
+import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.sdk.ChaincodeResponse;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.ProposalResponse;
 import org.hyperledger.fabric.sdk.TransactionProposalRequest;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 
 import java.util.ArrayList;
@@ -28,6 +27,9 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.*;
 
 
 public class TransactionTest {
@@ -35,7 +37,7 @@ public class TransactionTest {
     Channel channel;
     Contract contract;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         channel = mock(Channel.class);
         when(channel.sendTransaction(ArgumentMatchers.anyCollection(), ArgumentMatchers.any(Channel.TransactionOptions.class)))
@@ -47,7 +49,7 @@ public class TransactionTest {
 
         request = mock(TransactionProposalRequest.class);
 
-        Gateway gateway = TestUtils.instance().newGatewayBuilder()
+        Gateway gateway = TestUtils.getInstance().newGatewayBuilder()
                 .client(client)
                 .commitHandler(DefaultCommitHandlers.NONE)
                 .connect();
@@ -58,7 +60,7 @@ public class TransactionTest {
     public void testGetName() {
         String name = "txn";
         String result = contract.createTransaction(name).getName();
-        Assert.assertThat(result, CoreMatchers.equalTo(name));
+        assertThat(result, CoreMatchers.equalTo(name));
     }
 
     @Test
@@ -67,15 +69,15 @@ public class TransactionTest {
         // TODO
     }
 
-    @Test(expected = GatewayException.class)
+    @Test
     public void testEvaluateNoResponses() throws Exception {
         List<ProposalResponse> responses = new ArrayList<>();
         when(channel.sendTransactionProposal(request)).thenReturn(responses);
 
-        contract.evaluateTransaction("txn", "arg1");
+        assertThrows(GatewayException.class, () -> contract.evaluateTransaction("txn", "arg1"));
     }
 
-    @Test(expected = GatewayException.class)
+    @Test
     public void testEvaluateUnsuccessfulResponse() throws Exception {
         List<ProposalResponse> responses = new ArrayList<>();
         ProposalResponse response = mock(ProposalResponse.class);
@@ -83,7 +85,7 @@ public class TransactionTest {
         responses.add(response);
         when(channel.sendTransactionProposal(request)).thenReturn(responses);
 
-        contract.evaluateTransaction("txn", "arg1");
+        assertThrows(GatewayException.class, () -> contract.evaluateTransaction("txn", "arg1"));
     }
 
     @Test
@@ -97,18 +99,18 @@ public class TransactionTest {
         when(channel.sendTransactionProposal(ArgumentMatchers.any())).thenReturn(responses);
 
         byte[] result = contract.evaluateTransaction("txn", "arg1");
-        Assert.assertThat(new String(result), CoreMatchers.equalTo(expected));
+        assertThat(new String(result), CoreMatchers.equalTo(expected));
     }
 
-    @Test(expected = GatewayException.class)
+    @Test
     public void testSubmitNoResponses() throws Exception {
         List<ProposalResponse> responses = new ArrayList<>();
         when(channel.sendTransactionProposal(request)).thenReturn(responses);
 
-        contract.submitTransaction("txn", "arg1");
+        assertThrows(GatewayException.class, () -> contract.submitTransaction("txn", "arg1"));
     }
 
-    @Test(expected = GatewayException.class)
+    @Test
     public void testSubmitUnsuccessfulResponse() throws Exception {
         List<ProposalResponse> responses = new ArrayList<>();
         ProposalResponse response = mock(ProposalResponse.class);
@@ -116,7 +118,7 @@ public class TransactionTest {
         responses.add(response);
         when(channel.sendTransactionProposal(request)).thenReturn(responses);
 
-        contract.submitTransaction("txn", "arg1");
+        assertThrows(GatewayException.class, () -> contract.submitTransaction("txn", "arg1"));
     }
 
     @Test
@@ -130,7 +132,7 @@ public class TransactionTest {
         when(channel.sendTransactionProposal(ArgumentMatchers.any())).thenReturn(responses);
 
         byte[] result = contract.submitTransaction("txn", "arg1");
-        Assert.assertThat(new String(result), CoreMatchers.equalTo(expected));
+        assertThat(new String(result), equalTo(expected));
     }
 
 }

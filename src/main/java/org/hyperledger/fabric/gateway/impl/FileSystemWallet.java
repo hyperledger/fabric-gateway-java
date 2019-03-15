@@ -6,6 +6,19 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import org.apache.commons.io.FileUtils;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+import org.hyperledger.fabric.gateway.GatewayException;
+import org.hyperledger.fabric.gateway.Wallet;
+
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonWriter;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -20,20 +33,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonWriter;
-
-import org.apache.commons.io.FileUtils;
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.openssl.PEMKeyPair;
-import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
-import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
-import org.hyperledger.fabric.gateway.GatewayException;
-import org.hyperledger.fabric.gateway.Wallet;
 
 public class FileSystemWallet implements Wallet {
   private Path basePath;
@@ -83,7 +82,7 @@ public class FileSystemWallet implements Wallet {
   @Override
   public Set<String> getAllLabels() {
     List<File> files = Arrays.asList(basePath.toFile().listFiles(File::isDirectory));
-    Set<String> labels = files.stream().map(file -> file.getName()).collect(Collectors.toSet());
+    Set<String> labels = files.stream().map(File::getName).collect(Collectors.toSet());
     return labels;
   }
 

@@ -6,6 +6,9 @@
 
 package org.hyperledger.fabric.gateway;
 
+import org.hyperledger.fabric.gateway.impl.event.TransactionEventSource;
+import org.hyperledger.fabric.sdk.Channel;
+
 /**
  * A Network object represents the set of peers in a Fabric network (channel).
  * Applications should get a Network instance from a Gateway using the
@@ -36,4 +39,18 @@ public interface Network {
 	 * @return The owning gateway.
 	 */
 	Gateway getGateway();
+
+	/**
+	 * Get the low-level chanel object associated with this network.
+	 * @return A channel.
+	 * @deprecated
+	 */
+	Channel getChannel();
+
+	/**
+	 * Get an event source that can be used to listen for transaction events on this network.
+	 * @return A transaction event source.
+	 * @deprecated
+	 */
+	TransactionEventSource getTransactionEventSource();
 }

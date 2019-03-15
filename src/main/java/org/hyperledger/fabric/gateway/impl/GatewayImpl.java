@@ -6,14 +6,7 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
+import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
@@ -33,6 +26,14 @@ import org.hyperledger.fabric.sdk.identity.X509Enrollment;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.hyperledger.fabric.sdk.security.CryptoSuiteFactory;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
 public class GatewayImpl implements Gateway {
     private HFClient client;
     private NetworkConfig networkConfig;
@@ -44,7 +45,7 @@ public class GatewayImpl implements Gateway {
     }
 
     public static class Builder implements Gateway.Builder {
-        private CommitHandlerFactory commitHandlerFactory = null;
+        private CommitHandlerFactory commitHandlerFactory = DefaultCommitHandlers.NETWORK_SCOPE_ALLFORTX;
         private Path ccp = null;
         private Identity identity = null;
         private User user = null;
@@ -71,7 +72,7 @@ public class GatewayImpl implements Gateway {
             return this;
         }
 
-        Builder client(HFClient client) {
+        public Builder client(HFClient client) {
             this.client = client;
             return this;
         }
@@ -156,7 +157,6 @@ public class GatewayImpl implements Gateway {
      * @param networkName The name of the network (channel).
      * @return network
      * @throws GatewayException
-     * @throws Exception
      */
     @Override
     public synchronized Network getNetwork(String networkName) throws GatewayException {

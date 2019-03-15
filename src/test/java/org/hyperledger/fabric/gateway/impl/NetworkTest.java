@@ -9,19 +9,19 @@ package org.hyperledger.fabric.gateway.impl;
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
+import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.sdk.Channel;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 
 public class NetworkTest {
     private Gateway gateway = null;
     private Network network = null;
 
-    @Before
+    @BeforeEach
     public void beforeEach() throws Exception {
-        gateway = TestUtils.instance().newGatewayBuilder().connect();
+        gateway = TestUtils.getInstance().newGatewayBuilder().connect();
         network = gateway.getNetwork("ch1");
     }
 
@@ -37,7 +37,7 @@ public class NetworkTest {
         Assert.assertEquals(gw, gateway);
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     public void testGetContract() {
         Contract contract = network.getContract("contract1");
         Assert.assertTrue(contract instanceof ContractImpl);
@@ -50,7 +50,7 @@ public class NetworkTest {
         Assert.assertEquals(contract, contract2);
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     public void testGetContractEmptyId() {
         try {
             network.getContract("");
@@ -68,7 +68,7 @@ public class NetworkTest {
         }
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     public void testGetContractNullName() {
         try {
             network.getContract("id", null);
@@ -77,5 +77,21 @@ public class NetworkTest {
         }
     }
 
-
+//    @Test
+//    public void testGetTransactionEventSource() {
+//        BlockEvent.TransactionEvent txEvent = Mockito.mock(BlockEvent.TransactionEvent.class);
+//
+//        BlockEvent blockEvent = Mockito.mock(BlockEvent.class);
+//        Mockito.doReturn(Arrays.asList(txEvent)).when(blockEvent).getTransactionEvents();
+//
+//        TransactionListener listener = Mockito.mock(TransactionListener.class);
+//
+//        try (StubBlockEventSource stubBlockSource = new StubBlockEventSource()) {
+//            TransactionEventSource transactionSource = network.getTransactionEventSource();
+//            transactionSource.addTransactionListener(listener);
+//            stubBlockSource.sendEvent(blockEvent);
+//        }
+//
+//        Mockito.verify(listener).receivedTransaction(txEvent);
+//    }
 }

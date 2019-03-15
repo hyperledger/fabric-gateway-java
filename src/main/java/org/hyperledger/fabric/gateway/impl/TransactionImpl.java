@@ -6,28 +6,24 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hyperledger.fabric.gateway.GatewayException;
-import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.Transaction;
 import org.hyperledger.fabric.gateway.spi.CommitHandler;
 import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
-import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.ChaincodeResponse;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.ProposalResponse;
 import org.hyperledger.fabric.sdk.TransactionProposalRequest;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public final class TransactionImpl implements Transaction {
     private static final Log logger = LogFactory.getLog(TransactionImpl.class);
@@ -71,7 +67,7 @@ public final class TransactionImpl implements Transaction {
             String transactionId = proposalResponse.getTransactionID();
 
             Channel.TransactionOptions transactionOptions = Channel.TransactionOptions.createTransactionOptions()
-                    .nOfEvents(Channel.NOfEvents.createNoEvents());
+                    .nOfEvents(Channel.NOfEvents.createNoEvents()); // Disable default commit wait behaviour
 
             CommitHandler commitHandler = commitHandlerFactory.create(transactionId, network);
             commitHandler.startListening();

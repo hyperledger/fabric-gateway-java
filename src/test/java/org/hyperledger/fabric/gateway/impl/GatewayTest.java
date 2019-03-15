@@ -9,20 +9,20 @@ package org.hyperledger.fabric.gateway.impl;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
+import org.hyperledger.fabric.gateway.TestUtils;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 
 public class GatewayTest {
     private Gateway.Builder builder = null;
 
-    @Before
+    @BeforeEach
     public void beforeEach() throws Exception {
-        builder = TestUtils.instance().newGatewayBuilder();
+        builder = TestUtils.getInstance().newGatewayBuilder();
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     public void testGetNetwork() throws Exception {
         try (Gateway gateway = builder.connect()) {
             Network network = gateway.getNetwork("mychannel");
@@ -32,7 +32,7 @@ public class GatewayTest {
         }
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     public void testGetCachedNetwork() throws Exception {
         try (Gateway gateway = builder.connect()) {
             Network network = gateway.getNetwork("mychannel");
@@ -53,7 +53,7 @@ public class GatewayTest {
         }
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     public void testGetAssumedNetwork() throws Exception {
         try (Gateway gateway = builder.connect()) {
             Network network = gateway.getNetwork("assumed");

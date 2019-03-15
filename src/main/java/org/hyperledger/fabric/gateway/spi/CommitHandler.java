@@ -17,9 +17,10 @@ public interface CommitHandler {
     void startListening();
 
     /**
-     * Wait until enough transaction commit events have been received to satisfy the event handling strategy.
-     * @throws GatewayException
-     * @throws TimeoutException
+     * Block until enough transaction commit events have been received to satisfy the event handling strategy.
+     * @throws GatewayException if the commit fails, either by being rejected by a peer of failing to meet the
+     * requirements of the strategy.
+     * @throws TimeoutException if the strategy was not satisfied in time.
      */
     void waitForEvents() throws GatewayException, TimeoutException;
 

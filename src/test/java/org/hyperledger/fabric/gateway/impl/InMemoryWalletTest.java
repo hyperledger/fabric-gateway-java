@@ -7,12 +7,12 @@
 package org.hyperledger.fabric.gateway.impl;
 
 import org.hyperledger.fabric.gateway.Wallet;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 public class InMemoryWalletTest extends WalletTest {
 
   @Override
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setup();
     wallet = Wallet.createInMemoryWallet();

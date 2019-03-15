@@ -6,17 +6,17 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import org.hyperledger.fabric.gateway.Wallet;
+import org.hyperledger.fabric.gateway.Wallet.Identity;
+import org.junit.Assert;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.PrivateKey;
 import java.util.Set;
-
-import org.hyperledger.fabric.gateway.Wallet;
-import org.hyperledger.fabric.gateway.Wallet.Identity;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 public abstract class WalletTest {
   Wallet wallet = null;
@@ -26,14 +26,14 @@ public abstract class WalletTest {
   static PrivateKey pk;
   static String certificate;
 
-  @BeforeClass
+  @BeforeAll
   public static void init() throws Exception {
 	  Enrollment enrollment = Enrollment.createTestEnrollment();
 	  pk = enrollment.getPrivateKey();
 	  certificate = enrollment.getCertificate();
   }
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     identity1 = new WalletIdentity("org1msp", certificate, pk);
     identity2 = new WalletIdentity("org2msp", certificate, pk);

@@ -1,18 +1,6 @@
 package scenario;
 
-import static org.junit.Assert.assertEquals;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.PrivateKey;
-import java.util.concurrent.TimeoutException;
-
+import cucumber.api.java8.En;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
@@ -23,40 +11,23 @@ import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.Wallet;
 
-import cucumber.api.java8.En;
-import org.hyperledger.fabric.gateway.spi.CommitHandler;
-import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.PrivateKey;
+
+import static org.junit.Assert.assertEquals;
 
 public class ScenarioSteps implements En {
 	Gateway gateway = null;
 	String evaluateResponse = null;
 	String submitResponse = null;
 	boolean fabricRunning = false;
-
-	public static final class DelayCommitHandler implements CommitHandler {
-		private final long delayMillis;
-
-		public DelayCommitHandler(long delayMillis) {
-			this.delayMillis = delayMillis;
-		}
-
-		@Override
-		public void startListening() { }
-
-		@Override
-		public void waitForEvents() throws GatewayException, TimeoutException {
-			try {
-				Thread.sleep(delayMillis);
-			} catch (InterruptedException e) {
-				throw new GatewayException(e);
-			}
-		}
-
-		@Override
-		public void cancelListening() {
-
-		}
-	}
 
 	public ScenarioSteps() {
 		Given("I have deployed a (.+?) Fabric network", (String tlsType) -> {
@@ -86,12 +57,6 @@ public class ScenarioSteps implements En {
 			Gateway.Builder builder = Gateway. createBuilder();
 			builder.identity(wallet, userName);
 			builder.networkConfig(networkConfigPath);
-			builder.commitHandler(new CommitHandlerFactory() {
-				@Override
-				public CommitHandler create(String transactionId, Network network) {
-					return new DelayCommitHandler(5000);
-				}
-			});
 			gateway = builder.connect();
 		});
 

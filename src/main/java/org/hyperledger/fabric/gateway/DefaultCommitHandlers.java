@@ -6,35 +6,46 @@
 
 package org.hyperledger.fabric.gateway;
 
+import org.hyperledger.fabric.gateway.impl.AllCommitStrategy;
+import org.hyperledger.fabric.gateway.impl.AnyCommitStrategy;
+import org.hyperledger.fabric.gateway.impl.CommitHandlerImpl;
+import org.hyperledger.fabric.gateway.impl.CommitStrategy;
 import org.hyperledger.fabric.gateway.impl.NoOpCommitHandler;
 import org.hyperledger.fabric.gateway.spi.CommitHandler;
 import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
 import org.hyperledger.fabric.sdk.Peer;
 
 import java.util.Collection;
-import java.util.Collections;
 
-public final class DefaultCommitHandlers {
-    public static CommitHandlerFactory NONE = new CommitHandlerFactory() {
-        @Override
-        public CommitHandler create(String transactionId, Network network) {
-            return NoOpCommitHandler.INSTANCE;
-        }
-    };
+/**
+ * Default commit handler implementations. Instances can be referenced directly or looked up by name, for example
+ * {@code DefaultCommitHandlers.valueOf("NONE")}.
+ */
+public enum DefaultCommitHandlers implements CommitHandlerFactory {
+    NONE((transactionId, network) -> NoOpCommitHandler.INSTANCE),
 
-    public static CommitHandlerFactory MSPID_SCOPE_ALLFORTX = new CommitHandlerFactory() {
-        @Override
-        public CommitHandler create(String transactionId, Network network) {
-            Collection<Peer> peers = Collections.emptyList();
-//            Collection<TxEventListener> listeners = Collections.emptyList(); // Listeners for each peer, and which know the tx ID to listen for
-            Object strategy = null; // TODO
-            CommitHandler handler = null; //new CommitHandlerImpl(strategy);
-            return handler;
-        }
-    };
+    NETWORK_SCOPE_ALLFORTX((transactionId, network) -> {
+        Collection<Peer> peers = network.getChannel().getPeers();
+        CommitStrategy strategy = new AllCommitStrategy(peers);
+        CommitHandler handler = new CommitHandlerImpl(transactionId, network, strategy);
+        return handler;
+    }),
 
-    /**
-     * Private constructor to prevent instantiation.
-     */
-    private DefaultCommitHandlers() { }
+    NETWORK_SCOPE_ANYFORTX((transactionId, network) -> {
+        Collection<Peer> peers = network.getChannel().getPeers();
+        CommitStrategy strategy = new AnyCommitStrategy(peers);
+        CommitHandler handler = new CommitHandlerImpl(transactionId, network, strategy);
+        return handler;
+    });
+
+    private final CommitHandlerFactory factory;
+
+    DefaultCommitHandlers(CommitHandlerFactory factory) {
+        this.factory = factory;
+    }
+
+    public CommitHandler create(String transactionId, Network network) {
+        return factory.create(transactionId, network);
+    }
+
 }

@@ -16,22 +16,22 @@ import org.hyperledger.fabric.gateway.Wallet;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class GatewayBuilderTest {
   Gateway.Builder builder = null;
   static Path networkConfigPath = null;
   static Enrollment enrollment = null;
 
-  @BeforeClass
+  @BeforeAll
   public static void enroll() throws Exception {
     enrollment = Enrollment.createTestEnrollment();
     networkConfigPath = Paths.get("src", "test", "java", "org", "hyperledger", "fabric", "gateway", "connection.json");
   }
 
-  @Before
+  @BeforeEach
   public void setup() {
     builder = Gateway.createBuilder();
   }
