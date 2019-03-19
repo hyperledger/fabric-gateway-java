@@ -78,6 +78,57 @@
 				<plugin>
 					<artifactId>maven-surefire-plugin</artifactId>
 					<version>2.22.1</version>
+				    <configuration>
+				        <excludes>
+				            <exclude>**/scenario/**</exclude>
+				        </excludes>
+				    </configuration>
+	                <executions>
+	                    <execution>
+	                        <phase>integration-test</phase>
+	                        <goals>
+	                            <goal>test</goal>
+	                        </goals>
+	                        <configuration>
+	                            <excludes>
+	                                <exclude>none</exclude>
+	                            </excludes>
+	                            <includes>
+	                                <include>**/RunScenarioTest</include>
+	                            </includes>
+	                        </configuration>
+	                    </execution>
+	                    <execution>
+	                    	<id>setup</id>
+	                        <phase>pre-integration-test</phase>
+	                        <goals>
+	                            <goal>test</goal>
+	                        </goals>
+	                        <configuration>
+	                            <excludes>
+	                                <exclude>none</exclude>
+	                            </excludes>
+	                            <includes>
+	                                <include>**/SetupScenarioTest</include>
+	                            </includes>
+	                        </configuration>
+	                    </execution>
+	                    <execution>
+	                    	<id>cleanup</id>
+	                        <phase>post-integration-test</phase>
+	                        <goals>
+	                            <goal>test</goal>
+	                        </goals>
+	                        <configuration>
+	                            <excludes>
+	                                <exclude>none</exclude>
+	                            </excludes>
+	                            <includes>
+	                                <include>**/CleanupScenarioTest</include>
+	                            </includes>
+	                        </configuration>
+	                    </execution>
+	                </executions>
 				</plugin>
 				<plugin>
 					<artifactId>maven-jar-plugin</artifactId>
@@ -129,4 +180,5 @@
 			</plugin>
 		</plugins>
 	</reporting>
+
 </project>

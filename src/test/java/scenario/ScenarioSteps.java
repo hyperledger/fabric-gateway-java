@@ -61,9 +61,6 @@ public class ScenarioSteps implements En {
 	public ScenarioSteps() {
 		Given("I have deployed a (.+?) Fabric network", (String tlsType) -> {
 		    if (!fabricRunning) {
-		    	createCryptoMaterial();
-		    	Path dockerCompose = Paths.get("src", "test", "fixtures", "docker-compose", "docker-compose.yaml");
-		    	exec(String.format("docker-compose -f %s -p node up -d", dockerCompose.toAbsolutePath().toString()));
 		    	fabricRunning = true;
 		    }
 		});
@@ -159,6 +156,18 @@ public class ScenarioSteps implements En {
 
     	assertEquals(exitCode, 0);
 
+	}
+
+	static void startFabric() throws Exception {
+    	createCryptoMaterial();
+    	Path dockerCompose = Paths.get("src", "test", "fixtures", "docker-compose", "docker-compose.yaml");
+    	exec(String.format("docker-compose -f %s -p node up -d", dockerCompose.toAbsolutePath().toString()));
+    	Thread.sleep(10000);
+	}
+
+	static void stopFabric() throws Exception {
+    	Path dockerCompose = Paths.get("src", "test", "fixtures", "docker-compose", "docker-compose.yaml");
+    	exec(String.format("docker-compose -f %s -p node down", dockerCompose.toAbsolutePath().toString()));
 	}
 
 	private static void createCryptoMaterial() throws Exception {
