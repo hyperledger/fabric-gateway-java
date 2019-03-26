@@ -6,7 +6,7 @@ public class CleanupScenarioTest {
 
 	@Test
 	public void stopFabric() throws Exception {
-		ScenarioSteps.stopFabric();
+		ScenarioSteps.stopFabric(true);
 	}
 
 }

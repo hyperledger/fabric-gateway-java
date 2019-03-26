@@ -60,6 +60,7 @@ public class ScenarioSteps implements En {
 
 	public ScenarioSteps() {
 		Given("I have deployed a (.+?) Fabric network", (String tlsType) -> {
+			// tlsType is either "tls" or "non-tls"
 		    if (!fabricRunning) {
 		    	fabricRunning = true;
 		    }
@@ -67,13 +68,20 @@ public class ScenarioSteps implements En {
 
 		Given("I have created and joined all channels from the (.+?) common connection profile", (String tlsType) -> {
 		    // TODO this only does mychannel
-	    	exec("docker exec org1_cli peer channel create -o orderer.example.com:7050 -c mychannel -f /etc/hyperledger/configtx/channel.tx --outputBlock /etc/hyperledger/configtx/mychannel.block");
-	    	exec("docker exec org1_cli peer channel join -b /etc/hyperledger/configtx/mychannel.block");
-	    	exec("docker exec org2_cli peer channel join -b /etc/hyperledger/configtx/mychannel.block");
+			String tlsOption;
+			if (tlsType.equals("tls")) {
+				tlsOption = "--tls true --cafile /etc/hyperledger/configtx/crypto-config/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem";
+			} else {
+				tlsOption = "";
+			}
+	    	exec(String.format("docker exec org1_cli peer channel create -o orderer.example.com:7050 -c mychannel -f /etc/hyperledger/configtx/channel.tx --outputBlock /etc/hyperledger/configtx/mychannel.block %s", tlsOption));
+	    	exec(String.format("docker exec org1_cli peer channel join -b /etc/hyperledger/configtx/mychannel.block %s", tlsOption));
+	    	exec(String.format("docker exec org2_cli peer channel join -b /etc/hyperledger/configtx/mychannel.block %s", tlsOption));
 		});
 
 		Given("^I have created a gateway named (.+?) as user (.+?) within (.+?) using the (.+?) common connection profile$", (String gatewayName, String userName, String orgName, String tlsType) -> {
-			Path networkConfigPath = Paths.get("src", "test", "java", "org", "hyperledger", "fabric", "gateway", "connection.json");
+	    	String ccp = tlsType.equals("tls") ? "connection-tls.json" : "connection.json";
+			Path networkConfigPath = Paths.get("src", "test", "java", "org", "hyperledger", "fabric", "gateway", ccp);
 			Wallet wallet = createWallet();
 			Gateway.Builder builder = Gateway. createBuilder();
 			builder.identity(wallet, userName);
@@ -90,12 +98,18 @@ public class ScenarioSteps implements En {
 		Given("^I install\\/instantiate (.+?) chaincode named (.+?) at version (.+?) as (.+?) to the (.+?) Fabric network for all organizations on channel (.+?) with endorsement policy (.+?) and args (.+?)$", (String ccType, String ccName, String version, String ccId, String tlsType, String channelName, String policyType, String args) -> {
 		    // Write code here that turns the phrase above into concrete actions
 		    String[] params = args.substring(1, args.length()-1).split(",");
+			String tlsOption;
+			if (tlsType.equals("tls")) {
+				tlsOption = "--tls true --cafile /etc/hyperledger/configtx/crypto-config/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem";
+			} else {
+				tlsOption = "";
+			}
 
 		    String ccPath = String.format("/opt/gopath/src/github.com/chaincode/%s/%s", ccType, ccName);
 	    	exec(String.format("docker exec org1_cli peer chaincode install -l %s -n %s -v %s -p %s", ccType, ccName, version, ccPath));
 	    	exec(String.format("docker exec org2_cli peer chaincode install -l %s -n %s -v %s -p %s", ccType, ccName, version, ccPath));
 	    	Thread.sleep(3000);
-	    	exec(String.format("docker exec org1_cli peer chaincode instantiate -o orderer.example.com:7050 -l %s -C %s -n %s -v %s -c {\"function\":\"initLedger\",\"Args\":[\"\"]} -P OR(\"Org1MSP.member\")", ccType, channelName, ccName, version));
+	    	exec(String.format("docker exec org1_cli peer chaincode instantiate -o orderer.example.com:7050 -l %s -C %s -n %s -v %s -c {\"function\":\"initLedger\",\"Args\":[\"\"]} -P OR(\"Org1MSP.member\",\"Org2MSP.member\") %s", ccType, channelName, ccName, version, tlsOption));
 	    	Thread.sleep(3000);
 		});
 
@@ -158,15 +172,17 @@ public class ScenarioSteps implements En {
 
 	}
 
-	static void startFabric() throws Exception {
+	static void startFabric(boolean tls) throws Exception {
     	createCryptoMaterial();
-    	Path dockerCompose = Paths.get("src", "test", "fixtures", "docker-compose", "docker-compose.yaml");
+    	String yaml = tls ? "docker-compose-tls.yaml" : "docker-compose.yaml";
+    	Path dockerCompose = Paths.get("src", "test", "fixtures", "docker-compose", yaml);
     	exec(String.format("docker-compose -f %s -p node up -d", dockerCompose.toAbsolutePath().toString()));
     	Thread.sleep(10000);
 	}
 
-	static void stopFabric() throws Exception {
-    	Path dockerCompose = Paths.get("src", "test", "fixtures", "docker-compose", "docker-compose.yaml");
+	static void stopFabric(boolean tls) throws Exception {
+    	String yaml = tls ? "docker-compose-tls.yaml" : "docker-compose.yaml";
+    	Path dockerCompose = Paths.get("src", "test", "fixtures", "docker-compose", yaml);
     	exec(String.format("docker-compose -f %s -p node down", dockerCompose.toAbsolutePath().toString()));
 	}
 
