@@ -35,7 +35,6 @@ public final class CommitHandlerImpl implements CommitHandler {
     private final Set<Peer> peers;
     private final CountDownLatch latch = new CountDownLatch(1);
     private final AtomicReference<GatewayException> error = new AtomicReference<>();
-    private final long timeoutSeconds = 300; // TODO: Get timeout from gateway options
 
     public CommitHandlerImpl(String transactionId, Network network, CommitStrategy strategy) {
         this.transactionId = transactionId;
@@ -56,9 +55,9 @@ public final class CommitHandlerImpl implements CommitHandler {
     }
 
     @Override
-    public void waitForEvents() throws GatewayException {
+    public void waitForEvents(long timeout, TimeUnit timeUnit) throws GatewayException {
         try {
-            latch.await(timeoutSeconds, TimeUnit.SECONDS);
+            latch.await(timeout, timeUnit);
         } catch (InterruptedException e) {
             throw new GatewayException(e);
         } finally {

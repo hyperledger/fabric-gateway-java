@@ -22,8 +22,14 @@ import java.util.Collection;
  * {@code DefaultCommitHandlers.valueOf("NONE")}.
  */
 public enum DefaultCommitHandlers implements CommitHandlerFactory {
+    /**
+     * Do not wait for any commit events to be received from peers after submitting a transaction.
+     */
     NONE((transactionId, network) -> NoOpCommitHandler.INSTANCE),
 
+    /**
+     * Wait to receive commit events from all currently responding peers in the network after submitting a transaction.
+     */
     NETWORK_SCOPE_ALLFORTX((transactionId, network) -> {
         Collection<Peer> peers = network.getChannel().getPeers();
         CommitStrategy strategy = new AllCommitStrategy(peers);
@@ -31,6 +37,9 @@ public enum DefaultCommitHandlers implements CommitHandlerFactory {
         return handler;
     }),
 
+    /**
+     * Wait to receive a commit event from any currently responding peer in the network after submitting a transaction.
+     */
     NETWORK_SCOPE_ANYFORTX((transactionId, network) -> {
         Collection<Peer> peers = network.getChannel().getPeers();
         CommitStrategy strategy = new AnyCommitStrategy(peers);
@@ -47,5 +56,4 @@ public enum DefaultCommitHandlers implements CommitHandlerFactory {
     public CommitHandler create(String transactionId, Network network) {
         return factory.create(transactionId, network);
     }
-
 }

@@ -35,14 +35,11 @@ import java.util.Map;
 import java.util.Set;
 
 public class GatewayImpl implements Gateway {
-    private HFClient client;
-    private NetworkConfig networkConfig;
-    private Identity identity;
-    private Map<String, Network> networks = new HashMap<>();
-    private CommitHandlerFactory commitHandlerFactory;
-
-    private GatewayImpl() {
-    }
+    private final HFClient client;
+    private final NetworkConfig networkConfig;
+    private final Identity identity;
+    private final Map<String, Network> networks = new HashMap<>();
+    private final CommitHandlerFactory commitHandlerFactory;
 
     public static class Builder implements Gateway.Builder {
         private CommitHandlerFactory commitHandlerFactory = DefaultCommitHandlers.NETWORK_SCOPE_ALLFORTX;
@@ -79,30 +76,7 @@ public class GatewayImpl implements Gateway {
 
         @Override
         public Gateway connect() throws GatewayException {
-            try {
-                GatewayImpl gw = new GatewayImpl();
-                if (client != null) {
-                    gw.client = client;
-                } else {
-                    if (identity == null) {
-                        throw new GatewayException("The gateway identity must be set");
-                    }
-                    if (ccp == null) {
-                        throw new GatewayException("The network configuration must be specified");
-                    }
-                    gw.client = HFClient.createNewInstance();
-                    CryptoSuite cryptoSuite;
-                    cryptoSuite = CryptoSuiteFactory.getDefault().getCryptoSuite();
-                    gw.client.setCryptoSuite(cryptoSuite);
-                    gw.networkConfig = NetworkConfig.fromJsonFile(this.ccp.toFile());
-                    gw.identity = this.identity;
-                    gw.client.setUserContext(createUser());
-                }
-                gw.commitHandlerFactory = this.commitHandlerFactory;
-                return gw;
-            } catch (InvalidArgumentException | NetworkConfigurationException | IOException | CryptoException | ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
-                throw new GatewayException(e);
-            }
+            return new GatewayImpl(this);
         }
 
         private User createUser() {
@@ -147,17 +121,37 @@ public class GatewayImpl implements Gateway {
         }
     }
 
+    private GatewayImpl(Builder builder) throws GatewayException {
+        try {
+            if (builder.client != null) {
+                this.client = builder.client;
+                this.identity = null;
+                this.networkConfig = null;
+            } else {
+                if (builder.identity == null) {
+                    throw new GatewayException("The gateway identity must be set");
+                }
+                if (builder.ccp == null) {
+                    throw new GatewayException("The network configuration must be specified");
+                }
+                this.client = HFClient.createNewInstance();
+                CryptoSuite cryptoSuite;
+                cryptoSuite = CryptoSuiteFactory.getDefault().getCryptoSuite();
+                this.client.setCryptoSuite(cryptoSuite);
+                this.networkConfig = NetworkConfig.fromJsonFile(builder.ccp.toFile());
+                this.identity = builder.identity;
+                this.client.setUserContext(builder.createUser());
+            }
+            this.commitHandlerFactory = builder.commitHandlerFactory;
+        } catch (InvalidArgumentException | NetworkConfigurationException | IOException | CryptoException | ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
+            throw new GatewayException(e);
+        }
+    }
+
     @Override
     public void close() {
     }
 
-    /**
-     * Get a network.
-     *
-     * @param networkName The name of the network (channel).
-     * @return network
-     * @throws GatewayException
-     */
     @Override
     public synchronized Network getNetwork(String networkName) throws GatewayException {
         if (networkName == null || networkName.isEmpty()) {

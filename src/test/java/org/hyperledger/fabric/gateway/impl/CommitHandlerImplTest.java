@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
@@ -31,6 +32,8 @@ import static org.mockito.Mockito.*;
 public class CommitHandlerImplTest {
     private final TestUtils testUtils = TestUtils.getInstance();
     private final String transactionId = "txId";
+    private final long timeout = 30;
+    private final TimeUnit timeUnit = TimeUnit.SECONDS;
     private StubBlockEventSource blockSource;
     private Peer peer;
     private Collection<Peer> peers;
@@ -161,7 +164,7 @@ public class CommitHandlerImplTest {
 
         commitHandler.startListening();
         sendValidTransactionEvent();
-        commitHandler.waitForEvents();
+        commitHandler.waitForEvents(timeout, timeUnit);
     }
 
     @Test
@@ -170,7 +173,7 @@ public class CommitHandlerImplTest {
 
         commitHandler.startListening();
         sendPeerDisconnectEvent();
-        commitHandler.waitForEvents();
+        commitHandler.waitForEvents(timeout, timeUnit);
     }
 
     @Test
@@ -179,7 +182,7 @@ public class CommitHandlerImplTest {
 
         commitHandler.startListening();
         sendValidTransactionEvent();
-        assertThrows(GatewayException.class, () -> commitHandler.waitForEvents());
+        assertThrows(GatewayException.class, () -> commitHandler.waitForEvents(timeout, timeUnit));
     }
 
     @Test
@@ -188,13 +191,13 @@ public class CommitHandlerImplTest {
 
         commitHandler.startListening();
         sendInvalidTransactionEvent();
-        assertThrows(GatewayException.class, () -> commitHandler.waitForEvents());
+        assertThrows(GatewayException.class, () -> commitHandler.waitForEvents(timeout, timeUnit));
     }
 
     @Test
     public void wait_returns_if_cancelled() throws Exception {
         commitHandler.startListening();
         commitHandler.cancelListening();
-        commitHandler.waitForEvents();
+        commitHandler.waitForEvents(timeout, timeUnit);
     }
 }

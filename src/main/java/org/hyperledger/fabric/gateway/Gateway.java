@@ -6,10 +6,10 @@
 
 package org.hyperledger.fabric.gateway;
 
-import java.nio.file.Path;
-
 import org.hyperledger.fabric.gateway.impl.GatewayImpl;
 import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
+
+import java.nio.file.Path;
 
 /**
  * The Gateway provides the connection point for an application to access
@@ -78,13 +78,15 @@ public interface Gateway extends AutoCloseable {
 		 * @param wallet The {@link Wallet} object containing the identity.
 		 * @param id The name of the identity stored in the wallet.
 		 * @return The builder instance, allowing multiple configuration options to be chained.
-		 * @throws GatewayException
+		 * @throws GatewayException if the specified identity can not be loaded from the wallet.
 		 */
 		Builder identity(Wallet wallet, String id) throws GatewayException;
 
 		/**
-		 * Allows an alternative commit handler to be specified. Optional.
-		 * @param commitHandler
+		 * <em>Optional</em> - Allows an alternative commit handler to be specified. The commit handler defines how
+		 * client code should wait to receive commit events from peers following submit of a transaction.
+		 * <p>Default commit handler implementations are defined in {@link DefaultCommitHandlers}.</p>
+		 * @param commitHandler A commit handler implementation.
 		 * @return The builder instance, allowing multiple configuration options to be chained.
 		 */
 		Builder commitHandler(CommitHandlerFactory commitHandler);
@@ -92,7 +94,7 @@ public interface Gateway extends AutoCloseable {
 		/**
 		 * Connects to the gateway using the specified options.
 		 * @return The connected {@link Gateway} object.
-		 * @throws GatewayException
+		 * @throws GatewayException on failure to connect the gateway using specified options.
 		 */
 		Gateway connect() throws GatewayException;
 	}

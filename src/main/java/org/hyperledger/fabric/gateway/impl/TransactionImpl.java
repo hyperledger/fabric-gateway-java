@@ -31,6 +31,9 @@ public final class TransactionImpl implements Transaction {
     private final NetworkImpl network;
     private final CommitHandlerFactory commitHandlerFactory;
 
+    private long commitTimeout = 5;
+    private TimeUnit commitTimeUnit = TimeUnit.MINUTES;
+
     TransactionImpl(TransactionProposalRequest request, NetworkImpl network) {
         this.request = request;
         this.network = network;
@@ -46,6 +49,12 @@ public final class TransactionImpl implements Transaction {
     public void setTransient(Map<String, byte[]> transientData) {
         // TODO Auto-generated method stub
 
+    }
+
+    @Override
+    public void setCommitTimeout(long timeout, TimeUnit timeUnit) {
+        this.commitTimeout = timeout;
+        this.commitTimeUnit = timeUnit;
     }
 
     @Override
@@ -82,7 +91,7 @@ public final class TransactionImpl implements Transaction {
                 throw new GatewayException("Failed to send transaction to the orderer", e);
             }
 
-            commitHandler.waitForEvents();
+            commitHandler.waitForEvents(commitTimeout, commitTimeUnit);
 
             return result;
         } catch (InvalidArgumentException | ProposalException e) {

@@ -7,6 +7,7 @@
 package org.hyperledger.fabric.gateway;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -37,14 +38,22 @@ public interface Transaction {
 	void setTransient(Map<String, byte[]> transientData);
 
 	/**
+	 * Set the maximum length of time to wait for commit events to be received after submitting a transaction to the
+	 * orderer.
+	 * @param timeout the maximum time to wait.
+	 * @param timeUnit the time unit of the timeout argument.
+	 */
+	void setCommitTimeout(long timeout, TimeUnit timeUnit);
+
+	/**
 	 * Submit a transaction to the ledger. The transaction function represented by this object
 	 * will be evaluated on the endorsing peers and then submitted to the ordering service
 	 * for committing to the ledger.
 	 *
 	 * @param args Transaction function arguments.
 	 * @return Payload response from the transaction function.
-	 * @throws GatewayException
-	 * @throws TimeoutException If the transaction was successfully submitted to the orderer but
+	 * @throws GatewayException if a error occurs submitting the transaction to the ledger.
+	 * @throws TimeoutException if the transaction was successfully submitted to the orderer but
 	 * timed out before a commit event was received from peers.
 	 */
 	byte[] submit(String... args) throws GatewayException, TimeoutException;

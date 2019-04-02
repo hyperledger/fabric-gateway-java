@@ -11,6 +11,13 @@ import org.hyperledger.fabric.gateway.Network;
 /**
  * Functional interface describing a factory method for constructing commit handler instances.
  */
+@FunctionalInterface
 public interface CommitHandlerFactory {
+    /**
+     * Factory function to create a commit handler instance.
+     * @param transactionId Transaction for which the instance is to handle commit events.
+     * @param network Network on which the transaction is invoked.
+     * @return A commit handler.
+     */
     CommitHandler create(String transactionId, Network network);
 }

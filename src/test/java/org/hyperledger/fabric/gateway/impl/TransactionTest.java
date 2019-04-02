@@ -134,5 +134,4 @@ public class TransactionTest {
         byte[] result = contract.submitTransaction("txn", "arg1");
         assertThat(new String(result), equalTo(expected));
     }
-
 }
