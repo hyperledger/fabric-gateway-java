@@ -27,17 +27,17 @@ import java.util.concurrent.TimeoutException;
 
 public final class TransactionImpl implements Transaction {
     private static final Log logger = LogFactory.getLog(TransactionImpl.class);
+
     private final TransactionProposalRequest request;
     private final NetworkImpl network;
     private final CommitHandlerFactory commitHandlerFactory;
-
-    private long commitTimeout = 5;
-    private TimeUnit commitTimeUnit = TimeUnit.MINUTES;
+    private Timeout commitTimeout;
 
     TransactionImpl(TransactionProposalRequest request, NetworkImpl network) {
         this.request = request;
         this.network = network;
         this.commitHandlerFactory = network.getGateway().getCommitHandlerFactory();
+        this.commitTimeout = network.getGateway().getCommitTimeout();
     }
 
     @Override
@@ -53,8 +53,7 @@ public final class TransactionImpl implements Transaction {
 
     @Override
     public void setCommitTimeout(long timeout, TimeUnit timeUnit) {
-        this.commitTimeout = timeout;
-        this.commitTimeUnit = timeUnit;
+        commitTimeout = new Timeout(timeout, timeUnit);
     }
 
     @Override
@@ -91,7 +90,7 @@ public final class TransactionImpl implements Transaction {
                 throw new GatewayException("Failed to send transaction to the orderer", e);
             }
 
-            commitHandler.waitForEvents(commitTimeout, commitTimeUnit);
+            commitHandler.waitForEvents(commitTimeout.getTimeout(), commitTimeout.getTimeUnit());
 
             return result;
         } catch (InvalidArgumentException | ProposalException e) {

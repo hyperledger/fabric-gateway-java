@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public class GatewayImpl implements Gateway {
     private final HFClient client;
@@ -40,6 +41,7 @@ public class GatewayImpl implements Gateway {
     private final Identity identity;
     private final Map<String, Network> networks = new HashMap<>();
     private final CommitHandlerFactory commitHandlerFactory;
+    private final Timeout commitTimeout;
 
     public static class Builder implements Gateway.Builder {
         private CommitHandlerFactory commitHandlerFactory = DefaultCommitHandlers.NETWORK_SCOPE_ALLFORTX;
@@ -47,6 +49,7 @@ public class GatewayImpl implements Gateway {
         private Identity identity = null;
         private User user = null;
         private HFClient client;
+        private Timeout commitTimeout = new Timeout(5, TimeUnit.MINUTES);
 
         public Builder() {
         }
@@ -66,6 +69,12 @@ public class GatewayImpl implements Gateway {
         @Override
         public Builder commitHandler(CommitHandlerFactory commitHandlerFactory) {
             this.commitHandlerFactory = commitHandlerFactory;
+            return this;
+        }
+
+        @Override
+        public Gateway.Builder commitTimeout(long timeout, TimeUnit timeUnit) {
+            this.commitTimeout = new Timeout(timeout, timeUnit);
             return this;
         }
 
@@ -143,6 +152,7 @@ public class GatewayImpl implements Gateway {
                 this.client.setUserContext(builder.createUser());
             }
             this.commitHandlerFactory = builder.commitHandlerFactory;
+            this.commitTimeout = builder.commitTimeout;
         } catch (InvalidArgumentException | NetworkConfigurationException | IOException | CryptoException | ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
             throw new GatewayException(e);
         }
@@ -190,12 +200,15 @@ public class GatewayImpl implements Gateway {
         return identity;
     }
 
-    HFClient getClient() {
+    public HFClient getClient() {
         return client;
     }
 
-    CommitHandlerFactory getCommitHandlerFactory() {
+    public CommitHandlerFactory getCommitHandlerFactory() {
         return commitHandlerFactory;
     }
 
+    public Timeout getCommitTimeout() {
+        return commitTimeout;
+    }
 }

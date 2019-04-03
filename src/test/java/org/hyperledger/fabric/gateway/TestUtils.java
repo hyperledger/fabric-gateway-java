@@ -11,7 +11,10 @@ import org.hyperledger.fabric.gateway.impl.Enrollment;
 import org.hyperledger.fabric.gateway.impl.GatewayImpl;
 import org.hyperledger.fabric.gateway.impl.event.PeerDisconnectEvent;
 import org.hyperledger.fabric.sdk.BlockEvent;
+import org.hyperledger.fabric.sdk.ChaincodeResponse;
 import org.hyperledger.fabric.sdk.Peer;
+import org.hyperledger.fabric.sdk.ProposalResponse;
+import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.mockito.Mockito;
 
 import java.io.IOException;
@@ -90,5 +93,27 @@ public final class TestUtils {
                 return null;
             }
         };
+    }
+
+    public ProposalResponse newSuccessfulProposalResponse(byte[] responsePayload) {
+        ProposalResponse response = newProposalResponse(responsePayload);
+        Mockito.when(response.getStatus()).thenReturn(ChaincodeResponse.Status.SUCCESS);
+        return response;
+    }
+
+    public ProposalResponse newFailureProposalResponse(byte[] responsePayload) {
+        ProposalResponse response = newProposalResponse(responsePayload);
+        Mockito.when(response.getStatus()).thenReturn(ChaincodeResponse.Status.FAILURE);
+        return response;
+    }
+
+    private ProposalResponse newProposalResponse(byte[] responsePayload) {
+        ProposalResponse response = Mockito.mock(ProposalResponse.class);
+        try {
+            Mockito.when(response.getChaincodeActionResponsePayload()).thenReturn(responsePayload);
+        } catch (InvalidArgumentException e) {
+            throw new RuntimeException(e);
+        }
+        return response;
     }
 }

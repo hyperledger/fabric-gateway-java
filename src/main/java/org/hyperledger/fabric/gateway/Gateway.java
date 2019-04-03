@@ -10,6 +10,7 @@ import org.hyperledger.fabric.gateway.impl.GatewayImpl;
 import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
 
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The Gateway provides the connection point for an application to access
@@ -90,6 +91,15 @@ public interface Gateway extends AutoCloseable {
 		 * @return The builder instance, allowing multiple configuration options to be chained.
 		 */
 		Builder commitHandler(CommitHandlerFactory commitHandler);
+
+		/**
+		 * <em>Optional</em> - Set the default maximum time to wait for commit events to be received from peers after
+		 * submitting a transaction to the orderer.
+		 * @param timeout the maximum time to wait.
+		 * @param timeUnit the time unit of the timeout argument.
+		 * @return The builder instance, allowing multiple configuration options to be chained.
+		 */
+		Builder commitTimeout(long timeout, TimeUnit timeUnit);
 
 		/**
 		 * Connects to the gateway using the specified options.

@@ -8,11 +8,10 @@ package org.hyperledger.fabric.gateway.impl;
 
 import org.hamcrest.CoreMatchers;
 import org.hyperledger.fabric.gateway.Contract;
-import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.TestUtils;
-import org.hyperledger.fabric.sdk.ChaincodeResponse;
+import org.hyperledger.fabric.gateway.spi.CommitHandler;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.ProposalResponse;
@@ -22,20 +21,25 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.CoreMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.*;
 
 
 public class TransactionTest {
-    TransactionProposalRequest request;
-    Channel channel;
-    Contract contract;
+    private final TestUtils testUtils = TestUtils.getInstance();
+    private final Timeout timeout = new Timeout(7, TimeUnit.DAYS);
+    private TransactionProposalRequest request;
+    private Channel channel;
+    private Contract contract;
+    private CommitHandler commitHandler;
 
     @BeforeEach
     public void setup() throws Exception {
@@ -49,9 +53,11 @@ public class TransactionTest {
 
         request = mock(TransactionProposalRequest.class);
 
+        commitHandler = mock(CommitHandler.class);
         Gateway gateway = TestUtils.getInstance().newGatewayBuilder()
                 .client(client)
-                .commitHandler(DefaultCommitHandlers.NONE)
+                .commitHandler((transactionId, network) -> commitHandler)
+                .commitTimeout(timeout.getTimeout(), timeout.getTimeUnit())
                 .connect();
         contract = gateway.getNetwork("network").getContract("contract");
     }
@@ -71,19 +77,15 @@ public class TransactionTest {
 
     @Test
     public void testEvaluateNoResponses() throws Exception {
-        List<ProposalResponse> responses = new ArrayList<>();
-        when(channel.sendTransactionProposal(request)).thenReturn(responses);
+        when(channel.sendTransactionProposal(request)).thenReturn(Collections.emptyList());
 
         assertThrows(GatewayException.class, () -> contract.evaluateTransaction("txn", "arg1"));
     }
 
     @Test
     public void testEvaluateUnsuccessfulResponse() throws Exception {
-        List<ProposalResponse> responses = new ArrayList<>();
-        ProposalResponse response = mock(ProposalResponse.class);
-        when(response.getStatus()).thenReturn(ChaincodeResponse.Status.FAILURE);
-        responses.add(response);
-        when(channel.sendTransactionProposal(request)).thenReturn(responses);
+        ProposalResponse response = testUtils.newFailureProposalResponse(new byte[0]);
+        when(channel.sendTransactionProposal(request)).thenReturn(Arrays.asList(response));
 
         assertThrows(GatewayException.class, () -> contract.evaluateTransaction("txn", "arg1"));
     }
@@ -91,12 +93,8 @@ public class TransactionTest {
     @Test
     public void testEvaluateSuccess() throws Exception {
         String expected = "successful result";
-        List<ProposalResponse> responses = new ArrayList<>();
-        ProposalResponse response = mock(ProposalResponse.class);
-        when(response.getStatus()).thenReturn(ChaincodeResponse.Status.SUCCESS);
-        when(response.getChaincodeActionResponsePayload()).thenReturn(expected.getBytes());
-        responses.add(response);
-        when(channel.sendTransactionProposal(ArgumentMatchers.any())).thenReturn(responses);
+        ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
+        when(channel.sendTransactionProposal(ArgumentMatchers.any())).thenReturn(Arrays.asList(response));
 
         byte[] result = contract.evaluateTransaction("txn", "arg1");
         assertThat(new String(result), CoreMatchers.equalTo(expected));
@@ -112,11 +110,8 @@ public class TransactionTest {
 
     @Test
     public void testSubmitUnsuccessfulResponse() throws Exception {
-        List<ProposalResponse> responses = new ArrayList<>();
-        ProposalResponse response = mock(ProposalResponse.class);
-        when(response.getStatus()).thenReturn(ChaincodeResponse.Status.FAILURE);
-        responses.add(response);
-        when(channel.sendTransactionProposal(request)).thenReturn(responses);
+        ProposalResponse response = testUtils.newFailureProposalResponse(new byte[0]);
+        when(channel.sendTransactionProposal(request)).thenReturn(Arrays.asList(response));
 
         assertThrows(GatewayException.class, () -> contract.submitTransaction("txn", "arg1"));
     }
@@ -124,14 +119,21 @@ public class TransactionTest {
     @Test
     public void testSubmitSuccess() throws Exception {
         String expected = "successful result";
-        List<ProposalResponse> responses = new ArrayList<>();
-        ProposalResponse response = mock(ProposalResponse.class);
-        when(response.getStatus()).thenReturn(ChaincodeResponse.Status.SUCCESS);
-        when(response.getChaincodeActionResponsePayload()).thenReturn(expected.getBytes());
-        responses.add(response);
-        when(channel.sendTransactionProposal(ArgumentMatchers.any())).thenReturn(responses);
+        ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
+        when(channel.sendTransactionProposal(ArgumentMatchers.any())).thenReturn(Arrays.asList(response));
 
         byte[] result = contract.submitTransaction("txn", "arg1");
         assertThat(new String(result), equalTo(expected));
+    }
+
+    @Test
+    public void testUsesGatewayCommitTimeout() throws Exception {
+        String expected = "successful result";
+        ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
+        when(channel.sendTransactionProposal(ArgumentMatchers.any())).thenReturn(Arrays.asList(response));
+
+        contract.submitTransaction("txn", "arg1");
+
+        verify(commitHandler).waitForEvents(timeout.getTimeout(), timeout.getTimeUnit());
     }
 }
