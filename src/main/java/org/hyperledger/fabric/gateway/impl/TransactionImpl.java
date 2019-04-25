@@ -12,9 +12,13 @@ import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Transaction;
 import org.hyperledger.fabric.gateway.spi.CommitHandler;
 import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
+import org.hyperledger.fabric.gateway.spi.Query;
+import org.hyperledger.fabric.gateway.spi.QueryHandler;
+import org.hyperledger.fabric.sdk.ChaincodeID;
 import org.hyperledger.fabric.sdk.ChaincodeResponse;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.ProposalResponse;
+import org.hyperledger.fabric.sdk.QueryByChaincodeRequest;
 import org.hyperledger.fabric.sdk.TransactionProposalRequest;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
@@ -28,21 +32,25 @@ import java.util.concurrent.TimeoutException;
 public final class TransactionImpl implements Transaction {
     private static final Log logger = LogFactory.getLog(TransactionImpl.class);
 
-    private final TransactionProposalRequest request;
-    private final NetworkImpl network;
+    private final ContractImpl contract;
+    private final String name;
     private final CommitHandlerFactory commitHandlerFactory;
-    private Timeout commitTimeout;
+    private TimePeriod commitTimeout;
+    private final QueryHandler queryHandler;
 
-    TransactionImpl(TransactionProposalRequest request, NetworkImpl network) {
-        this.request = request;
-        this.network = network;
-        this.commitHandlerFactory = network.getGateway().getCommitHandlerFactory();
-        this.commitTimeout = network.getGateway().getCommitTimeout();
+    TransactionImpl(ContractImpl contract, String name) {
+        this.contract = contract;
+        this.name = name;
+        NetworkImpl network = contract.getNetwork();
+        GatewayImpl gateway = network.getGateway();
+        commitHandlerFactory = gateway.getCommitHandlerFactory();
+        commitTimeout = gateway.getCommitTimeout();
+        queryHandler = network.getQueryHandler();
     }
 
     @Override
     public String getName() {
-        return request.getFcn();
+        return name;
     }
 
     @Override
@@ -53,14 +61,20 @@ public final class TransactionImpl implements Transaction {
 
     @Override
     public void setCommitTimeout(long timeout, TimeUnit timeUnit) {
-        commitTimeout = new Timeout(timeout, timeUnit);
+        commitTimeout = new TimePeriod(timeout, timeUnit);
     }
 
     @Override
     public byte[] submit(String... args) throws GatewayException, TimeoutException {
         try {
+            NetworkImpl network = contract.getNetwork();
             Channel channel = network.getChannel();
+
+            TransactionProposalRequest request = network.getGateway().getClient().newTransactionProposalRequest();
+            request.setChaincodeID(ChaincodeID.newBuilder().setName(contract.getChaincodeId()).build());
+            request.setFcn(name);
             request.setArgs(args);
+
             Collection<ProposalResponse> proposalResponses = channel.sendTransactionProposal(request);
 
             // Validate the proposal responses.
@@ -90,7 +104,7 @@ public final class TransactionImpl implements Transaction {
                 throw new GatewayException("Failed to send transaction to the orderer", e);
             }
 
-            commitHandler.waitForEvents(commitTimeout.getTimeout(), commitTimeout.getTimeUnit());
+            commitHandler.waitForEvents(commitTimeout.getTime(), commitTimeout.getTimeUnit());
 
             return result;
         } catch (InvalidArgumentException | ProposalException e) {
@@ -115,21 +129,19 @@ public final class TransactionImpl implements Transaction {
 
     @Override
     public byte[] evaluate(String... args) throws GatewayException {
+        NetworkImpl network = contract.getNetwork();
+
+        QueryByChaincodeRequest request = network.getGateway().getClient().newQueryProposalRequest();
+        ChaincodeID chaincodeId = ChaincodeID.newBuilder().setName(contract.getChaincodeId()).build();
+        request.setChaincodeID(chaincodeId);
+        request.setFcn(name);
+        request.setArgs(args);
+
+        Query query = new QueryImpl(network.getChannel(), request);
+        ProposalResponse response = queryHandler.evaluate(query);
         try {
-            Channel channel = network.getChannel();
-            request.setArgs(args);
-            Collection<ProposalResponse> proposalResponses = channel.sendTransactionProposal(request);
-
-            // Validate the proposal responses.
-            Collection<ProposalResponse> validResponses = validatePeerResponses(proposalResponses);
-
-            if (validResponses.size() < 1) {
-                logger.error("No valid proposal responses received.");
-                throw new GatewayException("No valid proposal responses received.");
-            }
-            ProposalResponse proposalResponse = validResponses.iterator().next();
-            return proposalResponse.getChaincodeActionResponsePayload();
-        } catch (InvalidArgumentException | ProposalException e) {
+            return response.getChaincodeActionResponsePayload();
+        } catch (InvalidArgumentException e) {
             throw new GatewayException(e);
         }
     }

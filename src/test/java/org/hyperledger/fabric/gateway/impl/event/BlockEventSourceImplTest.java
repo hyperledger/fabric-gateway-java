@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class BlockEventSourceImplTest {
     private Channel channel;
@@ -86,7 +86,8 @@ public class BlockEventSourceImplTest {
         reset(channel);
         when(channel.registerBlockListener(any())).thenThrow(InvalidArgumentException.class);
 
-        assertThrows(IllegalStateException.class, () -> blockEventSource.addBlockListener(blockEvent -> {}));
+        assertThatThrownBy(() -> blockEventSource.addBlockListener(blockEvent -> {}))
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test

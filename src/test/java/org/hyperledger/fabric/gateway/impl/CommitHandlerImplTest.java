@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 public class CommitHandlerImplTest {
@@ -182,7 +182,7 @@ public class CommitHandlerImplTest {
 
         commitHandler.startListening();
         sendValidTransactionEvent();
-        assertThrows(GatewayException.class, () -> commitHandler.waitForEvents(timeout, timeUnit));
+        assertThatThrownBy(() -> commitHandler.waitForEvents(timeout, timeUnit)).isInstanceOf(GatewayException.class);
     }
 
     @Test
@@ -191,7 +191,7 @@ public class CommitHandlerImplTest {
 
         commitHandler.startListening();
         sendInvalidTransactionEvent();
-        assertThrows(GatewayException.class, () -> commitHandler.waitForEvents(timeout, timeUnit));
+        assertThatThrownBy(() -> commitHandler.waitForEvents(timeout, timeUnit)).isInstanceOf(GatewayException.class);
     }
 
     @Test

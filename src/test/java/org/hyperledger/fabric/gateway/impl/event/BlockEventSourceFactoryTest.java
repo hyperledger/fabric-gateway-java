@@ -11,9 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.sameInstance;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class BlockEventSourceFactoryTest {
     private final BlockEventSourceFactory factory = BlockEventSourceFactory.getInstance();
@@ -29,16 +27,16 @@ public class BlockEventSourceFactoryTest {
         BlockEventSource first = factory.newBlockEventSource(channel);
         BlockEventSource second = factory.newBlockEventSource(channel);
 
-        assertThat(first, not(sameInstance(second)));
+        assertThat(first).isNotSameAs(second);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     public void can_override_factory_function() {
         BlockEventSource expected = Mockito.mock(BlockEventSource.class);
 
         BlockEventSourceFactory.setFactoryFunction(channel -> expected);
         BlockEventSource result = factory.newBlockEventSource(channel);
 
-        assertThat(result, sameInstance(expected));
+        assertThat(result).isSameAs(expected);
     }
 }

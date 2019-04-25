@@ -28,10 +28,10 @@ public interface Contract {
 	Transaction createTransaction(String name);
 
 	/**
-	 * Submit a transaction to the ledger. The transaction function <code>name</code>
+	 * Submit a transaction to the ledger. The transaction function {@code name}
 	 * will be evaluated on the endorsing peers and then submitted to the ordering service
 	 * for committing to the ledger.
-	 * This function is equivalent to calling <code>createTransaction(name).submit()</code>.
+	 * This function is equivalent to calling {@code createTransaction(name).submit()}.
 	 *
 	 * @param name Transaction function name.
 	 * @param args Transaction function arguments.
@@ -46,11 +46,11 @@ public interface Contract {
 
 	/**
 	 * Evaluate a transaction function and return its results.
-	 * The transaction function <code>name</code>
+	 * The transaction function {@code name}
 	 * will be evaluated on the endorsing peers but the responses will not be sent to
 	 * the ordering service and hence will not be committed to the ledger.
 	 * This is used for querying the world state.
-	 * This function is equivalent to calling <code>createTransaction(name).evaluate()</code>.
+	 * This function is equivalent to calling {@code createTransaction(name).evaluate()}.
 	 *
 	 * @param name Transaction function name.
 	 * @param args Transaction function arguments.

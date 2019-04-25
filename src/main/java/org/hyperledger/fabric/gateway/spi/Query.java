@@ -6,12 +6,14 @@
 
 package org.hyperledger.fabric.gateway.spi;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-
+import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.sdk.Peer;
+import org.hyperledger.fabric.sdk.ProposalResponse;
+
+import java.util.Collection;
+import java.util.Map;
 
 public interface Query {
-  CompletableFuture<Map<String, String>> evaluate(List<Peer> peers);
+    ProposalResponse evaluate(Peer peer) throws GatewayException;
+    Map<Peer, ProposalResponse> evaluate(Collection<Peer> peers) throws GatewayException;
 }

@@ -7,12 +7,14 @@
 package org.hyperledger.fabric.gateway.impl;
 
 import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
+import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.Wallet;
 import org.hyperledger.fabric.gateway.Wallet.Identity;
 import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
+import org.hyperledger.fabric.gateway.spi.QueryHandlerFactory;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.Enrollment;
 import org.hyperledger.fabric.sdk.HFClient;
@@ -41,15 +43,17 @@ public class GatewayImpl implements Gateway {
     private final Identity identity;
     private final Map<String, Network> networks = new HashMap<>();
     private final CommitHandlerFactory commitHandlerFactory;
-    private final Timeout commitTimeout;
+    private final TimePeriod commitTimeout;
+    private final QueryHandlerFactory queryHandlerFactory;
 
     public static class Builder implements Gateway.Builder {
         private CommitHandlerFactory commitHandlerFactory = DefaultCommitHandlers.NETWORK_SCOPE_ALLFORTX;
+        private TimePeriod commitTimeout = new TimePeriod(5, TimeUnit.MINUTES);
+        private QueryHandlerFactory queryHandlerFactory = DefaultQueryHandlers.MSPID_SCOPE_SINGLE;
         private Path ccp = null;
         private Identity identity = null;
         private User user = null;
         private HFClient client;
-        private Timeout commitTimeout = new Timeout(5, TimeUnit.MINUTES);
 
         public Builder() {
         }
@@ -73,8 +77,14 @@ public class GatewayImpl implements Gateway {
         }
 
         @Override
+        public Gateway.Builder queryHandler(QueryHandlerFactory queryHandler) {
+            this.queryHandlerFactory = queryHandler;
+            return this;
+        }
+
+        @Override
         public Gateway.Builder commitTimeout(long timeout, TimeUnit timeUnit) {
-            this.commitTimeout = new Timeout(timeout, timeUnit);
+            this.commitTimeout = new TimePeriod(timeout, timeUnit);
             return this;
         }
 
@@ -153,6 +163,7 @@ public class GatewayImpl implements Gateway {
             }
             this.commitHandlerFactory = builder.commitHandlerFactory;
             this.commitTimeout = builder.commitTimeout;
+            this.queryHandlerFactory = builder.queryHandlerFactory;
         } catch (InvalidArgumentException | NetworkConfigurationException | IOException | CryptoException | ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
             throw new GatewayException(e);
         }
@@ -208,7 +219,11 @@ public class GatewayImpl implements Gateway {
         return commitHandlerFactory;
     }
 
-    public Timeout getCommitTimeout() {
+    public TimePeriod getCommitTimeout() {
         return commitTimeout;
+    }
+
+    public QueryHandlerFactory getQueryHandlerFactory() {
+        return queryHandlerFactory;
     }
 }

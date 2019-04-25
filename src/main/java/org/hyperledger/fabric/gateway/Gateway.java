@@ -8,6 +8,7 @@ package org.hyperledger.fabric.gateway;
 
 import org.hyperledger.fabric.gateway.impl.GatewayImpl;
 import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
+import org.hyperledger.fabric.gateway.spi.QueryHandlerFactory;
 
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
@@ -54,6 +55,9 @@ public interface Gateway extends AutoCloseable {
 		return new GatewayImpl.Builder();
 	}
 
+	@Override
+	void close();
+
 	/**
 	 *
 	 * The Gateway Builder interface defines the options that can be configured
@@ -91,6 +95,15 @@ public interface Gateway extends AutoCloseable {
 		 * @return The builder instance, allowing multiple configuration options to be chained.
 		 */
 		Builder commitHandler(CommitHandlerFactory commitHandler);
+
+		/**
+		 * <em>Optional</em> - Allows an alternative query handler to be specified. The query handler defines the
+		 * peers that should be used to evaluate transactions.
+		 * <p>Default query handler implementations are defined in {@link DefaultQueryHandlers}.</p>
+		 * @param queryHandler A query handler implementation.
+		 * @return The builder instance, allowing multiple configuration options to be chained.
+		 */
+		Builder queryHandler(QueryHandlerFactory queryHandler);
 
 		/**
 		 * <em>Optional</em> - Set the default maximum time to wait for commit events to be received from peers after

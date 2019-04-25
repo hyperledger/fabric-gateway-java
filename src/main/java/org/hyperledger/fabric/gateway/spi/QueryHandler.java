@@ -6,8 +6,9 @@
 
 package org.hyperledger.fabric.gateway.spi;
 
-import java.util.concurrent.CompletableFuture;
+import org.hyperledger.fabric.gateway.GatewayException;
+import org.hyperledger.fabric.sdk.ProposalResponse;
 
 public interface QueryHandler {
-  CompletableFuture<String> evaluate(Query query);
+    ProposalResponse evaluate(Query query) throws GatewayException;
 }

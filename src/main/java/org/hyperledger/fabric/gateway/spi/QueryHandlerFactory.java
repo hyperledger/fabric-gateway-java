@@ -8,6 +8,15 @@ package org.hyperledger.fabric.gateway.spi;
 
 import org.hyperledger.fabric.gateway.Network;
 
+/**
+ * Functional interface describing a factory method for constructing query handler instances.
+ */
+@FunctionalInterface
 public interface QueryHandlerFactory {
+  /**
+   * Factory function to create a query handler instance.
+   * @param network Network on which the query is invoked.
+   * @return A query handler.
+   */
   QueryHandler create(Network network);
 }

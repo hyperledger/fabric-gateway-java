@@ -6,13 +6,12 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
-import org.hamcrest.CoreMatchers;
 import org.hyperledger.fabric.sdk.Peer;
-import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 public class PeerDisconnectInterceptorTest {
@@ -52,7 +51,7 @@ public class PeerDisconnectInterceptorTest {
 
         ArgumentCaptor<PeerDisconnectEvent> argument = ArgumentCaptor.forClass(PeerDisconnectEvent.class);
         verify(listener).peerDisconnected(argument.capture());
-        Assert.assertThat(argument.getValue().getPeer(), CoreMatchers.equalTo(peer));
+        assertThat(argument.getValue().getPeer()).isEqualTo(peer);
     }
 
     @Test
@@ -64,10 +63,10 @@ public class PeerDisconnectInterceptorTest {
 
         ArgumentCaptor<PeerDisconnectEvent> argument = ArgumentCaptor.forClass(PeerDisconnectEvent.class);
         verify(listener).peerDisconnected(argument.capture());
-        Assert.assertThat(argument.getValue().getCause(), CoreMatchers.equalTo(expectedCause));
+        assertThat(argument.getValue().getCause()).isEqualTo(expectedCause);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     public void removed_listener_does_not_receive_events() {
         eventSource.removeDisconnectListener(listener);
         fireEvent(sdkEvent);
@@ -81,7 +80,7 @@ public class PeerDisconnectInterceptorTest {
         verify(peer).setPeerEventingServiceDisconnected(originalDisconnectHandler);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     public void close_removes_listeners() {
         eventSource.close();
         fireEvent(sdkEvent);
@@ -89,7 +88,7 @@ public class PeerDisconnectInterceptorTest {
         verify(listener, never()).peerDisconnected(any());
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     public void original_handler_invoked_on_event() {
         fireEvent(sdkEvent);
 

@@ -11,9 +11,11 @@ import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.sdk.Channel;
-import org.junit.Assert;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class NetworkTest {
     private Gateway gateway = null;
@@ -27,71 +29,47 @@ public class NetworkTest {
 
     @Test
     public void testGetChannel() {
-        Channel ch1 = ((NetworkImpl) network).getChannel();
-        Assert.assertEquals(ch1.getName(), "ch1");
+        Channel ch1 = network.getChannel();
+        assertThat(ch1.getName()).isEqualTo("ch1");
     }
 
     @Test
     public void testGetGateway() {
         Gateway gw = network.getGateway();
-        Assert.assertEquals(gw, gateway);
+        assertThat(gw).isSameAs(gateway);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     public void testGetContract() {
         Contract contract = network.getContract("contract1");
-        Assert.assertTrue(contract instanceof ContractImpl);
+        assertThat(contract).isInstanceOf(ContractImpl.class);
     }
 
     @Test
     public void testGetCachedContract() {
         Contract contract = network.getContract("contract1");
         Contract contract2 = network.getContract("contract1");
-        Assert.assertEquals(contract, contract2);
+        assertThat(contract).isSameAs(contract2);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     public void testGetContractEmptyId() {
-        try {
-            network.getContract("");
-        } catch (IllegalArgumentException e) {
-            Assert.assertEquals(e.getMessage(), "getContract: chaincodeId must be a non-empty string");
-        }
+        assertThatThrownBy(() -> network.getContract(""))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("getContract: chaincodeId must be a non-empty string");
     }
 
     @Test
     public void testGetContractNullId() {
-        try {
-            network.getContract(null);
-        } catch (IllegalArgumentException e) {
-            Assert.assertEquals(e.getMessage(), "getContract: chaincodeId must be a non-empty string");
-        }
+        assertThatThrownBy(() -> network.getContract(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("getContract: chaincodeId must be a non-empty string");
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     public void testGetContractNullName() {
-        try {
-            network.getContract("id", null);
-        } catch (IllegalArgumentException e) {
-            Assert.assertEquals(e.getMessage(), "getContract: name must not be null");
-        }
+        assertThatThrownBy(() -> network.getContract("id", null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("getContract: name must not be null");
     }
-
-//    @Test
-//    public void testGetTransactionEventSource() {
-//        BlockEvent.TransactionEvent txEvent = Mockito.mock(BlockEvent.TransactionEvent.class);
-//
-//        BlockEvent blockEvent = Mockito.mock(BlockEvent.class);
-//        Mockito.doReturn(Arrays.asList(txEvent)).when(blockEvent).getTransactionEvents();
-//
-//        TransactionListener listener = Mockito.mock(TransactionListener.class);
-//
-//        try (StubBlockEventSource stubBlockSource = new StubBlockEventSource()) {
-//            TransactionEventSource transactionSource = network.getTransactionEventSource();
-//            transactionSource.addTransactionListener(listener);
-//            stubBlockSource.sendEvent(blockEvent);
-//        }
-//
-//        Mockito.verify(listener).receivedTransaction(txEvent);
-//    }
 }

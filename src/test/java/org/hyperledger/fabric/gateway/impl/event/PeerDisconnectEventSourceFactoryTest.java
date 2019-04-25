@@ -11,8 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import static org.hamcrest.CoreMatchers.sameInstance;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class PeerDisconnectEventSourceFactoryTest {
     private final PeerDisconnectEventSourceFactory factory = PeerDisconnectEventSourceFactory.getInstance();
@@ -28,7 +27,7 @@ public class PeerDisconnectEventSourceFactoryTest {
         PeerDisconnectEventSource first = factory.getPeerDisconnectEventSource(peer);
         PeerDisconnectEventSource second = factory.getPeerDisconnectEventSource(peer);
 
-        assertThat(first, sameInstance(second));
+        assertThat(first).isSameAs(second);
     }
 
     @org.junit.jupiter.api.Test
@@ -38,7 +37,7 @@ public class PeerDisconnectEventSourceFactoryTest {
         factory.setPeerDisconnectEventSource(peer, override);
         PeerDisconnectEventSource result = factory.getPeerDisconnectEventSource(peer);
 
-        assertThat(result, sameInstance(override));
+        assertThat(result).isSameAs(override);
     }
 
     @Test

@@ -12,6 +12,7 @@ import org.hyperledger.fabric.gateway.impl.event.BlockEventSource;
 import org.hyperledger.fabric.gateway.impl.event.BlockEventSourceFactory;
 import org.hyperledger.fabric.gateway.impl.event.TransactionEventSource;
 import org.hyperledger.fabric.gateway.impl.event.TransactionEventSourceImpl;
+import org.hyperledger.fabric.gateway.spi.QueryHandler;
 import org.hyperledger.fabric.sdk.Channel;
 
 import java.util.HashMap;
@@ -23,12 +24,14 @@ public class NetworkImpl implements Network {
     private final Map<String, Contract> contracts = new HashMap<>();
     private final BlockEventSource blockSource;
     private final TransactionEventSource transactionSource;
+    private final QueryHandler queryHandler;
 
     NetworkImpl(Channel channel, GatewayImpl gateway) {
         this.channel = channel;
         this.gateway = gateway;
         blockSource = BlockEventSourceFactory.getInstance().newBlockEventSource(channel);
         transactionSource = new TransactionEventSourceImpl(blockSource);
+        queryHandler = gateway.getQueryHandlerFactory().create(this);
     }
 
     @Override
@@ -67,5 +70,9 @@ public class NetworkImpl implements Network {
     @Override
     public TransactionEventSource getTransactionEventSource() {
         return transactionSource;
+    }
+
+    public QueryHandler getQueryHandler() {
+        return queryHandler;
     }
 }

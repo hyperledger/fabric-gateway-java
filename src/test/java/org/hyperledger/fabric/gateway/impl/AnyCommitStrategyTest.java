@@ -37,7 +37,7 @@ public class AnyCommitStrategyTest {
         assertThat(strategy.getPeers(), equalTo(peers));
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     public void success_if_one_event_received() {
         CommitStrategy.Result result = strategy.onEvent(testUtils.newValidMockTransactionEvent(peer1, "txId"));
 
@@ -51,7 +51,7 @@ public class AnyCommitStrategyTest {
         assertThat(result, equalTo(CommitStrategy.Result.CONTINUE));
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     public void fail_if_all_disconnects_received() {
         strategy.onError(testUtils.newPeerDisconnectedEvent(peer1));
         CommitStrategy.Result result = strategy.onError(testUtils.newPeerDisconnectedEvent(peer2));

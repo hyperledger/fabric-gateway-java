@@ -6,13 +6,11 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
-import java.util.concurrent.TimeoutException;
-
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Transaction;
-import org.hyperledger.fabric.sdk.ChaincodeID;
-import org.hyperledger.fabric.sdk.TransactionProposalRequest;
+
+import java.util.concurrent.TimeoutException;
 
 public class ContractImpl implements Contract {
     private final NetworkImpl network;
@@ -33,11 +31,7 @@ public class ContractImpl implements Contract {
             throw new IllegalArgumentException("Transaction must be a non-empty string");
         }
         String qualifiedName = getQualifiedName(name);
-        TransactionProposalRequest proposalRequest = gateway.getClient().newTransactionProposalRequest();
-        proposalRequest.setChaincodeID(ChaincodeID.newBuilder().setName(chaincodeId).build());
-        proposalRequest.setFcn(qualifiedName);
-        Transaction txn = new TransactionImpl(proposalRequest, network);
-        return txn;
+        return new TransactionImpl(this, qualifiedName);
     }
 
     @Override
@@ -48,6 +42,14 @@ public class ContractImpl implements Contract {
     @Override
     public byte[] evaluateTransaction(String name, String... args) throws GatewayException {
         return createTransaction(name).evaluate(args);
+    }
+
+    public NetworkImpl getNetwork() {
+        return network;
+    }
+
+    public String getChaincodeId() {
+        return chaincodeId;
     }
 
     private String getQualifiedName(String tname) {

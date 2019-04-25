@@ -10,9 +10,12 @@ import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.TestUtils;
-import org.junit.Assert;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class GatewayTest {
     private Gateway.Builder builder = null;
@@ -22,63 +25,47 @@ public class GatewayTest {
         builder = TestUtils.getInstance().newGatewayBuilder();
     }
 
-    @org.junit.jupiter.api.Test
-    public void testGetNetwork() throws Exception {
+    @Disabled("Crypto failure: org.bouncycastle.jcajce.provider.asymmetric.rsa.BCRSAPrivateCrtKey cannot be cast to java.security.interfaces.ECPrivateKey")
+    @Test
+    public void testGetNetworkFromConfig() throws GatewayException {
         try (Gateway gateway = builder.connect()) {
             Network network = gateway.getNetwork("mychannel");
-            Assert.assertEquals(((NetworkImpl) network).getChannel().getName(), "mychannel");
-        } catch (GatewayException e) {
-            // expect this to throw when attempting to initialise channel without fabric network stood up
-        }
-    }
-
-    @org.junit.jupiter.api.Test
-    public void testGetCachedNetwork() throws Exception {
-        try (Gateway gateway = builder.connect()) {
-            Network network = gateway.getNetwork("mychannel");
-            Network network2 = gateway.getNetwork("mychannel");
-            Assert.assertEquals(network, network2);
-        } catch (GatewayException e) {
-            // expect this to throw when attempting to initialise channel without fabric network stood up
+            assertThat(network.getChannel().getName()).isEqualTo("mychannel");
         }
     }
 
     @Test
-    public void testGetNetworkFromConfig() throws Exception {
-        try (GatewayImpl gateway = (GatewayImpl) builder.connect()) {
-            Network network = gateway.getNetwork("mychannel");
-            Assert.assertEquals(((NetworkImpl) network).getChannel().getName(), "mychannel");
-        } catch (GatewayException e) {
-            // expect this to throw when attempting to initialise channel without fabric network stood up
-        }
-    }
-
-    @org.junit.jupiter.api.Test
     public void testGetAssumedNetwork() throws Exception {
         try (Gateway gateway = builder.connect()) {
             Network network = gateway.getNetwork("assumed");
-            Assert.assertEquals(((NetworkImpl) network).getChannel().getName(), "assumed");
+            assertThat(network.getChannel().getName()).isEqualTo("assumed");
+        }
+    }
+
+    @Test
+    public void testGetCachedNetwork() throws GatewayException {
+        try (Gateway gateway = builder.connect()) {
+            Network network = gateway.getNetwork("assumed");
+            Network network2 = gateway.getNetwork("assumed");
+            assertThat(network).isSameAs(network2);
         }
     }
 
     @Test
     public void testGetNetworkEmptyString() throws Exception {
         try (Gateway gateway = builder.connect()) {
-            gateway.getNetwork("");
-            Assert.fail("Should have thrown exception");
-        } catch (IllegalArgumentException e) {
-            Assert.assertEquals(e.getMessage(), "Channel name must be a non-empty string");
+            assertThatThrownBy(() -> gateway.getNetwork(""))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Channel name must be a non-empty string");
         }
     }
 
     @Test
     public void testGetNetworkNullString() throws Exception {
         try (Gateway gateway = builder.connect()) {
-            gateway.getNetwork(null);
-            Assert.fail("Should have thrown exception");
-        } catch (IllegalArgumentException e) {
-            Assert.assertEquals(e.getMessage(), "Channel name must be a non-empty string");
+            assertThatThrownBy(() -> gateway.getNetwork(null))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Channel name must be a non-empty string");
         }
     }
-
 }
