@@ -7,4 +7,6 @@ src/test/fixtures/crypto-material/crypto-config/
 src/test/fixtures/crypto-material/genesis.block
 src/test/fixtures/crypto-material/mychannel.block
 src/test/fixtures/crypto-material/channel.tx
+src/test/fixtures/crypto-material/Org1MSPanchors.tx
+src/test/fixtures/crypto-material/Org2MSPanchors.tx
 src/test/fixtures/crypto-material/core.yaml

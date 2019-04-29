@@ -129,6 +129,8 @@ public class TransactionTest {
         String expected = "successful result";
         ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
         when(channel.sendTransactionProposal(ArgumentMatchers.any())).thenReturn(Arrays.asList(response));
+        when(channel.sendTransactionProposalToEndorsers(ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Arrays.asList(response));
+
 
         byte[] result = contract.submitTransaction("txn", "arg1");
         assertThat(new String(result)).isEqualTo(expected);

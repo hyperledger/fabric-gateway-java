@@ -115,6 +115,13 @@ public interface Gateway extends AutoCloseable {
 		Builder commitTimeout(long timeout, TimeUnit timeUnit);
 
 		/**
+		 * <em>Optional</em> - Enable or disable service discovery for all transaction submissions for this gateway
+		 * @param enabled - true to enable service discovery
+		 * @return The builder instance, allowing multiple configuration options to be chained.
+		 */
+		Builder discovery(boolean enabled);
+
+		/**
 		 * Connects to the gateway using the specified options.
 		 * @return The connected {@link Gateway} object.
 		 * @throws GatewayException on failure to connect the gateway using specified options.

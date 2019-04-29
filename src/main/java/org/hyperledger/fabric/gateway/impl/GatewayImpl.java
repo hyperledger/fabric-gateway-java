@@ -6,6 +6,15 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
 import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
 import org.hyperledger.fabric.gateway.Gateway;
@@ -28,15 +37,6 @@ import org.hyperledger.fabric.sdk.identity.X509Enrollment;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.hyperledger.fabric.sdk.security.CryptoSuiteFactory;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
 public class GatewayImpl implements Gateway {
     private final HFClient client;
     private final NetworkConfig networkConfig;
@@ -45,6 +45,7 @@ public class GatewayImpl implements Gateway {
     private final CommitHandlerFactory commitHandlerFactory;
     private final TimePeriod commitTimeout;
     private final QueryHandlerFactory queryHandlerFactory;
+    private final boolean discovery;
 
     public static class Builder implements Gateway.Builder {
         private CommitHandlerFactory commitHandlerFactory = DefaultCommitHandlers.NETWORK_SCOPE_ALLFORTX;
@@ -54,6 +55,7 @@ public class GatewayImpl implements Gateway {
         private Identity identity = null;
         private User user = null;
         private HFClient client;
+        private boolean discovery = false;
 
         public Builder() {
         }
@@ -88,7 +90,13 @@ public class GatewayImpl implements Gateway {
             return this;
         }
 
-        public Builder client(HFClient client) {
+		@Override
+		public Gateway.Builder discovery(boolean enabled) {
+			this.discovery = enabled;
+			return this;
+		}
+
+		public Builder client(HFClient client) {
             this.client = client;
             return this;
         }
@@ -164,6 +172,7 @@ public class GatewayImpl implements Gateway {
             this.commitHandlerFactory = builder.commitHandlerFactory;
             this.commitTimeout = builder.commitTimeout;
             this.queryHandlerFactory = builder.queryHandlerFactory;
+            this.discovery = builder.discovery;
         } catch (InvalidArgumentException | NetworkConfigurationException | IOException | CryptoException | ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
             throw new GatewayException(e);
         }
@@ -193,6 +202,7 @@ public class GatewayImpl implements Gateway {
                     channel = client.newChannel(networkName);
                 } catch (InvalidArgumentException e) {
                     // we've already checked the channel status
+                	throw new GatewayException(e);
                 }
             }
             try {
@@ -225,5 +235,9 @@ public class GatewayImpl implements Gateway {
 
     public QueryHandlerFactory getQueryHandlerFactory() {
         return queryHandlerFactory;
+    }
+
+    public boolean isDiscoveryEnabled() {
+        return discovery;
     }
 }

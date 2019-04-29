@@ -6,6 +6,14 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import static org.hyperledger.fabric.sdk.Channel.DiscoveryOptions.createDiscoveryOptions;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hyperledger.fabric.gateway.GatewayException;
@@ -19,15 +27,11 @@ import org.hyperledger.fabric.sdk.ChaincodeResponse;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.ProposalResponse;
 import org.hyperledger.fabric.sdk.QueryByChaincodeRequest;
+import org.hyperledger.fabric.sdk.ServiceDiscovery;
 import org.hyperledger.fabric.sdk.TransactionProposalRequest;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import org.hyperledger.fabric.sdk.exception.ServiceDiscoveryException;
 
 public final class TransactionImpl implements Transaction {
     private static final Log logger = LogFactory.getLog(TransactionImpl.class);
@@ -75,7 +79,14 @@ public final class TransactionImpl implements Transaction {
             request.setFcn(name);
             request.setArgs(args);
 
-            Collection<ProposalResponse> proposalResponses = channel.sendTransactionProposal(request);
+            Collection<ProposalResponse> proposalResponses;
+            if(network.getGateway().isDiscoveryEnabled()) {
+            	proposalResponses = channel.sendTransactionProposalToEndorsers(request,
+                        createDiscoveryOptions().setEndorsementSelector(ServiceDiscovery.EndorsementSelector.ENDORSEMENT_SELECTION_RANDOM)
+                        .setForceDiscovery(true));
+            } else {
+            	proposalResponses = channel.sendTransactionProposal(request);
+            }
 
             // Validate the proposal responses.
             Collection<ProposalResponse> validResponses = validatePeerResponses(proposalResponses);
@@ -107,7 +118,7 @@ public final class TransactionImpl implements Transaction {
             commitHandler.waitForEvents(commitTimeout.getTime(), commitTimeout.getTimeUnit());
 
             return result;
-        } catch (InvalidArgumentException | ProposalException e) {
+        } catch (InvalidArgumentException | ProposalException | ServiceDiscoveryException e) {
             throw new GatewayException(e);
         }
     }
