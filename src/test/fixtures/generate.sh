@@ -11,6 +11,5 @@ docker exec cli configtxgen -profile TwoOrgsChannel -outputCreateChannelTx /etc/
 docker exec cli configtxgen -profile TwoOrgsChannel -outputAnchorPeersUpdate /etc/hyperledger/config/Org1MSPanchors.tx -channelID mychannel -asOrg Org1MSP
 docker exec cli configtxgen -profile TwoOrgsChannel -outputAnchorPeersUpdate /etc/hyperledger/config/Org2MSPanchors.tx -channelID mychannel -asOrg Org2MSP
 docker exec cli cp /etc/hyperledger/fabric/core.yaml /etc/hyperledger/config
+docker exec cli sh /etc/hyperledger/config/rename_sk.sh
 docker-compose -f docker-compose-cli.yaml down --volumes
-cd ../crypto-material
-sh rename_sk.sh

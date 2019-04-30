@@ -86,17 +86,13 @@ public class ScenarioSteps implements En {
 
 		Given("^I install\\/instantiate (.+?) chaincode named (.+?) at version (.+?) as (.+?) to the (.+?) Fabric network for all organizations on channel (.+?) with endorsement policy (.+?) and args (.+?)$", (String ccType, String ccName, String version, String ccId, String tlsType, String channelName, String policyType, String args) -> {
 		    // Write code here that turns the phrase above into concrete actions
-			System.out.println(args);
-			System.out.println(policyType);
 		    String[] params = args.substring(1, args.length()-1).split(",");
 		    String transactionName = params[0];
 		    String[] params2_N = new String[params.length - 1];
 		    System.arraycopy(params, 1, params2_N, 0, params.length - 1);
 		    String arguments = "[\"" + String.join("\",\"", params2_N) + "\"]";
-		    System.out.println(arguments);
 			String tlsOption;
 			String initArg = String.format("{\"function\":\"%s\",\"Args\":%s}", transactionName, arguments);
-			System.out.println(initArg);
 			if (tlsType.equals("tls")) {
 				tlsOption = "--tls true --cafile /etc/hyperledger/configtx/crypto-config/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem";
 			} else {
@@ -164,7 +160,7 @@ public class ScenarioSteps implements En {
 	}
 
 	private static void exec(String command) throws Exception {
-		System.out.println(command);
+		System.err.println(command);
 		Process process = Runtime.getRuntime().exec(command);
 		int exitCode = process.waitFor();
 
@@ -175,7 +171,7 @@ public class ScenarioSteps implements En {
 
 		String line;
 		while ((line = br.readLine()) != null) {
-			System.out.println(line);
+			System.err.println(line);
 		}
 
 		assertEquals(exitCode, 0);
@@ -200,6 +196,16 @@ public class ScenarioSteps implements En {
 		File fixtures = Paths.get("src", "test", "fixtures").toFile();
 		Process process = Runtime.getRuntime().exec("sh generate.sh", null, fixtures);
 		int exitCode = process.waitFor();
+		// get STDERR for the process and print it
+		InputStream is = process.getErrorStream();
+		InputStreamReader isr = new InputStreamReader(is);
+		BufferedReader br = new BufferedReader(isr);
+
+		String line;
+		while ((line = br.readLine()) != null) {
+			System.err.println(line);
+		}
+
 		assertEquals(exitCode, 0);
 	}
 
