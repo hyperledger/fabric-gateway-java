@@ -49,14 +49,14 @@ timestamps { // set the timestamps on the jenkins console
 
     // Publish jar files from merge job
     if (env.JOB_TYPE == "merge") {
-      publishJar()
+    //  publishJar()  Disabling the jar publish until the credentials are set
       apiDocs()
    } else {
       echo "------> Don't publish jar files from VERIFY job"
    }
 
         stage ('PostBuild') {
-          if (currentBuild.result == null || currentBuild.result == 'SUCCESS') {
+          if (currentBuild.result == 'FAILURE' || currentBuild.result == 'SUCCESS') {
             junit allowEmptyResults: true, testResults: 'target/surefire-reports/**/*.xml'
             archiveArtifacts allowEmptyArchive: true, artifacts: '**/*.log'
           }// Don't fail the build if there is no log file
@@ -106,9 +106,9 @@ def publishJar() {
 }
 
 def apiDocs() {
-// Publish API Javadocs after successful merge
-  stage("Publish JavaDocs") {
-    sh 'echo "--------> Publish JavaDocs"'
+// Publish Java API docs after successful merge
+  stage("Publish JavaApiDocs") {
+    sh 'echo "--------> Publish JavaApiDocs"'
     def ROOTDIR = pwd()
     withCredentials([[$class: 'UsernamePasswordMultiBinding',
       credentialsId: 'gateway-java-credentials',
@@ -120,7 +120,7 @@ def apiDocs() {
       }
     }
     catch (err) {
-      failure_stage = "Publish JavaDocs"
+      failure_stage = "Publish JavaApiDocs"
       currentBuild.result = 'FAILURE'
       throw err
     }
