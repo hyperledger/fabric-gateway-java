@@ -14,6 +14,7 @@ import org.hyperledger.fabric.sdk.Peer;
 
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.stream.Collectors;
 
 /**
  * Default query handler implementations. Instances can be referenced directly or looked up by name, for example
@@ -25,8 +26,7 @@ public enum DefaultQueryHandlers implements QueryHandlerFactory {
      * in turn until one provides a successful response. If no peers respond then an exception is thrown.
      */
     MSPID_SCOPE_SINGLE(network -> {
-        Collection<Peer> peers = network.getChannel().getPeers(getQueryRoles());
-        // TODO: Should be filtering organization peers
+        Collection<Peer> peers = getChaincodeQueryPeersForOrganization(network);
         return new SingleQueryHandler(peers);
     }),
 
@@ -35,8 +35,7 @@ public enum DefaultQueryHandlers implements QueryHandlerFactory {
      * in turn until one provides a successful response. If no peers respond then an exception is thrown.
      */
     MSPID_SCOPE_ROUND_ROBIN(network -> {
-        Collection<Peer> peers = network.getChannel().getPeers(getQueryRoles());
-        // TODO: Should be filtering organization peers
+        Collection<Peer> peers = getChaincodeQueryPeersForOrganization(network);
         return new RoundRobinQueryHandler(peers);
     });
 
@@ -48,8 +47,16 @@ public enum DefaultQueryHandlers implements QueryHandlerFactory {
         this.factory = factory;
     }
 
-    private static EnumSet<Peer.PeerRole> getQueryRoles() {
-        return QUERY_ROLES;
+    private static Collection<Peer> getChaincodeQueryPeersForOrganization(Network network) {
+        String mspId = network.getGateway().getIdentity().getMspId();
+        Collection<Peer> peers = getChaincodeQueryPeers(network).stream()
+                .filter(peer -> network.getPeerOrganization(peer).equals(mspId))
+                .collect(Collectors.toList());
+        return peers;
+    }
+
+    private static Collection<Peer> getChaincodeQueryPeers(Network network) {
+        return network.getChannel().getPeers(QUERY_ROLES);
     }
 
     public QueryHandler create(Network network) {

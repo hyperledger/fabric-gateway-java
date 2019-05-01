@@ -28,7 +28,7 @@ public class BlockEventSourceImplTest {
     @BeforeEach
     public void beforeEach() throws Exception {
         channel = mock(Channel.class);
-        when(channel.registerBlockListener(any())).thenAnswer(invocation -> {
+        when(channel.registerBlockListener(any(org.hyperledger.fabric.sdk.BlockListener.class))).thenAnswer(invocation -> {
             org.hyperledger.fabric.sdk.BlockListener channelListener = invocation.getArgument(0);
             String handle = String.valueOf(channelListener.hashCode());
             channelListenerMap.put(handle, channelListener);
@@ -54,7 +54,7 @@ public class BlockEventSourceImplTest {
     @Test
     public void add_listener_registers_with_channel() throws Exception {
         blockEventSource.addBlockListener(blockEvent -> {});
-        verify(channel).registerBlockListener(any());
+        verify(channel).registerBlockListener(any(org.hyperledger.fabric.sdk.BlockListener.class));
     }
 
     @Test
@@ -68,23 +68,23 @@ public class BlockEventSourceImplTest {
     @org.junit.jupiter.api.Test
     public void add_duplicate_listener_does_not_register_with_channel() throws Exception {
         BlockListener listener = blockEventSource.addBlockListener(blockEvent -> {});
-        verify(channel, times(1)).registerBlockListener(any());
+        verify(channel, times(1)).registerBlockListener(any(org.hyperledger.fabric.sdk.BlockListener.class));
 
         blockEventSource.addBlockListener(listener);
-        verify(channel, times(1)).registerBlockListener(any());
+        verify(channel, times(1)).registerBlockListener(any(org.hyperledger.fabric.sdk.BlockListener.class));
     }
 
     @Test
     public void remove_listener_that_was_not_added_does_not_unregister_with_channel() throws Exception {
         blockEventSource.removeBlockListener(blockEvent -> {});
 
-        verify(channel, never()).registerBlockListener(any());
+        verify(channel, never()).registerBlockListener(any(org.hyperledger.fabric.sdk.BlockListener.class));
     }
 
     @Test
     public void throws_unchecked_if_channel_register_throws() throws Exception {
         reset(channel);
-        when(channel.registerBlockListener(any())).thenThrow(InvalidArgumentException.class);
+        when(channel.registerBlockListener(any(org.hyperledger.fabric.sdk.BlockListener.class))).thenThrow(InvalidArgumentException.class);
 
         assertThatThrownBy(() -> blockEventSource.addBlockListener(blockEvent -> {}))
                 .isInstanceOf(IllegalStateException.class);

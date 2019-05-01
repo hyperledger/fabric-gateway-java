@@ -11,7 +11,6 @@ import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.TestUtils;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,7 +24,6 @@ public class GatewayTest {
         builder = TestUtils.getInstance().newGatewayBuilder();
     }
 
-    @Disabled("Crypto failure: org.bouncycastle.jcajce.provider.asymmetric.rsa.BCRSAPrivateCrtKey cannot be cast to java.security.interfaces.ECPrivateKey")
     @Test
     public void testGetNetworkFromConfig() throws GatewayException {
         try (Gateway gateway = builder.connect()) {

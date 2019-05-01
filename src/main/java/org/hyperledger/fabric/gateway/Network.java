@@ -8,6 +8,7 @@ package org.hyperledger.fabric.gateway;
 
 import org.hyperledger.fabric.gateway.impl.event.TransactionEventSource;
 import org.hyperledger.fabric.sdk.Channel;
+import org.hyperledger.fabric.sdk.Peer;
 
 /**
  * A Network object represents the set of peers in a Fabric network (channel).
@@ -53,4 +54,13 @@ public interface Network {
 	 * @deprecated
 	 */
 	TransactionEventSource getTransactionEventSource();
+
+	/**
+	 * Get the membership services provider ID for a given peer.
+	 * @param peer a peer.
+	 * @return A member services provider ID.
+	 * @throws IllegalArgumentException if the peer is not associated with the network.
+	 * @deprecated
+	 */
+	String getPeerOrganization(Peer peer);
 }

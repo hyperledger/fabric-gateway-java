@@ -6,15 +6,8 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
 import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
 import org.hyperledger.fabric.gateway.Gateway;
@@ -32,14 +25,25 @@ import org.hyperledger.fabric.sdk.User;
 import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.NetworkConfigurationException;
-import org.hyperledger.fabric.sdk.exception.TransactionException;
 import org.hyperledger.fabric.sdk.identity.X509Enrollment;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.hyperledger.fabric.sdk.security.CryptoSuiteFactory;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 public class GatewayImpl implements Gateway {
+    private static final Log LOG = LogFactory.getLog(Gateway.class);
+
     private final HFClient client;
-    private final NetworkConfig networkConfig;
+    private final Optional<NetworkConfig> networkConfig;
     private final Identity identity;
     private final Map<String, Network> networks = new HashMap<>();
     private final CommitHandlerFactory commitHandlerFactory;
@@ -48,12 +52,11 @@ public class GatewayImpl implements Gateway {
     private final boolean discovery;
 
     public static class Builder implements Gateway.Builder {
-        private CommitHandlerFactory commitHandlerFactory = DefaultCommitHandlers.NETWORK_SCOPE_ALLFORTX;
+        private CommitHandlerFactory commitHandlerFactory = DefaultCommitHandlers.MSPID_SCOPE_ALLFORTX;
         private TimePeriod commitTimeout = new TimePeriod(5, TimeUnit.MINUTES);
         private QueryHandlerFactory queryHandlerFactory = DefaultQueryHandlers.MSPID_SCOPE_SINGLE;
         private Path ccp = null;
         private Identity identity = null;
-        private User user = null;
         private HFClient client;
         private boolean discovery = false;
 
@@ -79,19 +82,19 @@ public class GatewayImpl implements Gateway {
         }
 
         @Override
-        public Gateway.Builder queryHandler(QueryHandlerFactory queryHandler) {
+        public Builder queryHandler(QueryHandlerFactory queryHandler) {
             this.queryHandlerFactory = queryHandler;
             return this;
         }
 
         @Override
-        public Gateway.Builder commitTimeout(long timeout, TimeUnit timeUnit) {
+        public Builder commitTimeout(long timeout, TimeUnit timeUnit) {
             this.commitTimeout = new TimePeriod(timeout, timeUnit);
             return this;
         }
 
 		@Override
-		public Gateway.Builder discovery(boolean enabled) {
+		public Builder discovery(boolean enabled) {
 			this.discovery = enabled;
 			return this;
 		}
@@ -105,55 +108,19 @@ public class GatewayImpl implements Gateway {
         public Gateway connect() throws GatewayException {
             return new GatewayImpl(this);
         }
-
-        private User createUser() {
-            if (user != null) {
-                return user;
-            } else if (identity != null) {
-                Enrollment enrollment = new X509Enrollment(identity.getPrivateKey(), identity.getCertificate());
-                return new User() {
-
-                    @Override
-                    public String getName() {
-                        return "gateway";
-                    }
-
-                    @Override
-                    public Set<String> getRoles() {
-                        return Collections.emptySet();
-                    }
-
-                    @Override
-                    public String getAccount() {
-                        return "";
-                    }
-
-                    @Override
-                    public String getAffiliation() {
-                        return "";
-                    }
-
-                    @Override
-                    public Enrollment getEnrollment() {
-                        return enrollment;
-                    }
-
-                    @Override
-                    public String getMspId() {
-                        return identity.getMspId();
-                    }
-                };
-            }
-            return null;
-        }
     }
+
 
     private GatewayImpl(Builder builder) throws GatewayException {
         try {
+            this.commitHandlerFactory = builder.commitHandlerFactory;
+            this.commitTimeout = builder.commitTimeout;
+            this.queryHandlerFactory = builder.queryHandlerFactory;
+            this.discovery = builder.discovery;
             if (builder.client != null) {
                 this.client = builder.client;
                 this.identity = null;
-                this.networkConfig = null;
+                this.networkConfig = Optional.empty();
             } else {
                 if (builder.identity == null) {
                     throw new GatewayException("The gateway identity must be set");
@@ -162,19 +129,54 @@ public class GatewayImpl implements Gateway {
                     throw new GatewayException("The network configuration must be specified");
                 }
                 this.client = HFClient.createNewInstance();
-                CryptoSuite cryptoSuite;
-                cryptoSuite = CryptoSuiteFactory.getDefault().getCryptoSuite();
+                CryptoSuite cryptoSuite = CryptoSuiteFactory.getDefault().getCryptoSuite();
                 this.client.setCryptoSuite(cryptoSuite);
-                this.networkConfig = NetworkConfig.fromJsonFile(builder.ccp.toFile());
+                this.networkConfig = Optional.of(NetworkConfig.fromJsonFile(builder.ccp.toFile()));
                 this.identity = builder.identity;
-                this.client.setUserContext(builder.createUser());
+                configureUserContext();
             }
-            this.commitHandlerFactory = builder.commitHandlerFactory;
-            this.commitTimeout = builder.commitTimeout;
-            this.queryHandlerFactory = builder.queryHandlerFactory;
-            this.discovery = builder.discovery;
         } catch (InvalidArgumentException | NetworkConfigurationException | IOException | CryptoException | ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
             throw new GatewayException(e);
+        }
+    }
+
+    private void configureUserContext() throws GatewayException {
+        Enrollment enrollment = new X509Enrollment(identity.getPrivateKey(), identity.getCertificate());
+        User user = new User() {
+            @Override
+            public String getName() {
+                return "gateway";
+            }
+
+            @Override
+            public Set<String> getRoles() {
+                return Collections.emptySet();
+            }
+
+            @Override
+            public String getAccount() {
+                return "";
+            }
+
+            @Override
+            public String getAffiliation() {
+                return "";
+            }
+
+            @Override
+            public Enrollment getEnrollment() {
+                return enrollment;
+            }
+
+            @Override
+            public String getMspId() {
+                return identity.getMspId();
+            }
+        };
+        try {
+            client.setUserContext(user);
+        } catch (InvalidArgumentException e) {
+            throw new GatewayException("Failed to set user context", e);
         }
     }
 
@@ -190,11 +192,11 @@ public class GatewayImpl implements Gateway {
         Network network = networks.get(networkName);
         if (network == null) {
             Channel channel = client.getChannel(networkName);
-            if (channel == null && networkConfig != null) {
+            if (channel == null && networkConfig.isPresent()) {
                 try {
-                    channel = client.loadChannelFromConfig(networkName, networkConfig);
+                    channel = client.loadChannelFromConfig(networkName, networkConfig.get());
                 } catch (InvalidArgumentException | NetworkConfigurationException ex) {
-                    // ignore
+                    LOG.info("Unable to load channel configuration from connection profile: ", ex);
                 }
             }
             if (channel == null) {
@@ -204,11 +206,6 @@ public class GatewayImpl implements Gateway {
                     // we've already checked the channel status
                 	throw new GatewayException(e);
                 }
-            }
-            try {
-                channel.initialize();
-            } catch (InvalidArgumentException | TransactionException e) {
-                throw new GatewayException(e);
             }
             network = new NetworkImpl(channel, this);
             networks.put(networkName, network);
@@ -239,5 +236,9 @@ public class GatewayImpl implements Gateway {
 
     public boolean isDiscoveryEnabled() {
         return discovery;
+    }
+
+    public Optional<NetworkConfig> getNetworkConfig() {
+        return networkConfig;
     }
 }

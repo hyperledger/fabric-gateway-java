@@ -1,9 +1,21 @@
 package scenario;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import cucumber.api.java8.En;
+import io.cucumber.datatable.DataTable;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.hyperledger.fabric.gateway.Contract;
+import org.hyperledger.fabric.gateway.Gateway;
+import org.hyperledger.fabric.gateway.GatewayException;
+import org.hyperledger.fabric.gateway.Network;
+import org.hyperledger.fabric.gateway.Transaction;
+import org.hyperledger.fabric.gateway.Wallet;
 
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -20,24 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.openssl.PEMKeyPair;
-import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
-import org.hyperledger.fabric.gateway.Contract;
-import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
-import org.hyperledger.fabric.gateway.Gateway;
-import org.hyperledger.fabric.gateway.GatewayException;
-import org.hyperledger.fabric.gateway.Network;
-import org.hyperledger.fabric.gateway.Transaction;
-import org.hyperledger.fabric.gateway.Wallet;
-
-import cucumber.api.java8.En;
-import io.cucumber.datatable.DataTable;
+import static org.junit.Assert.*;
 
 public class ScenarioSteps implements En {
 	Gateway gateway = null;
@@ -104,7 +99,6 @@ public class ScenarioSteps implements En {
 					builder.identity(wallet, userName);
 					builder.networkConfig(networkConfigPath);
 					builder.commitTimeout(1, TimeUnit.MINUTES);
-					builder.commitHandler(DefaultCommitHandlers.NETWORK_SCOPE_ANYFORTX);
 					if (tlsType.equals("discovery")) {
 						builder.discovery(true);
 					}

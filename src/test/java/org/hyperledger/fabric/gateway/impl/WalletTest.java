@@ -6,6 +6,7 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.gateway.Wallet;
 import org.hyperledger.fabric.gateway.Wallet.Identity;
 import org.junit.jupiter.api.BeforeAll;
@@ -29,7 +30,7 @@ public abstract class WalletTest {
 
     @BeforeAll
     public static void init() throws Exception {
-        Enrollment enrollment = Enrollment.createTestEnrollment();
+        Enrollment enrollment = TestUtils.getInstance().newEnrollment();
         pk = enrollment.getPrivateKey();
         certificate = enrollment.getCertificate();
     }

@@ -7,6 +7,7 @@
 package org.hyperledger.fabric.gateway.impl;
 
 import org.hyperledger.fabric.gateway.Contract;
+import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.impl.event.BlockEventSource;
 import org.hyperledger.fabric.gateway.impl.event.BlockEventSourceFactory;
@@ -14,6 +15,9 @@ import org.hyperledger.fabric.gateway.impl.event.TransactionEventSource;
 import org.hyperledger.fabric.gateway.impl.event.TransactionEventSourceImpl;
 import org.hyperledger.fabric.gateway.spi.QueryHandler;
 import org.hyperledger.fabric.sdk.Channel;
+import org.hyperledger.fabric.sdk.Peer;
+import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
+import org.hyperledger.fabric.sdk.exception.TransactionException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,16 +26,29 @@ public class NetworkImpl implements Network {
     private final Channel channel;
     private final GatewayImpl gateway;
     private final Map<String, Contract> contracts = new HashMap<>();
-    private final BlockEventSource blockSource;
     private final TransactionEventSource transactionSource;
     private final QueryHandler queryHandler;
+    private final PeerTracker peerTracker;
 
-    NetworkImpl(Channel channel, GatewayImpl gateway) {
+    NetworkImpl(Channel channel, GatewayImpl gateway) throws GatewayException {
         this.channel = channel;
         this.gateway = gateway;
-        blockSource = BlockEventSourceFactory.getInstance().newBlockEventSource(channel);
+        this.peerTracker = new PeerTracker(channel);
+        gateway.getNetworkConfig().ifPresent(peerTracker::loadNetworkConfig);
+
+        initializeChannel();
+
+        BlockEventSource blockSource = BlockEventSourceFactory.getInstance().newBlockEventSource(channel);
         transactionSource = new TransactionEventSourceImpl(blockSource);
         queryHandler = gateway.getQueryHandlerFactory().create(this);
+    }
+
+    private void initializeChannel() throws GatewayException {
+        try {
+            channel.initialize();
+        } catch (InvalidArgumentException | TransactionException e) {
+            throw new GatewayException(e);
+        }
     }
 
     @Override
@@ -74,5 +91,14 @@ public class NetworkImpl implements Network {
 
     public QueryHandler getQueryHandler() {
         return queryHandler;
+    }
+
+    @Override
+    public String getPeerOrganization(Peer peer) {
+        String mspId = peerTracker.getPeerOrganization(peer);
+        if (mspId == null) {
+            throw new IllegalArgumentException("Peer is not a network member: " + peer);
+        }
+        return mspId;
     }
 }

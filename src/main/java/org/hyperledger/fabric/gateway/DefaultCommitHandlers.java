@@ -16,6 +16,7 @@ import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
 import org.hyperledger.fabric.sdk.Peer;
 
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 /**
  * Default commit handler implementations. Instances can be referenced directly or looked up by name, for example
@@ -28,11 +29,33 @@ public enum DefaultCommitHandlers implements CommitHandlerFactory {
     NONE((transactionId, network) -> NoOpCommitHandler.INSTANCE),
 
     /**
+     * Wait to receive commit events from all currently responding peers in the user's organization after submitting
+     * a transaction.
+     */
+    MSPID_SCOPE_ALLFORTX((transactionId, network) -> {
+        Collection<Peer> peers = getPeersForOrganization(network);
+        CommitStrategy strategy = new AllCommitStrategy(peers);
+        CommitHandler handler = new CommitHandlerImpl(transactionId, network, strategy);
+        return handler;
+    }),
+
+    /**
      * Wait to receive commit events from all currently responding peers in the network after submitting a transaction.
      */
     NETWORK_SCOPE_ALLFORTX((transactionId, network) -> {
         Collection<Peer> peers = network.getChannel().getPeers();
         CommitStrategy strategy = new AllCommitStrategy(peers);
+        CommitHandler handler = new CommitHandlerImpl(transactionId, network, strategy);
+        return handler;
+    }),
+
+    /**
+     * Wait to receive a commit event from any currently responding peer in the user's organization after submitting
+     * a transaction.
+     */
+    MSPID_SCOPE_ANYFORTX((transactionId, network) -> {
+        Collection<Peer> peers = getPeersForOrganization(network);
+        CommitStrategy strategy = new AnyCommitStrategy(peers);
         CommitHandler handler = new CommitHandlerImpl(transactionId, network, strategy);
         return handler;
     }),
@@ -51,6 +74,14 @@ public enum DefaultCommitHandlers implements CommitHandlerFactory {
 
     DefaultCommitHandlers(CommitHandlerFactory factory) {
         this.factory = factory;
+    }
+
+    private static Collection<Peer> getPeersForOrganization(Network network) {
+        String mspId = network.getGateway().getIdentity().getMspId();
+        Collection<Peer> peers = network.getChannel().getPeers().stream()
+                .filter(peer -> network.getPeerOrganization(peer).equals(mspId))
+                .collect(Collectors.toList());
+        return peers;
     }
 
     public CommitHandler create(String transactionId, Network network) {

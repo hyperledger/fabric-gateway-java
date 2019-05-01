@@ -8,6 +8,7 @@ package org.hyperledger.fabric.gateway.impl;
 
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
+import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.gateway.Wallet;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
@@ -30,7 +31,7 @@ public class GatewayBuilderTest {
 
     @BeforeAll
     public static void enroll() throws Exception {
-        enrollment = Enrollment.createTestEnrollment();
+        enrollment = TestUtils.getInstance().newEnrollment();
         networkConfigPath = Paths.get("src", "test", "java", "org", "hyperledger", "fabric", "gateway", "connection.json");
     }
 
