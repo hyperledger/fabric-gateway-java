@@ -41,6 +41,7 @@ public final class TransactionImpl implements Transaction {
     private final CommitHandlerFactory commitHandlerFactory;
     private TimePeriod commitTimeout;
     private final QueryHandler queryHandler;
+    private Map<String, byte[]> transientData = null;
 
     TransactionImpl(ContractImpl contract, String name) {
         this.contract = contract;
@@ -58,14 +59,15 @@ public final class TransactionImpl implements Transaction {
     }
 
     @Override
-    public void setTransient(Map<String, byte[]> transientData) {
-        // TODO Auto-generated method stub
-
+    public Transaction setTransient(Map<String, byte[]> transientData) {
+        this.transientData = transientData;
+        return this;
     }
 
     @Override
-    public void setCommitTimeout(long timeout, TimeUnit timeUnit) {
+    public Transaction setCommitTimeout(long timeout, TimeUnit timeUnit) {
         commitTimeout = new TimePeriod(timeout, timeUnit);
+        return this;
     }
 
     @Override
@@ -78,6 +80,9 @@ public final class TransactionImpl implements Transaction {
             request.setChaincodeID(ChaincodeID.newBuilder().setName(contract.getChaincodeId()).build());
             request.setFcn(name);
             request.setArgs(args);
+            if(transientData != null) {
+            	request.setTransientMap(transientData);
+            }
 
             Collection<ProposalResponse> proposalResponses;
             if(network.getGateway().isDiscoveryEnabled()) {
@@ -147,10 +152,13 @@ public final class TransactionImpl implements Transaction {
         request.setChaincodeID(chaincodeId);
         request.setFcn(name);
         request.setArgs(args);
-
-        Query query = new QueryImpl(network.getChannel(), request);
-        ProposalResponse response = queryHandler.evaluate(query);
         try {
+	        if(transientData != null) {
+	        	request.setTransientMap(transientData);
+	        }
+
+	        Query query = new QueryImpl(network.getChannel(), request);
+	        ProposalResponse response = queryHandler.evaluate(query);
             return response.getChaincodeActionResponsePayload();
         } catch (InvalidArgumentException e) {
             throw new GatewayException(e);

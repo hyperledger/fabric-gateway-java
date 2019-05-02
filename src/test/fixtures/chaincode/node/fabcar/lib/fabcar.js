@@ -87,7 +87,7 @@ class FabCar extends Contract {
             throw new Error(`${carNumber} does not exist`);
         }
         console.log(carAsBytes.toString());
-        return carAsBytes.toString();
+        return JSON.parse(carAsBytes.toString());
     }
 
     async createCar(ctx, carNumber, make, model, color, owner) {
@@ -132,7 +132,7 @@ class FabCar extends Contract {
                 console.log('end of data');
                 await iterator.close();
                 console.info(allResults);
-                return JSON.stringify(allResults);
+                return allResults;
             }
         }
     }
@@ -150,6 +150,15 @@ class FabCar extends Contract {
         await ctx.stub.putState(carNumber, Buffer.from(JSON.stringify(car)));
         console.info('============= END : changeCarOwner ===========');
     }
+
+	async echoTransient(ctx) {
+		const transientMap = ctx.stub.getTransient();
+		const result = {};
+		transientMap.forEach((value, key) => {
+			result[key] = value.toString('utf8');
+		});
+		return result;
+	}
 
 }
 

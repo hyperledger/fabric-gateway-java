@@ -13,5 +13,14 @@ Feature: Configure Fabric using SDK and submit/evaluate using a network Gateway
 		Given I install/instantiate node chaincode named fabcar at version 1.0.0 as fabcar01 to the tls Fabric network for all organizations on channel mychannel with endorsement policy 1AdminOr2Other and args [initLedger]
 		When I use the gateway named test_gateway to submit a transaction with args [createCar,CAR10,Trabant,601 Estate,brown,Simon] for chaincode fabcar instantiated on channel mychannel
 		Then The gateway named test_gateway has a submit type response
-		When I use the gateway named test_gateway to evaluate transaction with args [queryCar,CAR10] for chaincode fabcar instantiated on channel mychannel
-		Then The gateway named test_gateway has a evaluate type response matching "{\"color\":\"brown\",\"docType\":\"car\",\"make\":\"Trabant\",\"model\":\"601 Estate\",\"owner\":\"Simon\"}"
+		When I use the gateway named test_gateway to evaluate a transaction with args [queryCar,CAR10] for chaincode fabcar instantiated on channel mychannel
+		Then The gateway named test_gateway has a evaluate type JSON response matching
+		    """
+		    {
+		    	"color": "brown",
+		    	"docType": "car",
+		    	"make": "Trabant",
+		    	"model": "601 Estate",
+		    	"owner": "Simon"
+		    }
+		    """	

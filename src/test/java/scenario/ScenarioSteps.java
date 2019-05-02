@@ -1,150 +1,243 @@
 package scenario;
 
-import cucumber.api.java8.En;
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.openssl.PEMKeyPair;
-import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
-import org.hyperledger.fabric.gateway.Contract;
-import org.hyperledger.fabric.gateway.Gateway;
-import org.hyperledger.fabric.gateway.GatewayException;
-import org.hyperledger.fabric.gateway.Network;
-import org.hyperledger.fabric.gateway.Wallet;
-import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.PrivateKey;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.hyperledger.fabric.gateway.Contract;
+import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
+import org.hyperledger.fabric.gateway.Gateway;
+import org.hyperledger.fabric.gateway.GatewayException;
+import org.hyperledger.fabric.gateway.Network;
+import org.hyperledger.fabric.gateway.Transaction;
+import org.hyperledger.fabric.gateway.Wallet;
+
+import cucumber.api.java8.En;
+import io.cucumber.datatable.DataTable;
 
 public class ScenarioSteps implements En {
 	Gateway gateway = null;
 	String evaluateResponse = null;
 	String submitResponse = null;
-    boolean fabricRunning = false;
-    static boolean channelsJoined = false;
+	Map<String, Transaction> transactions = new HashMap<>();
+	static Set<String> runningChaincodes = new HashSet<>();
+	boolean fabricRunning = false;
+	static boolean channelsJoined = false;
 
 	public ScenarioSteps() {
 		Given("I have deployed a (.+?) Fabric network", (String tlsType) -> {
 			// tlsType is either "tls" or "non-tls"
-		    if (!fabricRunning) {
-		    	fabricRunning = true;
-		    }
+			if (!fabricRunning) {
+				fabricRunning = true;
+			}
 		});
 
 		Given("I have created and joined all channels from the (.+?) common connection profile", (String tlsType) -> {
-		    // TODO this only does mychannel
-			if(!channelsJoined) {
+			// TODO this only does mychannel
+			if (!channelsJoined) {
 				String tlsOption;
 				if (tlsType.equals("tls")) {
 					tlsOption = "--tls true --cafile /etc/hyperledger/configtx/crypto-config/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem";
 				} else {
 					tlsOption = "";
 				}
-		    	exec(String.format("docker exec org1_cli peer channel create -o orderer.example.com:7050 -c mychannel -f /etc/hyperledger/configtx/channel.tx --outputBlock /etc/hyperledger/configtx/mychannel.block %s", tlsOption));
-		    	exec(String.format("docker exec org1_cli peer channel join -b /etc/hyperledger/configtx/mychannel.block %s", tlsOption));
-		    	exec(String.format("docker exec org2_cli peer channel join -b /etc/hyperledger/configtx/mychannel.block %s", tlsOption));
-		    	exec(String.format("docker exec org1_cli peer channel update -o orderer.example.com:7050 -c mychannel -f /etc/hyperledger/configtx/Org1MSPanchors.tx %s", tlsOption));
-		    	exec(String.format("docker exec org2_cli peer channel update -o orderer.example.com:7050 -c mychannel -f /etc/hyperledger/configtx/Org2MSPanchors.tx %s", tlsOption));
-		    	channelsJoined = true;
+				exec(String.format(
+						"docker exec org1_cli peer channel create -o orderer.example.com:7050 -c mychannel -f /etc/hyperledger/configtx/channel.tx --outputBlock /etc/hyperledger/configtx/mychannel.block %s",
+						tlsOption));
+				exec(String.format(
+						"docker exec org1_cli peer channel join -b /etc/hyperledger/configtx/mychannel.block %s",
+						tlsOption));
+				exec(String.format(
+						"docker exec org2_cli peer channel join -b /etc/hyperledger/configtx/mychannel.block %s",
+						tlsOption));
+				exec(String.format(
+						"docker exec org1_cli peer channel update -o orderer.example.com:7050 -c mychannel -f /etc/hyperledger/configtx/Org1MSPanchors.tx %s",
+						tlsOption));
+				exec(String.format(
+						"docker exec org2_cli peer channel update -o orderer.example.com:7050 -c mychannel -f /etc/hyperledger/configtx/Org2MSPanchors.tx %s",
+						tlsOption));
+				channelsJoined = true;
 			}
 		});
 
-		Given("^I have created a gateway named (.+?) as user (.+?) within (.+?) using the (.+?) common connection profile$", (String gatewayName, String userName, String orgName, String tlsType) -> {
-	    	String ccp;
-			switch (tlsType) {
-			case "tls":
-				ccp = "connection-tls.json";
-				break;
-			case "discovery":
-				ccp = "connection-discovery.json";
-				break;
-			default:
-				ccp = "connection.json";
-			}
-			Path networkConfigPath = Paths.get("src", "test", "java", "org", "hyperledger", "fabric", "gateway", ccp);
-			Wallet wallet = createWallet();
-			Gateway.Builder builder = Gateway. createBuilder();
-			builder.identity(wallet, userName);
-			builder.networkConfig(networkConfigPath);
-			builder.commitTimeout(1, TimeUnit.MINUTES);
-			builder.commitHandler(DefaultCommitHandlers.NETWORK_SCOPE_ANYFORTX);
-			if(tlsType.equals("discovery")) {
-				builder.discovery(true);
-			}
-			gateway = builder.connect();
-		});
+		Given("^I have created a gateway named (.+?) as user (.+?) within (.+?) using the (.+?) common connection profile$",
+				(String gatewayName, String userName, String orgName, String tlsType) -> {
+					String ccp;
+					switch (tlsType) {
+					case "tls":
+						ccp = "connection-tls.json";
+						break;
+					case "discovery":
+						ccp = "connection-discovery.json";
+						break;
+					default:
+						ccp = "connection.json";
+					}
+					Path networkConfigPath = Paths.get("src", "test", "java", "org", "hyperledger", "fabric", "gateway",
+							ccp);
+					Wallet wallet = createWallet();
+					Gateway.Builder builder = Gateway.createBuilder();
+					builder.identity(wallet, userName);
+					builder.networkConfig(networkConfigPath);
+					builder.commitTimeout(1, TimeUnit.MINUTES);
+					builder.commitHandler(DefaultCommitHandlers.NETWORK_SCOPE_ANYFORTX);
+					if (tlsType.equals("discovery")) {
+						builder.discovery(true);
+					}
+					gateway = builder.connect();
+				});
 
-		Given("^I install\\/instantiate (.+?) chaincode named (.+?) at version (.+?) as (.+?) to the (.+?) Fabric network for all organizations on channel (.+?) with endorsement policy (.+?) and args (.+?)$", (String ccType, String ccName, String version, String ccId, String tlsType, String channelName, String policyType, String args) -> {
-		    // Write code here that turns the phrase above into concrete actions
-		    String[] params = args.substring(1, args.length()-1).split(",");
-		    String transactionName = params[0];
-		    String[] params2_N = new String[params.length - 1];
-		    System.arraycopy(params, 1, params2_N, 0, params.length - 1);
-		    String arguments = "[\"" + String.join("\",\"", params2_N) + "\"]";
-			String tlsOption;
-			String initArg = String.format("{\"function\":\"%s\",\"Args\":%s}", transactionName, arguments);
-			if (tlsType.equals("tls")) {
-				tlsOption = "--tls true --cafile /etc/hyperledger/configtx/crypto-config/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem";
-			} else {
-				tlsOption = "";
-			}
+		Given("^I install\\/instantiate (.+?) chaincode named (.+?) at version (.+?) as (.+?) to the (.+?) Fabric network for all organizations on channel (.+?) with endorsement policy (.+?) and args (.+?)$",
+				(String ccType, String ccName, String version, String ccId, String tlsType, String channelName,
+						String policyType, String args) -> {
+					String mangledName = ccName + version + channelName;
+					if(runningChaincodes.contains(mangledName)) {
+						return;
+					}
+					String[] params = args.substring(1, args.length() - 1).split(",");
+					String transactionName = params[0];
+					String[] params2_N = new String[params.length - 1];
+					System.arraycopy(params, 1, params2_N, 0, params.length - 1);
+					String arguments = "[\"" + String.join("\",\"", params2_N) + "\"]";
+					String tlsOption;
+					String initArg = String.format("{\"function\":\"%s\",\"Args\":%s}", transactionName, arguments);
+					if (tlsType.equals("tls")) {
+						tlsOption = "--tls true --cafile /etc/hyperledger/configtx/crypto-config/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem";
+					} else {
+						tlsOption = "";
+					}
 
-		    String ccPath = String.format("/opt/gopath/src/github.com/chaincode/%s/%s", ccType, ccName);
-	    	exec(String.format("docker exec org1_cli peer chaincode install -l %s -n %s -v %s -p %s", ccType, ccName, version, ccPath));
-	    	exec(String.format("docker exec org2_cli peer chaincode install -l %s -n %s -v %s -p %s", ccType, ccName, version, ccPath));
-	    	Thread.sleep(3000);
-	    	exec(String.format("docker exec org1_cli peer chaincode instantiate -o orderer.example.com:7050 -l %s -C %s -n %s -v %s -c %s -P AND(\"Org1MSP.member\",\"Org2MSP.member\") %s", ccType, channelName, ccName, version, initArg, tlsOption));
-	    	Thread.sleep(10000);
-		});
+					String ccPath = String.format("/opt/gopath/src/github.com/chaincode/%s/%s", ccType, ccName);
+					exec(String.format("docker exec org1_cli peer chaincode install -l %s -n %s -v %s -p %s", ccType,
+							ccName, version, ccPath));
+					exec(String.format("docker exec org2_cli peer chaincode install -l %s -n %s -v %s -p %s", ccType,
+							ccName, version, ccPath));
+					Thread.sleep(3000);
+					exec(String.format(
+							"docker exec org1_cli peer chaincode instantiate -o orderer.example.com:7050 -l %s -C %s -n %s -v %s -c %s -P AND(\"Org1MSP.member\",\"Org2MSP.member\") %s",
+							ccType, channelName, ccName, version, initArg, tlsOption));
+					runningChaincodes.add(mangledName);
+					Thread.sleep(60000);
+				});
 
-		Given("I update channel with name (.+?) with config file (.+?) from the (.+?) common connection profile", (String channelName, String txFileName, String tlsType) -> {
-		    // Write code here that turns the phrase above into concrete actions
-		    throw new cucumber.api.PendingException();
-		});
+		Given("I update channel with name (.+?) with config file (.+?) from the (.+?) common connection profile",
+				(String channelName, String txFileName, String tlsType) -> {
+					// Write code here that turns the phrase above into concrete actions
+					throw new cucumber.api.PendingException();
+				});
 
-		When("^I use the gateway named (.+?) to submit a transaction with args (.+?) for chaincode (.+?) instantiated on channel (.+?)$", (String gatewayName, String args, String ccName, String channelName) -> {
-		    // Write code here that turns the phrase above into concrete actions
-		    String[] params = args.substring(1, args.length()-1).split(",");
-		    Network network = gateway.getNetwork(channelName);
-		    Contract contract = network.getContract(ccName);
-		    String transactionName = params[0];
-		    String[] arguments = new String[params.length - 1];
-		    System.arraycopy(params, 1, arguments, 0, params.length - 1);
-		    byte[] retval = contract.submitTransaction(transactionName, arguments);
-		    submitResponse = new String(retval);
-		});
+		When("^I use the gateway named (.+?) to (submit|evaluate) a transaction with args (.+?) for chaincode (.+?) instantiated on channel (.+?)$",
+				(String gatewayName, String action, String args, String ccName, String channelName) -> {
+					// Write code here that turns the phrase above into concrete actions
+					String[] params = args.substring(1, args.length() - 1).split(",");
+					Network network = gateway.getNetwork(channelName);
+					Contract contract = network.getContract(ccName);
+					String transactionName = params[0];
+					String[] arguments = new String[params.length - 1];
+					System.arraycopy(params, 1, arguments, 0, params.length - 1);
+					if(action.equals("submit")) {
+						byte[] retval = contract.submitTransaction(transactionName, arguments);
+						submitResponse = new String(retval);
+						evaluateResponse = null;
+					} else {
+						byte[] retval = contract.evaluateTransaction(transactionName, arguments);
+						evaluateResponse = new String(retval);
+						submitResponse = null;
+					}
+				});
 
-		When("^I use the gateway named (.+?) to evaluate transaction with args (.+?) for chaincode (.+?) instantiated on channel (.+?)$", (String gatewayName, String args, String ccName, String channelName) -> {
-		    String[] params = args.substring(1, args.length()-1).split(",");
-		    Network network = gateway.getNetwork(channelName);
-		    Contract contract = network.getContract(ccName);
-		    String transactionName = params[0];
-		    String[] arguments = new String[params.length - 1];
-		    System.arraycopy(params, 1, arguments, 0, params.length - 1);
-		    byte[] retval = contract.evaluateTransaction(transactionName, arguments);
-		    evaluateResponse = new String(retval);
-		});
+		When("^I use the gateway named (.+?) to create a (.+?) transaction as (.+?) for contract (.+?) instantiated on channel (.+?)$",
+				(String gatewayName, String txnFn, String txnLabel, String ccName, String channelName) -> {
+					Network network = gateway.getNetwork(channelName);
+					Contract contract = network.getContract(ccName);
+					Transaction txn = contract.createTransaction(txnFn);
+					transactions.put(txnLabel, txn);
+				});
 
-		Then("^The gateway named (.+?) has a (.+?) type response matching (.+?)$", (String gatewayName, String type, String expected) -> {
-			switch (type) {
-				case "evaluate":
-					assertEquals(expected, evaluateResponse);
-					break;
-				case "submit":
-					assertEquals(expected, submitResponse);
-					break;
-			}
-		});
+		When("^I set transient data on transaction (.+?) to$",
+				(String txnLabel, DataTable data) -> {
+					Transaction txn = transactions.get(txnLabel);
+					Map<String, String> table = data.asMap(String.class, String.class);
+					Map<String, byte[]> transientMap = new HashMap<>();
+					table.forEach((k, v) -> {
+						transientMap.put(k, v.getBytes());
+					});
+					txn.setTransient(transientMap);
+				});
+
+		When("^I (submit|evaluate) the transaction (.+?) with args (.+?)$",
+				(String action, String txnLabel, String args) -> {
+					Transaction txn = transactions.get(txnLabel);
+					String[] params = args.substring(1, args.length() - 1).split(",");
+					String[] arguments = new String[params.length - 1];
+					System.arraycopy(params, 1, arguments, 0, params.length - 1);
+					if(action.equals("submit")) {
+						byte[] retval = txn.submit(arguments);
+						submitResponse = new String(retval);
+						evaluateResponse = null;
+					} else {
+						byte[] retval = txn.evaluate(arguments);
+						evaluateResponse = new String(retval);
+						submitResponse = null;
+					}
+				});
+
+		Then("^The gateway named (.+?) has a (.+?) type response matching (.+?)$",
+				(String gatewayName, String type, String expected) -> {
+					switch (type) {
+					case "evaluate":
+						assertEquals(expected, evaluateResponse);
+						break;
+					case "submit":
+						assertEquals(expected, submitResponse);
+						break;
+					}
+				});
+
+		Then("^The gateway named (.+?) has a (.+?) type JSON response matching$",
+				(String gatewayName, String type, String expected) -> {
+					String response = null;
+					switch (type) {
+					case "evaluate":
+						assertNotNull(evaluateResponse);
+						response = evaluateResponse;
+						break;
+					case "submit":
+						assertNotNull(submitResponse);
+						response = submitResponse;
+						break;
+					}
+					try (JsonReader expectedReader = Json.createReader(new StringReader(expected));
+							JsonReader actualReader = Json.createReader(new StringReader(response))) {
+						JsonObject expectedObject = expectedReader.readObject();
+						JsonObject actualObject = actualReader.readObject();
+						assertTrue(expectedObject.equals(actualObject));
+					};
+				});
 
 		Then("^The gateway named (.+?) has a (.+?) type response$", (String gatewayName, String type) -> {
 			switch (type) {

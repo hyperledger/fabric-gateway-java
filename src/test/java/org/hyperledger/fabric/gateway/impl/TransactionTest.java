@@ -6,10 +6,29 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.TestUtils;
+import org.hyperledger.fabric.gateway.Transaction;
 import org.hyperledger.fabric.gateway.spi.CommitHandler;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;
@@ -20,17 +39,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.*;
-
 
 public class TransactionTest {
     private final TestUtils testUtils = TestUtils.getInstance();
@@ -40,6 +48,7 @@ public class TransactionTest {
     private CommitHandler commitHandler;
     private Peer peer;
     private ProposalResponse failureResponse;
+    private Map<String, byte[]> transientMap;
 
     @BeforeEach
     public void setup() throws Exception {
@@ -63,6 +72,10 @@ public class TransactionTest {
         contract = gateway.getNetwork("network").getContract("contract");
 
         failureResponse = testUtils.newFailureProposalResponse("Epic fail");
+
+        transientMap = new HashMap<>();
+    	transientMap.put("key1", "value1".getBytes());
+    	transientMap.put("key2", "value2".getBytes());
     }
 
     @Test
@@ -70,12 +83,6 @@ public class TransactionTest {
         String name = "txn";
         String result = contract.createTransaction(name).getName();
         assertThat(result).isEqualTo(name);
-    }
-
-    @Test
-    public void testSetTransient() {
-        contract.createTransaction("txn").setTransient(null);
-        // TODO
     }
 
     @Disabled("Not sure if this is a valid scenario")
@@ -108,6 +115,17 @@ public class TransactionTest {
     }
 
     @Test
+    public void testEvaluateSuccessWithTransient() throws Exception {
+        String expected = "successful result";
+        ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
+        when(response.getPeer()).thenReturn(peer);
+        when(channel.queryByChaincode(any(), anyCollection())).thenReturn(Arrays.asList(response));
+
+        byte[] result = contract.createTransaction("txn").setTransient(transientMap).evaluate("arg1");
+        assertThat(new String(result)).isEqualTo(expected);
+    }
+
+    @Test
     public void testSubmitNoResponses() throws Exception {
         List<ProposalResponse> responses = new ArrayList<>();
         when(channel.sendTransactionProposal(any())).thenReturn(responses);
@@ -133,6 +151,18 @@ public class TransactionTest {
 
 
         byte[] result = contract.submitTransaction("txn", "arg1");
+        assertThat(new String(result)).isEqualTo(expected);
+    }
+
+    @Test
+    public void testSubmitSuccessWithTransient() throws Exception {
+        String expected = "successful result";
+        ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
+        when(channel.sendTransactionProposal(ArgumentMatchers.any())).thenReturn(Arrays.asList(response));
+        when(channel.sendTransactionProposalToEndorsers(ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Arrays.asList(response));
+
+
+        byte[] result = contract.createTransaction("txn").setTransient(transientMap).submit("arg1");
         assertThat(new String(result)).isEqualTo(expected);
     }
 

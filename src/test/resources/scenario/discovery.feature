@@ -15,5 +15,14 @@ Feature: Configure Fabric using SDK using discovery service and submit/evaluate 
 		Given I install/instantiate node chaincode named marbles0 at version 1.0.0 as marbles to the tls Fabric network for all organizations on channel mychannel with endorsement policy 1AdminOr2Other and args [init,a,1000,b,2000]
 	 	When I use the gateway named discovery_gateway to submit a transaction with args [initMarble,marble1,blue,50,bob] for chaincode marbles0 instantiated on channel mychannel
 		Then The gateway named discovery_gateway has a submit type response
-		When I use the gateway named discovery_gateway to evaluate transaction with args [readMarble,marble1] for chaincode marbles0 instantiated on channel mychannel
-		Then The gateway named discovery_gateway has a evaluate type response matching {"color":"blue","docType":"marble","name":"marble1","owner":"bob","size":50}
+		When I use the gateway named discovery_gateway to evaluate a transaction with args [readMarble,marble1] for chaincode marbles0 instantiated on channel mychannel
+		Then The gateway named discovery_gateway has a evaluate type JSON response matching
+		"""
+		{
+			"color":"blue",
+			"docType":"marble",
+			"name":"marble1",
+			"owner":"bob",
+			"size":50
+		}
+		"""

@@ -35,7 +35,7 @@ public interface Transaction {
 	 *
 	 * @param transientData A Map containing the transient data.
 	 */
-	void setTransient(Map<String, byte[]> transientData);
+	Transaction setTransient(Map<String, byte[]> transientData);
 
 	/**
 	 * Set the maximum length of time to wait for commit events to be received after submitting a transaction to the
@@ -43,7 +43,7 @@ public interface Transaction {
 	 * @param timeout the maximum time to wait.
 	 * @param timeUnit the time unit of the timeout argument.
 	 */
-	void setCommitTimeout(long timeout, TimeUnit timeUnit);
+	Transaction setCommitTimeout(long timeout, TimeUnit timeUnit);
 
 	/**
 	 * Submit a transaction to the ledger. The transaction function represented by this object
