@@ -15,8 +15,8 @@ import org.hyperledger.fabric.sdk.QueryByChaincodeRequest;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
 
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -33,7 +33,7 @@ public final class QueryImpl implements Query {
     @Override
     public ProposalResponse evaluate(Peer peer) throws GatewayException {
         try {
-            Collection<ProposalResponse> responses = channel.queryByChaincode(request, Arrays.asList(peer));
+            Collection<ProposalResponse> responses = channel.queryByChaincode(request, Collections.singletonList(peer));
             return responses.iterator().next();
         } catch (ProposalException | InvalidArgumentException e) {
             throw new GatewayException(e);
@@ -45,7 +45,7 @@ public final class QueryImpl implements Query {
         try {
             Collection<ProposalResponse> responses = channel.queryByChaincode(request, peers);
             Map<Peer, ProposalResponse> results = responses.stream()
-                    .collect(Collectors.toMap(response -> response.getPeer(), Function.identity()));
+                    .collect(Collectors.toMap(ProposalResponse::getPeer, Function.identity()));
             return results;
         } catch (ProposalException | InvalidArgumentException e) {
             throw new GatewayException(e);

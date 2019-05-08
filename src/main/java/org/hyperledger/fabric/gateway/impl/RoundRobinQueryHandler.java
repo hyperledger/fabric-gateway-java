@@ -41,12 +41,11 @@ public final class RoundRobinQueryHandler implements QueryHandler {
             ProposalResponse response = query.evaluate(peer);
             if (response.getStatus().equals(ChaincodeResponse.Status.SUCCESS)) {
                 return response;
-            } else {
-                errorMessages.add(response.getMessage());
             }
+            errorMessages.add(response.getMessage());
         }
 
-        String message = "No peers available to query. Errors: " + errorMessages;
+        String message = "No successful responses received. Errors: " + errorMessages;
         throw new GatewayException(message);
     }
 }

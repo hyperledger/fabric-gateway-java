@@ -42,12 +42,11 @@ public final class SingleQueryHandler implements QueryHandler {
             if (response.getStatus().equals(ChaincodeResponse.Status.SUCCESS)) {
                 currentPeerIndex.set(peerIndex);
                 return response;
-            } else {
-                errorMessages.add(response.getMessage());
             }
+            errorMessages.add(response.getMessage());
         }
 
-        String message = "No peers available to query. Errors: " + errorMessages;
+        String message = "No successful responses received. Errors: " + errorMessages;
         throw new GatewayException(message);
     }
 }
