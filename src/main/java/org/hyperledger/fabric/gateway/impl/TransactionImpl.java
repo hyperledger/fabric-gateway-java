@@ -96,10 +96,6 @@ public final class TransactionImpl implements Transaction {
             // Validate the proposal responses.
             Collection<ProposalResponse> validResponses = validatePeerResponses(proposalResponses);
 
-            if (validResponses.size() < 1) {
-                logger.error("No valid proposal responses received.");
-                throw new GatewayException("No valid proposal responses received.");
-            }
             ProposalResponse proposalResponse = validResponses.iterator().next();
             byte[] result = proposalResponse.getChaincodeActionResponsePayload();
             String transactionId = proposalResponse.getTransactionID();
@@ -128,8 +124,9 @@ public final class TransactionImpl implements Transaction {
         }
     }
 
-    private Collection<ProposalResponse> validatePeerResponses(Collection<ProposalResponse> proposalResponses) {
+    private Collection<ProposalResponse> validatePeerResponses(Collection<ProposalResponse> proposalResponses) throws GatewayException {
         final Collection<ProposalResponse> validResponses = new ArrayList<>();
+        final Collection<String> invalidResponseMsgs = new ArrayList<>();
         proposalResponses.forEach(response -> {
             String peerUrl = response.getPeer() != null ? response.getPeer().getUrl() : "<unknown>";
             if (response.getStatus().equals(ChaincodeResponse.Status.SUCCESS)) {
@@ -137,8 +134,16 @@ public final class TransactionImpl implements Transaction {
                 validResponses.add(response);
             } else {
                 logger.warn(String.format("validatePeerResponses: invalid response from peer %s, message %s", peerUrl, response.getMessage()));
+                invalidResponseMsgs.add(response.getMessage());
             }
         });
+
+        if(validResponses.size() < 1) {
+        	String msg = String.format("No valid proposal responses received. %d peer error responses: %s",
+        			invalidResponseMsgs.size(), String.join("; ", invalidResponseMsgs));
+            logger.error(msg);
+            throw new GatewayException(msg);
+        }
 
         return validResponses;
     }
