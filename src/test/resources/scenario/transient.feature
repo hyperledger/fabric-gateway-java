@@ -6,17 +6,18 @@
 Feature: Configure Fabric using SDK and submit/evaluate using a network Gateway
 	Background:
 		Given I have deployed a tls Fabric network
-		And I have created and joined all channels from the tls common connection profile
-		And I have created a gateway named test_gateway as user User1 within Org1 using the tls common connection profile
+		And I have created and joined all channels from the tls connection profile
+		And I deploy node chaincode named fabcar at version 1.0.0 for all organizations on channel mychannel with endorsement policy 1AdminOr2Other and arguments ["initLedger"]
 
  	Scenario: Using a Gateway I can send transient data to instantiated node chaincode
-		Given I install/instantiate node chaincode named fabcar at version 1.0.0 as fabcar01 to the tls Fabric network for all organizations on channel mychannel with endorsement policy 1AdminOr2Other and args [initLedger]
-		When I use the gateway named test_transient to create a echoTransient transaction as txn01 for contract fabcar instantiated on channel mychannel
-		And I set transient data on transaction txn01 to
+		Given I have a gateway as user User1 using the tls connection profile
+		And I connect the gateway
+		When I prepare a transaction named echoTransient for contract fabcar on network mychannel
+		And I set transient data on the transaction to
 			| key1 | value1 |
 			| key2 | value2 |
-		And I evaluate the transaction txn01 with args []
-		Then The gateway named test_transient has a evaluate type JSON response matching
+		And I evaluate the transaction with arguments []
+		Then the response should be JSON matching
 		    """
 		    {
 		    	"key1": "value1",

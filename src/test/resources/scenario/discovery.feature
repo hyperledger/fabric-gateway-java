@@ -7,16 +7,18 @@ Feature: Configure Fabric using SDK using discovery service and submit/evaluate 
 
 	Background:
 		Given I have deployed a tls Fabric network
-		And I have created and joined all channels from the tls common connection profile
-		And I have created a gateway named discovery_gateway as user User1 within Org1 using the discovery common connection profile
-#		And I update channel with name mychannel with config file mychannel-org1anchor.tx from the tls common connection profile
+		And I have created and joined all channels from the tls connection profile
+#		And I update channel with name mychannel with config file mychannel-org1anchor.tx from the tls connection profile
+		And I deploy node chaincode named marbles0 at version 1.0.0 for all organizations on channel mychannel with endorsement policy 1AdminOr2Other and arguments ["init", "a", "1000", "b", "2000"]
 
  	Scenario: Using a Gateway with discovery I can submit and evaluate transactions on instantiated node chaincode
-		Given I install/instantiate node chaincode named marbles0 at version 1.0.0 as marbles to the tls Fabric network for all organizations on channel mychannel with endorsement policy 1AdminOr2Other and args [init,a,1000,b,2000]
-	 	When I use the gateway named discovery_gateway to submit a transaction with args [initMarble,marble1,blue,50,bob] for chaincode marbles0 instantiated on channel mychannel
-		Then The gateway named discovery_gateway has a submit type response
-		When I use the gateway named discovery_gateway to evaluate a transaction with args [readMarble,marble1] for chaincode marbles0 instantiated on channel mychannel
-		Then The gateway named discovery_gateway has a evaluate type JSON response matching
+		Given I have a gateway as user User1 using the discovery connection profile
+		And I connect the gateway
+	 	When I prepare a transaction named initMarble for contract marbles0 on network mychannel
+	 	And I submit the transaction with arguments ["marble1", "blue", "50", "bob"]
+	 	And I prepare a transaction named readMarble for contract marbles0 on network mychannel
+	 	And I evaluate the transaction with arguments ["marble1"]
+	 	Then the response should be JSON matching
 		"""
 		{
 			"color":"blue",
