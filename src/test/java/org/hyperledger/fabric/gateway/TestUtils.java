@@ -88,8 +88,16 @@ public final class TestUtils {
     }
 
     public Peer newMockPeer(String name) {
+        AtomicReference<Peer.PeerEventingServiceDisconnected> disconnectHandler =
+                new AtomicReference<>(Mockito.mock(Peer.PeerEventingServiceDisconnected.class));
+
         Peer mockPeer = Mockito.mock(Peer.class);
+
         Mockito.when(mockPeer.getName()).thenReturn(name);
+        Mockito.when(mockPeer.getPeerEventingServiceDisconnected()).thenAnswer(invocation -> disconnectHandler.get());
+        Mockito.when(mockPeer.setPeerEventingServiceDisconnected(Mockito.any(Peer.PeerEventingServiceDisconnected.class)))
+                .thenAnswer(invocation -> disconnectHandler.getAndSet(invocation.getArgument(0)));
+
         return mockPeer;
     }
 

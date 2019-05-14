@@ -6,6 +6,7 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
+import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.sdk.Peer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,26 +18,18 @@ import static org.mockito.Mockito.*;
 public class PeerDisconnectInterceptorTest {
     private Peer peer;
     private Peer.PeerEventingServiceDisconnected originalDisconnectHandler;
-    private Peer.PeerEventingServiceDisconnected registeredDisconnectHandler;
     private PeerDisconnectListener listener;
     private Peer.PeerEventingServiceDisconnectEvent sdkEvent;
     private PeerDisconnectEventSource eventSource;
 
     private void fireEvent(Peer.PeerEventingServiceDisconnectEvent event) {
-        registeredDisconnectHandler.disconnected(event);
+        peer.getPeerEventingServiceDisconnected().disconnected(event);
     }
 
     @BeforeEach
     public void beforeEach() {
-        originalDisconnectHandler = mock(Peer.PeerEventingServiceDisconnected.class);
-        registeredDisconnectHandler = originalDisconnectHandler;
-
-        peer = mock(Peer.class);
-        when(peer.setPeerEventingServiceDisconnected(any())).thenAnswer(invocation -> {
-            Peer.PeerEventingServiceDisconnected currentHandler = registeredDisconnectHandler;
-            registeredDisconnectHandler = invocation.getArgument(0);
-            return currentHandler;
-        });
+        peer = TestUtils.getInstance().newMockPeer("mockPeer");
+        originalDisconnectHandler = peer.getPeerEventingServiceDisconnected();
 
         listener = mock(PeerDisconnectListener.class);
         sdkEvent = mock(Peer.PeerEventingServiceDisconnectEvent.class);
@@ -77,7 +70,7 @@ public class PeerDisconnectInterceptorTest {
     @Test
     public void close_restores_original_disconnect_handler() {
         eventSource.close();
-        verify(peer).setPeerEventingServiceDisconnected(originalDisconnectHandler);
+        assertThat(peer.getPeerEventingServiceDisconnected()).isSameAs(originalDisconnectHandler);
     }
 
     @Test
