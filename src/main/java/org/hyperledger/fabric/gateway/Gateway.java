@@ -74,8 +74,10 @@ public interface Gateway extends AutoCloseable {
 		 * Specifies the path to the common connection profile.
 		 * @param config The path to the common connection profile.
 		 * @return The builder instance, allowing multiple configuration options to be chained.
+		 * @throws GatewayException if the config file does not exist, or is not JSON or YAML format,
+		 * or contains invalid information.
 		 */
-		Builder networkConfig(Path config);
+		Builder networkConfig(Path config) throws GatewayException;
 
 		/**
 		 * Specifies the identity that is to be used to connect to the network.  All operations

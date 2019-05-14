@@ -6,6 +6,21 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import java.io.FileReader;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import javax.json.Json;
+import javax.json.JsonReader;
+import javax.json.stream.JsonParsingException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
@@ -29,16 +44,6 @@ import org.hyperledger.fabric.sdk.identity.X509Enrollment;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.hyperledger.fabric.sdk.security.CryptoSuiteFactory;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
 public class GatewayImpl implements Gateway {
     private static final Log LOG = LogFactory.getLog(Gateway.class);
 
@@ -55,7 +60,7 @@ public class GatewayImpl implements Gateway {
         private CommitHandlerFactory commitHandlerFactory = DefaultCommitHandlers.MSPID_SCOPE_ALLFORTX;
         private TimePeriod commitTimeout = new TimePeriod(5, TimeUnit.MINUTES);
         private QueryHandlerFactory queryHandlerFactory = DefaultQueryHandlers.MSPID_SCOPE_SINGLE;
-        private Path ccp = null;
+        private NetworkConfig ccp = null;
         private Identity identity = null;
         private HFClient client;
         private boolean discovery = false;
@@ -64,10 +69,22 @@ public class GatewayImpl implements Gateway {
         }
 
         @Override
-        public Builder networkConfig(Path config) {
-            this.ccp = config;
-            return this;
-        }
+		public Builder networkConfig(Path config) throws GatewayException {
+			try {
+				// ccp is either JSON or YAML
+			    try (JsonReader reader = Json.createReader(new FileReader(config.toFile()))) {
+			        reader.readObject();
+					// looks like JSON
+					ccp = NetworkConfig.fromJsonFile(config.toFile());
+				} catch (JsonParsingException ex) {
+					// assume YAML then
+					ccp = NetworkConfig.fromYamlFile(config.toFile());
+				}
+			} catch (IOException | InvalidArgumentException | NetworkConfigurationException e) {
+				throw new GatewayException(e);
+			}
+			return this;
+		}
 
         @Override
         public Builder identity(Wallet wallet, String id) throws GatewayException {
@@ -131,11 +148,11 @@ public class GatewayImpl implements Gateway {
                 this.client = HFClient.createNewInstance();
                 CryptoSuite cryptoSuite = CryptoSuiteFactory.getDefault().getCryptoSuite();
                 this.client.setCryptoSuite(cryptoSuite);
-                this.networkConfig = Optional.of(NetworkConfig.fromJsonFile(builder.ccp.toFile()));
+                this.networkConfig = Optional.of(builder.ccp);
                 this.identity = builder.identity;
                 configureUserContext();
             }
-        } catch (InvalidArgumentException | NetworkConfigurationException | IOException | CryptoException | ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
+        } catch (InvalidArgumentException | CryptoException | ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
             throw new GatewayException(e);
         }
     }
@@ -241,4 +258,5 @@ public class GatewayImpl implements Gateway {
     public Optional<NetworkConfig> getNetworkConfig() {
         return networkConfig;
     }
+
 }

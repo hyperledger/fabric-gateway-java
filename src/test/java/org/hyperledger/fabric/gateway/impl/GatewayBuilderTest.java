@@ -67,11 +67,23 @@ public class GatewayBuilderTest {
     }
 
     @Test
+    public void testBuilderYamlCcp() throws GatewayException {
+        Wallet wallet = Wallet.createInMemoryWallet();
+        wallet.put("admin", Wallet.Identity.createIdentity("msp1", enrollment.getCertificate(), enrollment.getPrivateKey()));
+        builder.identity(wallet, "admin");
+        Path yamlPath = Paths.get("src", "test", "java", "org", "hyperledger", "fabric", "gateway", "connection.json");
+        builder.networkConfig(yamlPath);
+        try (Gateway gateway = builder.connect()) {
+            assertThat(((GatewayImpl)gateway).getNetworkConfig().get().getClientOrganization().getMspId()).isEqualTo("Org1MSP");
+        }
+    }
+
+    @Test
     public void testBuilderInvalidCcp() throws GatewayException {
         Wallet wallet = Wallet.createInMemoryWallet();
         wallet.put("admin", Wallet.Identity.createIdentity("msp1", enrollment.getCertificate(), enrollment.getPrivateKey()));
-        builder.identity(wallet, "admin").networkConfig(Paths.get("invalidPath"));
-        assertThatThrownBy(() -> builder.connect())
+        builder.identity(wallet, "admin");
+        assertThatThrownBy(() -> builder.networkConfig(Paths.get("invalidPath")))
                 .isInstanceOf(GatewayException.class)
                 .hasCauseInstanceOf(IOException.class);
     }

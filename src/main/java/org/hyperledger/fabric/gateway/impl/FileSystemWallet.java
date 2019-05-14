@@ -6,22 +6,10 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
-import org.apache.commons.io.FileUtils;
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.openssl.PEMKeyPair;
-import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
-import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
-import org.hyperledger.fabric.gateway.GatewayException;
-import org.hyperledger.fabric.gateway.Wallet;
-
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonWriter;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -30,9 +18,23 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.PrivateKey;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonWriter;
+
+import org.apache.commons.io.FileUtils;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.hyperledger.fabric.gateway.GatewayException;
+import org.hyperledger.fabric.gateway.Wallet;
 
 public class FileSystemWallet implements Wallet {
   private Path basePath;
@@ -156,8 +158,11 @@ public class FileSystemWallet implements Wallet {
   }
 
   static void writePrivateKey(PrivateKey key, Path pemFile) throws IOException  {
-    try (JcaPEMWriter pemWriter = new JcaPEMWriter(Files.newBufferedWriter(pemFile))) {
-      pemWriter.writeObject(key);
+    try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(pemFile))) {
+    	writer.println("-----BEGIN PRIVATE KEY-----");
+    	String base64 = Base64.getEncoder().encodeToString(key.getEncoded());
+    	Arrays.stream(base64.split("(?<=\\G.{64})")).forEachOrdered(line -> writer.println(line));
+    	writer.println("-----END PRIVATE KEY-----");
     }
   }
 
