@@ -1,25 +1,8 @@
 package scenario;
 
-import cucumber.api.java8.En;
-import io.cucumber.datatable.DataTable;
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.openssl.PEMKeyPair;
-import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
-import org.hyperledger.fabric.gateway.Contract;
-import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
-import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
-import org.hyperledger.fabric.gateway.Gateway;
-import org.hyperledger.fabric.gateway.GatewayException;
-import org.hyperledger.fabric.gateway.Network;
-import org.hyperledger.fabric.gateway.Transaction;
-import org.hyperledger.fabric.gateway.Wallet;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonString;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -31,7 +14,6 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.PrivateKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -42,8 +24,23 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonString;
+
+import org.hyperledger.fabric.gateway.Contract;
+import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
+import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
+import org.hyperledger.fabric.gateway.Gateway;
+import org.hyperledger.fabric.gateway.GatewayException;
+import org.hyperledger.fabric.gateway.Network;
+import org.hyperledger.fabric.gateway.Transaction;
+import org.hyperledger.fabric.gateway.Wallet;
+
+import cucumber.api.java8.En;
+import io.cucumber.datatable.DataTable;
 
 public class ScenarioSteps implements En {
 	private static Set<String> runningChaincodes = new HashSet<>();
@@ -338,42 +335,12 @@ public class ScenarioSteps implements En {
 	private static Wallet createWallet() throws IOException, GatewayException {
 		Path credentialPath = Paths.get("src", "test", "fixtures", "crypto-material", "crypto-config",
 				"peerOrganizations", "org1.example.com", "users", "User1@org1.example.com", "msp");
-		String certificatePem = readFile(
-				credentialPath.resolve(Paths.get("signcerts", "User1@org1.example.com-cert.pem")));
-		PrivateKey privateKey = readPrivateKey(credentialPath.resolve(Paths.get("keystore", "key.pem")));
+		Path certificatePem = credentialPath.resolve(Paths.get("signcerts", "User1@org1.example.com-cert.pem"));
+		Path privateKey = credentialPath.resolve(Paths.get("keystore", "key.pem"));
 		Wallet wallet = Wallet.createInMemoryWallet();
-		wallet.put("User1", Wallet.Identity.createIdentity("Org1MSP", certificatePem, privateKey));
+		wallet.put("User1", Wallet.Identity.createIdentity("Org1MSP",
+				Files.newBufferedReader(certificatePem), Files.newBufferedReader(privateKey)));
 		return wallet;
-	}
-
-	private static String readFile(Path file) throws IOException {
-		StringBuilder contents = new StringBuilder();
-		if (Files.exists(file)) {
-			try (BufferedReader fr = Files.newBufferedReader(file)) {
-				String line;
-				while ((line = fr.readLine()) != null) {
-					contents.append(line);
-					contents.append('\n');
-				}
-			}
-			return contents.toString();
-		}
-		return null;
-	}
-
-	private static PrivateKey readPrivateKey(Path pemFile) throws IOException {
-		if (Files.exists(pemFile)) {
-			try (PEMParser parser = new PEMParser(Files.newBufferedReader(pemFile))) {
-				Object key = parser.readObject();
-				JcaPEMKeyConverter converter = new JcaPEMKeyConverter();
-				if (key instanceof PrivateKeyInfo) {
-					return converter.getPrivateKey((PrivateKeyInfo) key);
-				} else {
-					return converter.getPrivateKey(((PEMKeyPair) key).getPrivateKeyInfo());
-				}
-			}
-		}
-		return null;
 	}
 
 }

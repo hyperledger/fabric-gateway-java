@@ -6,11 +6,18 @@
 
 package org.hyperledger.fabric.gateway;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.nio.file.Path;
 import java.security.PrivateKey;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.hyperledger.fabric.gateway.impl.FileSystemWallet;
 import org.hyperledger.fabric.gateway.impl.InMemoryWallet;
 import org.hyperledger.fabric.gateway.impl.WalletIdentity;
@@ -75,8 +82,42 @@ public interface Wallet {
 		 */
 		PrivateKey getPrivateKey();
 
-		static Identity createIdentity(String mspId, String certificate, PrivateKey pk) {
-			return new WalletIdentity(mspId, certificate, pk);
+		/**
+		 * Creates an identity suitable for storing in a Wallet.
+		 * @param mspId The MSPID associated with the identity
+		 * @param certificate The public certificate PEM
+		 * @param privateKey The private key
+		 * @return the identity
+		 */
+		static Identity createIdentity(String mspId, String certificate, PrivateKey privateKey) {
+			return new WalletIdentity(mspId, certificate, privateKey);
+		}
+
+		/**
+		 * Creates an identity suitable for storing in a Wallet.  The certificate and private key PEMs
+		 * are supplied using the {@link Reader} interface for ease of reading from a file system
+		 * or other storage mechanism.
+		 * @param mspId The MSPID associated with the identity
+		 * @param certificate The public certificate PEM
+		 * @param privateKey The private key PEM
+		 * @return the identity
+		 * @throws IOException
+		 */
+		static Identity createIdentity(String mspId, Reader certificate, Reader privateKey) throws IOException {
+			try (PEMParser parser = new PEMParser(privateKey);
+					BufferedReader certReader = new BufferedReader(certificate)) {
+				Object key = parser.readObject();
+				JcaPEMKeyConverter converter = new JcaPEMKeyConverter();
+				PrivateKey pk;
+				if (key instanceof PrivateKeyInfo) {
+					pk = converter.getPrivateKey((PrivateKeyInfo) key);
+				} else {
+					pk = converter.getPrivateKey(((PEMKeyPair) key).getPrivateKeyInfo());
+				}
+				String certStr = certReader.lines().collect(Collectors.joining("\n", "", "\n"));
+
+				return new WalletIdentity(mspId, certStr, pk);
+			}
 		}
 	}
 

@@ -29,10 +29,6 @@ import javax.json.JsonReader;
 import javax.json.JsonWriter;
 
 import org.apache.commons.io.FileUtils;
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.openssl.PEMKeyPair;
-import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Wallet;
 
@@ -114,9 +110,8 @@ public class FileSystemWallet implements Wallet {
       JsonObject enrollment = idObject.getJsonObject("enrollment");
       String signingId = enrollment.getString("signingIdentity");
       Path pemFile = basePath.resolve(Paths.get(name, signingId + "-priv"));
-      PrivateKey privateKey = readPrivateKey(pemFile);
       String certificate = enrollment.getJsonObject("identity").getString("certificate");
-      return new WalletIdentity(mspId, certificate, privateKey);
+      return Identity.createIdentity(mspId, new StringReader(certificate), Files.newBufferedReader(pemFile));
     } catch (IOException e) {
       throw new GatewayException(e);
     }
@@ -140,21 +135,6 @@ public class FileSystemWallet implements Wallet {
     }
     json = writer.toString();
     return json;
-  }
-
-  static PrivateKey readPrivateKey(Path pemFile) throws IOException {
-    if (Files.exists(pemFile)) {
-      try (PEMParser parser = new PEMParser(Files.newBufferedReader(pemFile))) {
-        Object key = parser.readObject();
-        JcaPEMKeyConverter converter = new JcaPEMKeyConverter();
-        if (key instanceof PrivateKeyInfo) {
-          return converter.getPrivateKey((PrivateKeyInfo) key);
-        } else {
-          return converter.getPrivateKey(((PEMKeyPair) key).getPrivateKeyInfo());
-        }
-      }
-    }
-    return null;
   }
 
   static void writePrivateKey(PrivateKey key, Path pemFile) throws IOException  {
