@@ -34,7 +34,6 @@ Feature: Commit handler strategies for submitting transactions
 		And I connect the gateway
 		When I prepare a transaction named createCar for contract fabcar on network mychannel
 	 	And I submit the transaction with arguments ["MSPID_SCOPE_ANYFORTX", "Trabant", "601 Estate", "brown", "Simon"]
-	 	Then a response should be received
 		And I prepare a transaction named queryCar for contract fabcar on network mychannel
 	 	And I evaluate the transaction with arguments ["MSPID_SCOPE_ANYFORTX"]
 		Then the response should be JSON matching

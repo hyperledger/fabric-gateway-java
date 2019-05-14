@@ -47,7 +47,7 @@ class PeerTracker {
         networkConfig.getOrganizationInfos().forEach(orgInfo -> {
             String mspId = orgInfo.getMspId();
             orgInfo.getPeerNames().stream()
-                    .map(name -> channelPeersByName.get(name))
+                    .map(channelPeersByName::get)
                     .filter(Objects::nonNull) // Ignore peers not in this channel
                     .forEach(peer -> peerOrgMap.putIfAbsent(peer, mspId));
         });
