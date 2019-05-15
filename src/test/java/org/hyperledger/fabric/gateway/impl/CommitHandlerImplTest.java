@@ -84,14 +84,14 @@ public class CommitHandlerImplTest {
 
     private BlockEvent.TransactionEvent sendValidTransactionEvent(String transactionId) {
         BlockEvent.TransactionEvent txEvent = testUtils.newValidMockTransactionEvent(peer, transactionId);
-        BlockEvent blockEvent = testUtils.newMockBlockEvent(peer, txEvent);
+        BlockEvent blockEvent = testUtils.newMockBlockEvent(peer, 1, txEvent);
         blockSource.sendEvent(blockEvent);
         return txEvent;
     }
 
     private BlockEvent.TransactionEvent sendInvalidTransactionEvent() {
         BlockEvent.TransactionEvent txEvent = testUtils.newInvalidMockTransactionEvent(peer, transactionId);
-        BlockEvent blockEvent = testUtils.newMockBlockEvent(peer, txEvent);
+        BlockEvent blockEvent = testUtils.newMockBlockEvent(peer, 1, txEvent);
         blockSource.sendEvent(blockEvent);
         return txEvent;
     }

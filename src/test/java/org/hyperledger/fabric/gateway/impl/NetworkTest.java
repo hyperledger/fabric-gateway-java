@@ -11,11 +11,16 @@ import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.TestUtils;
+import org.hyperledger.fabric.gateway.impl.event.StubBlockEventSource;
+import org.hyperledger.fabric.gateway.spi.BlockListener;
+import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.Peer;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import java.util.stream.Collectors;
@@ -28,11 +33,20 @@ public class NetworkTest {
 
     private Gateway gateway = null;
     private Network network = null;
+    private StubBlockEventSource stubBlockEventSource = null;
+    private final Peer peer1 = testUtils.newMockPeer("peer1");
+    private final Peer peer2 = testUtils.newMockPeer("peer2");
 
     @BeforeEach
     public void beforeEach() throws Exception {
+        stubBlockEventSource = new StubBlockEventSource(); // Must be before network is created
         gateway = testUtils.newGatewayBuilder().connect();
         network = gateway.getNetwork("ch1");
+    }
+
+    @AfterEach
+    public void afterEach() {
+        stubBlockEventSource.close();
     }
 
     @Test
@@ -118,7 +132,7 @@ public class NetworkTest {
                 .connect();
         network = gateway.getNetwork(channelName);
 
-        // Send fake peer discovery event to handler registered by network
+        // Send fake peer1 discovery event to handler registered by network
         Channel.SDPeerAdditionInfo mockPeerAddInfo = Mockito.mock(Channel.SDPeerAdditionInfo.class);
         Mockito.when(mockPeerAddInfo.getMspId()).thenReturn(mspId);
         Peer newPeer = mockChannel.getSDPeerAddition().addPeer(mockPeerAddInfo);
@@ -126,5 +140,96 @@ public class NetworkTest {
         String result = network.getPeerOrganization(newPeer);
 
         assertThat(result).isEqualTo(mspId);
+    }
+
+    @Test
+    public void testAddBlockListenerReturnsTheBlockListener() {
+        BlockListener listener = blockEvent -> {};
+
+        BlockListener result = network.addBlockListener(listener);
+
+        assertThat(result).isSameAs(listener);
+    }
+
+    @Test
+    public void testBlockListenerReceivesBlockEvents() {
+        BlockListener listener = Mockito.mock(BlockListener.class);
+        BlockEvent event = testUtils.newMockBlockEvent(peer1, 2);
+
+        network.addBlockListener(listener);
+        stubBlockEventSource.sendEvent(event);
+
+        Mockito.verify(listener).receivedBlock(event);
+    }
+
+    @Test
+    public void testRemovedBlockListenerDoesNotReceiveEvents() {
+        BlockListener listener = Mockito.mock(BlockListener.class);
+        BlockEvent event = testUtils.newMockBlockEvent(peer1, 1);
+
+        network.addBlockListener(listener);
+        network.removeBlockListener(listener);
+        stubBlockEventSource.sendEvent(event);
+
+        Mockito.verify(listener, Mockito.never()).receivedBlock(event);
+    }
+
+    @Test
+    public void testBlockListenerDoesNotReceiveDuplicateEvents() {
+        BlockListener listener = Mockito.mock(BlockListener.class);
+        BlockEvent event = testUtils.newMockBlockEvent(peer1, 1);
+        BlockEvent duplicateEvent = testUtils.newMockBlockEvent(peer2, 1);
+
+        network.addBlockListener(listener);
+        stubBlockEventSource.sendEvent(event);
+        stubBlockEventSource.sendEvent(duplicateEvent);
+
+        Mockito.verify(listener, Mockito.never()).receivedBlock(duplicateEvent);
+    }
+
+    @Test
+    public void testBlockListerReceivesEventsInOrder() {
+        BlockListener listener = Mockito.mock(BlockListener.class);
+        BlockEvent event1 = testUtils.newMockBlockEvent(peer1, 1);
+        BlockEvent event2 = testUtils.newMockBlockEvent(peer1, 2);
+        BlockEvent event3 = testUtils.newMockBlockEvent(peer1, 3);
+
+        network.addBlockListener(listener);
+        stubBlockEventSource.sendEvent(event1); // Prime the listener with an initial block number
+        stubBlockEventSource.sendEvent(event3);
+        stubBlockEventSource.sendEvent(event2);
+
+        InOrder orderVerifier = Mockito.inOrder(listener);
+        orderVerifier.verify(listener).receivedBlock(event1);
+        orderVerifier.verify(listener).receivedBlock(event2);
+        orderVerifier.verify(listener).receivedBlock(event3);
+    }
+
+    @Test
+    public void testBlockListerDoesNotReceiveOldEvents() {
+        BlockListener listener = Mockito.mock(BlockListener.class);
+        BlockEvent event1 = testUtils.newMockBlockEvent(peer1, 1);
+        BlockEvent event2 = testUtils.newMockBlockEvent(peer1, 2);
+
+        network.addBlockListener(listener);
+        stubBlockEventSource.sendEvent(event2);
+        stubBlockEventSource.sendEvent(event1);
+
+        Mockito.verify(listener, Mockito.never()).receivedBlock(event1);
+    }
+
+    @Test
+    public void testBlockListerReceivesNewEventsAfterOldEvents() {
+        BlockListener listener = Mockito.mock(BlockListener.class);
+        BlockEvent event1 = testUtils.newMockBlockEvent(peer1, 1);
+        BlockEvent event2 = testUtils.newMockBlockEvent(peer1, 2);
+        BlockEvent event3 = testUtils.newMockBlockEvent(peer1, 3);
+
+        network.addBlockListener(listener);
+        stubBlockEventSource.sendEvent(event2); // Prime the listener with an initial block number
+        stubBlockEventSource.sendEvent(event1);
+        stubBlockEventSource.sendEvent(event3);
+
+        Mockito.verify(listener).receivedBlock(event3);
     }
 }

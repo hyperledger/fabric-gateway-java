@@ -7,6 +7,7 @@
 package org.hyperledger.fabric.gateway;
 
 import org.hyperledger.fabric.gateway.impl.event.TransactionEventSource;
+import org.hyperledger.fabric.gateway.spi.BlockListener;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.Peer;
 
@@ -63,4 +64,17 @@ public interface Network {
 	 * @deprecated
 	 */
 	String getPeerOrganization(Peer peer);
+
+	/**
+	 * Add a listener to receive block events from the network.
+	 * @param listener A block listener.
+	 * @return The block listener argument.
+	 */
+	BlockListener addBlockListener(BlockListener listener);
+
+	/**
+	 * Removes a previously added block listener.
+	 * @param listener A block listener.
+	 */
+	void removeBlockListener(BlockListener listener);
 }

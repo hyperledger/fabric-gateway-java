@@ -6,13 +6,14 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
+import org.hyperledger.fabric.gateway.spi.BlockListener;
 import org.hyperledger.fabric.sdk.BlockEvent;
 
 /**
  * Stub implementation of a BlockEventSource to allow tests to drive events into the system.
  *
- * <p>Creating an getInstance of this class modifies the behaviour of the {@link BlockEventSourceFactory} so that this
- * getInstance is always returned by the factory. It is important to call {@link #close()} to restore default factory
+ * <p>Creating an instance of this class modifies the behaviour of the {@link BlockEventSourceFactory} so that this
+ * instance is always returned by the factory. It is important to call {@link #close()} to restore default factory
  * behaviour.</p>
  */
 public class StubBlockEventSource implements BlockEventSource {

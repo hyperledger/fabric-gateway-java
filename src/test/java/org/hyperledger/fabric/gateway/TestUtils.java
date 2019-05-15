@@ -144,9 +144,10 @@ public final class TestUtils {
         return txEvent;
     }
 
-    public BlockEvent newMockBlockEvent(Peer peer, BlockEvent.TransactionEvent... transactionEvents) {
+    public BlockEvent newMockBlockEvent(Peer peer, long blockNumber, BlockEvent.TransactionEvent... transactionEvents) {
         BlockEvent mockEvent = Mockito.mock(BlockEvent.class);
         Mockito.when(mockEvent.getPeer()).thenReturn(peer);
+        Mockito.when(mockEvent.getBlockNumber()).thenReturn(blockNumber);
         Mockito.when(mockEvent.getTransactionEvents()).thenReturn(Arrays.asList(transactionEvents));
         return mockEvent;
     }

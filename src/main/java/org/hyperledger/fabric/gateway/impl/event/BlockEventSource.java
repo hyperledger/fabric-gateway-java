@@ -6,6 +6,8 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
+import org.hyperledger.fabric.gateway.spi.BlockListener;
+
 /**
  * Allows observing received block events.
  */

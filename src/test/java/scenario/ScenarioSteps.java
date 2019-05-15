@@ -1,8 +1,23 @@
 package scenario;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import cucumber.api.java8.En;
+import io.cucumber.datatable.DataTable;
+import org.hyperledger.fabric.gateway.Contract;
+import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
+import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
+import org.hyperledger.fabric.gateway.Gateway;
+import org.hyperledger.fabric.gateway.GatewayException;
+import org.hyperledger.fabric.gateway.Network;
+import org.hyperledger.fabric.gateway.Transaction;
+import org.hyperledger.fabric.gateway.Wallet;
+import org.hyperledger.fabric.gateway.spi.BlockListener;
+import org.hyperledger.fabric.sdk.BlockEvent;
 
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonString;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -24,23 +39,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonString;
-
-import org.hyperledger.fabric.gateway.Contract;
-import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
-import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
-import org.hyperledger.fabric.gateway.Gateway;
-import org.hyperledger.fabric.gateway.GatewayException;
-import org.hyperledger.fabric.gateway.Network;
-import org.hyperledger.fabric.gateway.Transaction;
-import org.hyperledger.fabric.gateway.Wallet;
-
-import cucumber.api.java8.En;
-import io.cucumber.datatable.DataTable;
+import static org.junit.Assert.*;
 
 public class ScenarioSteps implements En {
 	private static Set<String> runningChaincodes = new HashSet<>();
@@ -51,14 +50,16 @@ public class ScenarioSteps implements En {
 	private Gateway gateway = null;
 	private String response = null;
 	private Transaction transaction = null;
+	private BlockListener blockListener = null;
+	private final List<BlockEvent> blockEvents = new ArrayList<>();
 
 	public ScenarioSteps() {
-		Given("^I have deployed a (.+) Fabric network$", (String tlsType) -> {
+		Given("I have deployed a {word} Fabric network", (String tlsType) -> {
 			// tlsType is either "tls" or "non-tls"
 			fabricNetworkType = tlsType;
 		});
 
-		Given("^I have created and joined all channels from the (.+) connection profile$", (String tlsType) -> {
+		Given("I have created and joined all channels from the {word} connection profile", (String tlsType) -> {
 			// TODO this only does mychannel
 			if (!channelsJoined) {
 				final List<String> tlsOptions;
@@ -118,7 +119,7 @@ public class ScenarioSteps implements En {
 			}
 		});
 
-		Given("^I have a gateway as user (.+) using the (.+) connection profile$",
+		Given("I have a gateway as user {word} using the {word} connection profile",
 				(String userName, String tlsType) -> {
 					Wallet wallet = createWallet();
 					gatewayBuilder = Gateway.createBuilder();
@@ -130,13 +131,13 @@ public class ScenarioSteps implements En {
 					}
 				});
 
-		Given("^I configure the gateway to use the default (.+) commit handler$",
+		Given("I configure the gateway to use the default {word} commit handler",
 				(String handlerName) -> gatewayBuilder.commitHandler(DefaultCommitHandlers.valueOf(handlerName)));
 
-		Given("^I configure the gateway to use the default (.+) query handler$",
+		Given("I configure the gateway to use the default {word} query handler",
 				(String handlerName) -> gatewayBuilder.queryHandler(DefaultQueryHandlers.valueOf(handlerName)));
 
-		Given("^I connect the gateway$", () -> gateway = gatewayBuilder.connect());
+		Given("I connect the gateway", () -> gateway = gatewayBuilder.connect());
 
 		Given("^I deploy (.+) chaincode named (.+) at version (.+) for all organizations on channel (.+) with endorsement policy (.+) and arguments (.+)$",
 				(String ccType, String ccName, String version, String channelName,
@@ -198,12 +199,12 @@ public class ScenarioSteps implements En {
 					Thread.sleep(60000);
 				});
 
-		Given("^I update channel with name (.+) with config file (.+) from the (.+) connection profile$",
+		Given("I update channel with name {word} with config file {string} from the {word} connection profile",
 				(String channelName, String txFileName, String tlsType) -> {
 					throw new cucumber.api.PendingException();
 				});
 
-		When("^I prepare a transaction named (.+) for contract (.+) on network (.+)$",
+		When("I prepare a transaction named {word} for contract {word} on network {word}",
 				(String txnFn, String ccName, String channelName) -> {
 					Network network = gateway.getNetwork(channelName);
 					Contract contract = network.getContract(ccName);
@@ -224,27 +225,37 @@ public class ScenarioSteps implements En {
 					response = new String(result, StandardCharsets.UTF_8);
 				});
 
-		When("^I set transient data on the transaction to$", (DataTable data) -> {
+		When("I set transient data on the transaction to", (DataTable data) -> {
 			Map<String, String> table = data.asMap(String.class, String.class);
 			Map<String, byte[]> transientMap = new HashMap<>();
 			table.forEach((k, v) -> transientMap.put(k, v.getBytes(StandardCharsets.UTF_8)));
 			transaction.setTransient(transientMap);
 		});
 
-		Then("^a response should be received$", () -> assertNotNull(response));
+		When("I add a block listener for network {word}", (String networkName) -> {
+			blockEvents.clear();
+			blockListener = gateway.getNetwork(networkName).addBlockListener(event -> {
+				blockEvents.add(event);
+			});
+		});
+
+		Then("a response should be received", () -> assertNotNull(response));
 
 		Then("^the response should match (.+)$",	(String expected) -> assertEquals(expected, response));
 
-		Then("^the response should be JSON matching$",
-				(String expected) -> {
-					assertNotNull(response);
-					try (JsonReader expectedReader = createJsonReader(expected);
-							JsonReader actualReader = createJsonReader(response)) {
-						JsonObject expectedObject = expectedReader.readObject();
-						JsonObject actualObject = actualReader.readObject();
-						assertEquals(expectedObject, actualObject);
-					}
-				});
+		Then("the response should be JSON matching", (String expected) -> {
+			assertNotNull(response);
+			try (JsonReader expectedReader = createJsonReader(expected);
+				 JsonReader actualReader = createJsonReader(response)) {
+				JsonObject expectedObject = expectedReader.readObject();
+				JsonObject actualObject = actualReader.readObject();
+				assertEquals(expectedObject, actualObject);
+			}
+		});
+
+		Then("a block event should be received", () -> {
+			assertFalse(blockEvents.isEmpty());
+		});
 	}
 
 	private Path getNetworkConfigPath(String configType) {
