@@ -15,7 +15,7 @@ git config --global user.name "fabric-gateway-java"
 # Clone GATEWAY_JAVA API docs repository
 git clone https://github.com/$GATEWAY_JAVA_USERNAME/$target_repo
 # Copy API docs to target repository & push to gh-pages URL
-cp -r docs/gen/* $GATEWAY_JAVA_USERNAME.github.io
+cp -r ../../target/apidocs/* $GATEWAY_JAVA_USERNAME.github.io
 cd $GATEWAY_JAVA_USERNAME.github.io
 git add .
 git commit -m "gateway_java_commit - $gateway_java_commit"
