@@ -6,14 +6,16 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
-import org.hyperledger.fabric.gateway.spi.BlockListener;
+import org.hyperledger.fabric.sdk.BlockEvent;
+
+import java.util.function.Consumer;
 
 /**
  * Allows observing received block events.
  */
 public interface BlockEventSource extends AutoCloseable {
-    BlockListener addBlockListener(BlockListener listener);
-    void removeBlockListener(BlockListener listener);
+    Consumer<BlockEvent> addBlockListener(Consumer<BlockEvent> listener);
+    void removeBlockListener(Consumer<BlockEvent> listener);
 
     @Override
     void close();

@@ -53,6 +53,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 public final class TestUtils {
     private static final TestUtils INSTANCE = new TestUtils();
@@ -239,6 +240,27 @@ public final class TestUtils {
             public PrivateKey getPrivateKey() {
                 return pk;
             }
+        };
+    }
+
+    public Consumer<BlockEvent> stubBlockListener() {
+        return new Consumer<BlockEvent>() {
+            @Override
+            public void accept(BlockEvent blockEvent) {}
+        };
+    }
+
+    public Consumer<BlockEvent.TransactionEvent> stubTransactionListener() {
+        return new Consumer<BlockEvent.TransactionEvent>() {
+            @Override
+            public void accept(BlockEvent.TransactionEvent transactionEvent) {}
+        };
+    }
+
+    public Consumer<ContractEvent> stubContractListener() {
+        return new Consumer<ContractEvent>() {
+            @Override
+            public void accept(ContractEvent contractEvent) {}
         };
     }
 }

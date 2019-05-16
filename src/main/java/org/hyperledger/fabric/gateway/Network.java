@@ -7,9 +7,11 @@
 package org.hyperledger.fabric.gateway;
 
 import org.hyperledger.fabric.gateway.impl.event.TransactionEventSource;
-import org.hyperledger.fabric.gateway.spi.BlockListener;
+import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.Peer;
+
+import java.util.function.Consumer;
 
 /**
  * A Network object represents the set of peers in a Fabric network (channel).
@@ -70,11 +72,11 @@ public interface Network {
 	 * @param listener A block listener.
 	 * @return The block listener argument.
 	 */
-	BlockListener addBlockListener(BlockListener listener);
+	Consumer<BlockEvent> addBlockListener(Consumer<BlockEvent> listener);
 
 	/**
 	 * Removes a previously added block listener.
 	 * @param listener A block listener.
 	 */
-	void removeBlockListener(BlockListener listener);
+	void removeBlockListener(Consumer<BlockEvent> listener);
 }

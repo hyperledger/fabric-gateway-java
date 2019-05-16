@@ -12,7 +12,6 @@ import org.hyperledger.fabric.gateway.impl.event.CompositePeerDisconnectListener
 import org.hyperledger.fabric.gateway.impl.event.PeerDisconnectEvent;
 import org.hyperledger.fabric.gateway.impl.event.PeerDisconnectEventSource;
 import org.hyperledger.fabric.gateway.impl.event.PeerDisconnectEventSourceFactory;
-import org.hyperledger.fabric.gateway.impl.event.TransactionListener;
 import org.hyperledger.fabric.gateway.spi.CommitHandler;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Peer;
@@ -24,13 +23,14 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public final class CommitHandlerImpl implements CommitHandler {
     private final String transactionId;
     private final Network network;
     private final CommitStrategy strategy;
-    private final TransactionListener txListener = this::onTxEvent;
+    private final Consumer<BlockEvent.TransactionEvent> txListener = this::onTxEvent;
     private final AtomicReference<CompositePeerDisconnectListener> disconnectListener = new AtomicReference<>();
     private final Set<Peer> peers;
     private final CountDownLatch latch = new CountDownLatch(1);

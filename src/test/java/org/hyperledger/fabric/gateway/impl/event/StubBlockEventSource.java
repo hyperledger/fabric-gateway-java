@@ -6,8 +6,9 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
-import org.hyperledger.fabric.gateway.spi.BlockListener;
 import org.hyperledger.fabric.sdk.BlockEvent;
+
+import java.util.function.Consumer;
 
 /**
  * Stub implementation of a BlockEventSource to allow tests to drive events into the system.
@@ -17,19 +18,19 @@ import org.hyperledger.fabric.sdk.BlockEvent;
  * behaviour.</p>
  */
 public class StubBlockEventSource implements BlockEventSource {
-    private final ListenerSet<BlockListener> listeners = new ListenerSet<>();
+    private final ListenerSet<Consumer<BlockEvent>> listeners = new ListenerSet<>();
 
     public StubBlockEventSource() {
         BlockEventSourceFactory.setFactoryFunction(channel -> this);
     }
 
     @Override
-    public BlockListener addBlockListener(BlockListener listener) {
+    public Consumer<BlockEvent> addBlockListener(Consumer<BlockEvent> listener) {
         return listeners.add(listener);
     }
 
     @Override
-    public void removeBlockListener(BlockListener listener) {
+    public void removeBlockListener(Consumer<BlockEvent> listener) {
         listeners.remove(listener);
     }
 
@@ -40,6 +41,6 @@ public class StubBlockEventSource implements BlockEventSource {
     }
 
     public void sendEvent(BlockEvent event) {
-        listeners.forEach(listener -> listener.receivedBlock(event));
+        listeners.forEach(listener -> listener.accept(event));
     }
 }

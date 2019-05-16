@@ -6,13 +6,14 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
-import org.hyperledger.fabric.gateway.spi.BlockListener;
 import org.hyperledger.fabric.sdk.BlockEvent;
+
+import java.util.function.Consumer;
 
 public class TransactionEventSourceImpl implements TransactionEventSource {
     private final BlockEventSource blockSource;
-    private final BlockListener blockListener;
-    private final ListenerSet<TransactionListener> listeners = new ListenerSet<>();
+    private final Consumer<BlockEvent> blockListener;
+    private final ListenerSet<Consumer<BlockEvent.TransactionEvent>> listeners = new ListenerSet<Consumer<BlockEvent.TransactionEvent>>();
 
     public TransactionEventSourceImpl(BlockEventSource blockSource) {
         this.blockSource = blockSource;
@@ -20,18 +21,18 @@ public class TransactionEventSourceImpl implements TransactionEventSource {
     }
 
     @Override
-    public TransactionListener addTransactionListener(TransactionListener listener) {
+    public Consumer<BlockEvent.TransactionEvent> addTransactionListener(Consumer<BlockEvent.TransactionEvent> listener) {
         return listeners.add(listener);
     }
 
     @Override
-    public void removeTransactionListener(TransactionListener listener) {
+    public void removeTransactionListener(Consumer<BlockEvent.TransactionEvent> listener) {
         listeners.remove(listener);
     }
 
     private void receivedBlock(BlockEvent blockEvent) {
         blockEvent.getTransactionEvents().forEach(txEvent -> {
-            listeners.forEach(listener -> listener.receivedTransaction(txEvent));
+            listeners.forEach(listener -> listener.accept(txEvent));
         });
     }
 

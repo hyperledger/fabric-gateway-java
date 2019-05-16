@@ -6,13 +6,13 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
-import org.hyperledger.fabric.gateway.spi.BlockListener;
 import org.hyperledger.fabric.sdk.BlockEvent;
 
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 
 /**
  * Listens to an existing block event source and ensures that its own listeners receive block events in order and
@@ -22,8 +22,8 @@ public class OrderedBlockEventSource implements BlockEventSource {
     private static final Comparator<BlockEvent> eventComparator = Comparator.comparingLong(BlockEvent::getBlockNumber);
 
     private final BlockEventSource blockSource;
-    private final ListenerSet<BlockListener> listeners = new ListenerSet<>();
-    private final BlockListener blockListener;
+    private final ListenerSet<Consumer<BlockEvent>> listeners = new ListenerSet<Consumer<BlockEvent>>();
+    private final Consumer<BlockEvent> blockListener;
     private long lastBlockNumber = -1;
     private final SortedSet<BlockEvent> queuedEvents = new TreeSet<>(eventComparator);
     private final Object eventHandlingLock = new Object();
@@ -34,12 +34,12 @@ public class OrderedBlockEventSource implements BlockEventSource {
     }
 
     @Override
-    public BlockListener addBlockListener(BlockListener listener) {
+    public Consumer<BlockEvent> addBlockListener(Consumer<BlockEvent> listener) {
         return listeners.add(listener);
     }
 
     @Override
-    public void removeBlockListener(BlockListener listener) {
+    public void removeBlockListener(Consumer<BlockEvent> listener) {
         listeners.remove(listener);
     }
 
@@ -75,7 +75,7 @@ public class OrderedBlockEventSource implements BlockEventSource {
 
             eventIter.remove();
             lastBlockNumber = blockNumber;
-            listeners.forEach(listener -> listener.receivedBlock(event));
+            listeners.forEach(listener -> listener.accept(event));
         }
     }
 

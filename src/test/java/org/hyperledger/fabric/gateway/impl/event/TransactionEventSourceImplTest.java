@@ -6,20 +6,24 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
+import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Peer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
+import java.util.function.Consumer;
 
 import static org.mockito.Mockito.*;
 
 public class TransactionEventSourceImplTest {
+    private static final TestUtils testUtils = TestUtils.getInstance();
+
     private StubBlockEventSource blockEventSource;
     private TransactionEventSource transactionEventSource;
     private BlockEvent.TransactionEvent transactionEvent;
+    private BlockEvent blockEvent;
 
     @BeforeEach
     public void beforeEach() {
@@ -27,9 +31,8 @@ public class TransactionEventSourceImplTest {
         transactionEventSource = new TransactionEventSourceImpl(blockEventSource);
 
         Peer peer = mock(Peer.class);
-
-        transactionEvent = mock(BlockEvent.TransactionEvent.class);
-        doReturn(peer).when(transactionEvent).getPeer();
+        transactionEvent = testUtils.newValidMockTransactionEvent(peer, "transactionId");
+        blockEvent = testUtils.newMockBlockEvent(peer, 1, transactionEvent);
     }
 
     @AfterEach
@@ -37,62 +40,56 @@ public class TransactionEventSourceImplTest {
         blockEventSource.close();
     }
 
-    private void fireTransactionEvent(BlockEvent.TransactionEvent transactionEvent) {
-        BlockEvent blockEvent = mock(BlockEvent.class);
-        doReturn(transactionEvent.getPeer()).when(blockEvent).getPeer();
-        doReturn(Arrays.asList(transactionEvent)).when(blockEvent).getTransactionEvents();
-
-        fireBlockEvent(blockEvent);
-    }
-    private void fireBlockEvent(BlockEvent event) {
-        blockEventSource.sendEvent(event);
+    private void fireTransactionEvent() {
+        blockEventSource.sendEvent(blockEvent);
     }
 
     @Test
     public void registered_listener_receives_transaction_events() {
-        TransactionListener listener = mock(TransactionListener.class);
+        Consumer<BlockEvent.TransactionEvent> listener = spy(testUtils.stubTransactionListener());
 
         transactionEventSource.addTransactionListener(listener);
-        fireTransactionEvent(transactionEvent);
+        fireTransactionEvent();
 
-        verify(listener).receivedTransaction(transactionEvent);
+        verify(listener).accept(transactionEvent);
     }
 
     @Test
     public void unregistered_lister_does_not_receive_events() {
-        TransactionListener listener = mock(TransactionListener.class);
+        Consumer<BlockEvent.TransactionEvent> listener = spy(testUtils.stubTransactionListener());
 
         transactionEventSource.addTransactionListener(listener);
         transactionEventSource.removeTransactionListener(listener);
-        fireTransactionEvent(transactionEvent);
+        fireTransactionEvent();
 
-        verify(listener, never()).receivedTransaction(transactionEvent);
+        verify(listener, never()).accept(transactionEvent);
     }
 
     @Test
     public void close_removes_listeners() {
-        TransactionListener listener = mock(TransactionListener.class);
+        Consumer<BlockEvent.TransactionEvent> listener = spy(testUtils.stubTransactionListener());
 
         transactionEventSource.addTransactionListener(listener);
         transactionEventSource.close();
-        fireTransactionEvent(transactionEvent);
+        fireTransactionEvent();
 
-        verify(listener, never()).receivedTransaction(transactionEvent);
+        verify(listener, never()).accept(transactionEvent);
     }
 
     @Test
     public void listener_can_unregister_during_event_handling() {
-        TransactionListener listener = mock(TransactionListener.class);
-        doAnswer(invocation -> {
-            transactionEventSource.removeTransactionListener(listener);
-            return null;
-        }).when(listener).receivedTransaction(any());
+        Consumer<BlockEvent.TransactionEvent> listener = spy(new Consumer<BlockEvent.TransactionEvent>() {
+            @Override
+            public void accept(BlockEvent.TransactionEvent transactionEvent) {
+                transactionEventSource.removeTransactionListener(this);
+            }
+        });
         transactionEventSource.addTransactionListener(listener);
 
-        fireTransactionEvent(transactionEvent);
-        verify(listener, times(1)).receivedTransaction(any());
+        fireTransactionEvent();
+        verify(listener, times(1)).accept(transactionEvent);
 
-        fireTransactionEvent(transactionEvent);
-        verify(listener, times(1)).receivedTransaction(any());
+        fireTransactionEvent();
+        verify(listener, times(1)).accept(transactionEvent);
     }
 }

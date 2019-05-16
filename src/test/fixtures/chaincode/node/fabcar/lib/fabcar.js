@@ -102,6 +102,7 @@ class FabCar extends Contract {
         };
 
         await ctx.stub.putState(carNumber, Buffer.from(JSON.stringify(car)));
+        ctx.stub.setEvent('createCar', Buffer.from(carNumber));
         console.info('============= END : Create Car ===========');
     }
 

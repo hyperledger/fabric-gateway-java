@@ -3,6 +3,7 @@ package scenario;
 import cucumber.api.java8.En;
 import io.cucumber.datatable.DataTable;
 import org.hyperledger.fabric.gateway.Contract;
+import org.hyperledger.fabric.gateway.ContractEvent;
 import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
 import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
 import org.hyperledger.fabric.gateway.Gateway;
@@ -10,7 +11,6 @@ import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.Transaction;
 import org.hyperledger.fabric.gateway.Wallet;
-import org.hyperledger.fabric.gateway.spi.BlockListener;
 import org.hyperledger.fabric.sdk.BlockEvent;
 
 import javax.json.Json;
@@ -37,12 +37,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
 
 public class ScenarioSteps implements En {
-	private static Set<String> runningChaincodes = new HashSet<>();
+	private static final long EVENT_TIMEOUT_SECONDS = 30;
+	private static final Set<String> runningChaincodes = new HashSet<>();
 	private static boolean channelsJoined = false;
 
 	private String fabricNetworkType = null;
@@ -50,8 +56,10 @@ public class ScenarioSteps implements En {
 	private Gateway gateway = null;
 	private String response = null;
 	private Transaction transaction = null;
-	private BlockListener blockListener = null;
-	private final List<BlockEvent> blockEvents = new ArrayList<>();
+	private Consumer<BlockEvent> blockListener = null;
+	private final BlockingQueue<BlockEvent> blockEvents = new LinkedBlockingQueue<>();
+	private Consumer<ContractEvent> contractListener = null;
+	private final BlockingQueue<ContractEvent> contractEvents = new LinkedBlockingQueue<>();
 
 	public ScenarioSteps() {
 		Given("I have deployed a {word} Fabric network", (String tlsType) -> {
@@ -214,7 +222,7 @@ public class ScenarioSteps implements En {
 		When("^I (submit|evaluate) the transaction with arguments (.+)$",
 				(String action, String argsJson) -> {
 
-					String[] args = toStringArray(parseJsonArray(argsJson));
+					String[] args = newStringArray(parseJsonArray(argsJson));
 
 					final byte[] result;
 					if (action.equals("submit")) {
@@ -222,7 +230,7 @@ public class ScenarioSteps implements En {
 					} else {
 						result = transaction.evaluate(args);
 					}
-					response = new String(result, StandardCharsets.UTF_8);
+					response = newString(result);
 				});
 
 		When("I set transient data on the transaction to", (DataTable data) -> {
@@ -232,12 +240,19 @@ public class ScenarioSteps implements En {
 			transaction.setTransient(transientMap);
 		});
 
-		When("I add a block listener for network {word}", (String networkName) -> {
+		When("I add a block listener to network {word}", (String networkName) -> {
 			blockEvents.clear();
-			blockListener = gateway.getNetwork(networkName).addBlockListener(event -> {
-				blockEvents.add(event);
-			});
+			blockListener = gateway.getNetwork(networkName).addBlockListener(blockEvents::add);
 		});
+
+		When("I add a contract listener to contract {word} on network {word} for events matching {string}",
+				(String contractName, String networkName, String eventName) -> {
+					contractEvents.clear();
+					Pattern eventNamePattern = Pattern.compile(eventName);
+					contractListener = gateway.getNetwork(networkName)
+							.getContract(contractName)
+							.addContractListener(contractEvents::add, eventNamePattern);
+				});
 
 		Then("a response should be received", () -> assertNotNull(response));
 
@@ -254,7 +269,18 @@ public class ScenarioSteps implements En {
 		});
 
 		Then("a block event should be received", () -> {
-			assertFalse(blockEvents.isEmpty());
+			BlockEvent event = blockEvents.poll(EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+			assertNotNull(event);
+		});
+
+		Then("a contract event with payload {string} should be received", (String expected) -> {
+			List<String> payloads = new ArrayList<>();
+			ContractEvent matchingEvent = removeFirstMatch(contractEvents, event -> {
+				String payload = event.getPayload().map(this::newString).orElse("");
+				payloads.add(payload);
+				return expected.equals(payload);
+			});
+			assertNotNull("No contract events with payload \"" + expected + "\": " + payloads, matchingEvent);
 		});
 	}
 
@@ -278,26 +304,49 @@ public class ScenarioSteps implements En {
 		}
 	}
 
-	private static JsonReader createJsonReader(String jsonString) {
+	private JsonReader createJsonReader(String jsonString) {
 		return Json.createReader(new StringReader(jsonString));
 	}
 
-	private String[] toStringArray(JsonArray jsonArray) {
+	private String[] newStringArray(JsonArray jsonArray) {
 		return jsonArray.getValuesAs(JsonString.class).stream()
 				.map(JsonString::getString)
 				.toArray(String[]::new);
 	}
 
-	private static void exec(String command, String... args) throws IOException, InterruptedException {
-		List<String> argList = new ArrayList<>(1 + args.length);
-		argList.add(command);
-		Collections.addAll(argList, args);
-		exec(argList);
+	private String newString(byte[] bytes) {
+		return new String(bytes, StandardCharsets.UTF_8);
 	}
 
-	private static void exec(List<String> commandArgs) throws IOException, InterruptedException{
-		System.err.println(commandArgs);
-		Process process = Runtime.getRuntime().exec(commandArgs.toArray(new String[0]));
+	/**
+	 * Remove and return the first element matching the given predicate. All other elements remain on the queue.
+	 * @param queue A queue.
+	 * @param match Filter used to match queue elements.
+	 * @return The first matching element or null if no matches are found.
+	 * @throws InterruptedException If waiting for queue elements is interrupted.
+	 */
+	private <T> T removeFirstMatch(BlockingQueue<T> queue, Predicate<? super T> match) throws InterruptedException {
+		List<T> unmatchedElements = new ArrayList<>();
+		T element;
+
+		while ((element = queue.poll(EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS)) != null) {
+			if (match.test(element)) {
+				break;
+			}
+			unmatchedElements.add(element);
+		}
+
+		queue.addAll(unmatchedElements); // Re-queue elements that didn't match
+		return element;
+	}
+
+	private static void exec(List<String> commandArgs) throws IOException, InterruptedException {
+		exec(commandArgs.toArray(new String[0]));
+	}
+
+	private static void exec(String... commandArgs) throws IOException, InterruptedException {
+		System.err.println(Arrays.toString(commandArgs));
+		Process process = Runtime.getRuntime().exec(commandArgs);
 		int exitCode = process.waitFor();
 
 		// get STDERR for the process and print it

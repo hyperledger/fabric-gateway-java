@@ -7,22 +7,27 @@
 package org.hyperledger.fabric.gateway.impl;
 
 import org.hyperledger.fabric.gateway.Contract;
+import org.hyperledger.fabric.gateway.ContractEvent;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Transaction;
 
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
+import java.util.regex.Pattern;
 
 public class ContractImpl implements Contract {
     private final NetworkImpl network;
     private final GatewayImpl gateway;
     private final String chaincodeId;
     private final String name;
+    private final Pattern chaincodeIdPattern;
 
     ContractImpl(NetworkImpl network, String chaincodeId, String name) {
         this.network = network;
         this.gateway = network.getGateway();
         this.chaincodeId = chaincodeId;
         this.name = name;
+        chaincodeIdPattern = Pattern.compile('^' + Pattern.quote(chaincodeId) + '$');
     }
 
     @Override
@@ -42,6 +47,16 @@ public class ContractImpl implements Contract {
     @Override
     public byte[] evaluateTransaction(String name, String... args) throws GatewayException {
         return createTransaction(name).evaluate(args);
+    }
+
+    @Override
+    public Consumer<ContractEvent> addContractListener(Consumer<ContractEvent> listener, Pattern eventName) {
+        return network.getContractEventSource().addContractListener(listener, chaincodeIdPattern, eventName);
+    }
+
+    @Override
+    public void removeContractListener(Consumer<ContractEvent> listener) {
+        network.getContractEventSource().removeContractListener(listener);
     }
 
     public NetworkImpl getNetwork() {

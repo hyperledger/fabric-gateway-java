@@ -6,12 +6,16 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
+import org.hyperledger.fabric.sdk.BlockEvent;
+
+import java.util.function.Consumer;
+
 /**
  * Allows observing received transaction events.
  */
 public interface TransactionEventSource extends AutoCloseable {
-    TransactionListener addTransactionListener(TransactionListener listener);
-    void removeTransactionListener(TransactionListener listener);
+    Consumer<BlockEvent.TransactionEvent> addTransactionListener(Consumer<BlockEvent.TransactionEvent> listener);
+    void removeTransactionListener(Consumer<BlockEvent.TransactionEvent> listener);
 
     @Override
     void close();

@@ -11,11 +11,13 @@ import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.impl.event.BlockEventSource;
 import org.hyperledger.fabric.gateway.impl.event.BlockEventSourceFactory;
+import org.hyperledger.fabric.gateway.impl.event.ContractEventSource;
+import org.hyperledger.fabric.gateway.impl.event.ContractEventSourceFactory;
 import org.hyperledger.fabric.gateway.impl.event.OrderedBlockEventSource;
 import org.hyperledger.fabric.gateway.impl.event.TransactionEventSource;
 import org.hyperledger.fabric.gateway.impl.event.TransactionEventSourceImpl;
-import org.hyperledger.fabric.gateway.spi.BlockListener;
 import org.hyperledger.fabric.gateway.spi.QueryHandler;
+import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
@@ -23,6 +25,7 @@ import org.hyperledger.fabric.sdk.exception.TransactionException;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class NetworkImpl implements Network {
     private final Channel channel;
@@ -32,6 +35,7 @@ public class NetworkImpl implements Network {
     private final TransactionEventSource transactionSource;
     private final QueryHandler queryHandler;
     private final PeerTracker peerTracker;
+    private final ContractEventSource contractEventSource;
 
     NetworkImpl(Channel channel, GatewayImpl gateway) throws GatewayException {
         this.channel = channel;
@@ -44,6 +48,7 @@ public class NetworkImpl implements Network {
         BlockEventSource rawBlockSource = BlockEventSourceFactory.getInstance().newBlockEventSource(channel);
         blockSource = new OrderedBlockEventSource(rawBlockSource);
         transactionSource = new TransactionEventSourceImpl(rawBlockSource);
+        contractEventSource = ContractEventSourceFactory.getInstance().newContractEventSource(channel);
         queryHandler = gateway.getQueryHandlerFactory().create(this);
     }
 
@@ -93,10 +98,6 @@ public class NetworkImpl implements Network {
         return transactionSource;
     }
 
-    public QueryHandler getQueryHandler() {
-        return queryHandler;
-    }
-
     @Override
     public String getPeerOrganization(Peer peer) {
         String mspId = peerTracker.getPeerOrganization(peer);
@@ -107,12 +108,20 @@ public class NetworkImpl implements Network {
     }
 
     @Override
-    public BlockListener addBlockListener(BlockListener listener) {
+    public Consumer<BlockEvent> addBlockListener(Consumer<BlockEvent> listener) {
         return blockSource.addBlockListener(listener);
     }
 
     @Override
-    public void removeBlockListener(BlockListener listener) {
+    public void removeBlockListener(Consumer<BlockEvent> listener) {
         blockSource.removeBlockListener(listener);
+    }
+
+    public QueryHandler getQueryHandler() {
+        return queryHandler;
+    }
+
+    public ContractEventSource getContractEventSource() {
+        return contractEventSource;
     }
 }

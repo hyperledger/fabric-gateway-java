@@ -6,12 +6,13 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
-import org.hyperledger.fabric.gateway.spi.BlockListener;
+import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 /**
  * Used to add and remove block listeners for an underlying Channel.
@@ -19,23 +20,23 @@ import java.util.concurrent.ConcurrentHashMap;
  * This implementation is thread-safe.
  * </p>
  */
-public final class BlockEventSourceImpl implements BlockEventSource {
-    private final Map<BlockListener, String> handleMap = new ConcurrentHashMap<>();
+public final class ChannelBlockEventSource implements BlockEventSource {
+    private final Map<Consumer<BlockEvent>, String> handleMap = new ConcurrentHashMap<>();
     private final Channel channel;
 
-    BlockEventSourceImpl(Channel channel) {
+    ChannelBlockEventSource(Channel channel) {
         this.channel = channel;
     }
 
     @Override
-    public BlockListener addBlockListener(BlockListener listener) {
+    public Consumer<BlockEvent> addBlockListener(Consumer<BlockEvent> listener) {
         handleMap.computeIfAbsent(listener, this::registerChannelListener);
         return listener;
     }
 
-    private String registerChannelListener(BlockListener listener) {
+    private String registerChannelListener(Consumer<BlockEvent> listener) {
         try {
-            return channel.registerBlockListener(listener::receivedBlock);
+            return channel.registerBlockListener(listener::accept);
         } catch (InvalidArgumentException e) {
             // Throws if channel has been shutdown
             throw new IllegalStateException(e);
@@ -43,7 +44,7 @@ public final class BlockEventSourceImpl implements BlockEventSource {
     }
 
     @Override
-    public void removeBlockListener(BlockListener listener) {
+    public void removeBlockListener(Consumer<BlockEvent> listener) {
         handleMap.computeIfPresent(listener, (key, value) -> {
             unregisterChannelListener(value);
             return null;
@@ -54,8 +55,7 @@ public final class BlockEventSourceImpl implements BlockEventSource {
         try {
             channel.unregisterBlockListener(handle);
         } catch (InvalidArgumentException e) {
-            // Throws if channel has been shutdown
-            throw new IllegalStateException(e);
+            // Ignore to ensure close() never throws
         }
     }
 

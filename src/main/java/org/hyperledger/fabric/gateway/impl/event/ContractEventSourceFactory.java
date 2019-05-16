@@ -11,16 +11,16 @@ import org.hyperledger.fabric.sdk.Channel;
 import java.util.function.Function;
 
 /**
- * Factory for creating BlockEventSource instances for channels.
+ * Factory for creating ContractEventSource instances for channels.
  */
-public final class BlockEventSourceFactory {
+public final class ContractEventSourceFactory {
     /** Exposed only for testing. */
-    static final Function<Channel, BlockEventSource> DEFAULT_FACTORY_FN = ChannelBlockEventSource::new;
+    static final Function<Channel, ContractEventSource> DEFAULT_FACTORY_FN = ChannelContractEventSource::new;
 
-    private static final BlockEventSourceFactory INSTANCE = new BlockEventSourceFactory();
-    private static Function<Channel, BlockEventSource> factoryFn = DEFAULT_FACTORY_FN;
+    private static final ContractEventSourceFactory INSTANCE = new ContractEventSourceFactory();
+    private static Function<Channel, ContractEventSource> factoryFn = DEFAULT_FACTORY_FN;
 
-    public static BlockEventSourceFactory getInstance() {
+    public static ContractEventSourceFactory getInstance() {
         return INSTANCE;
     }
 
@@ -28,17 +28,17 @@ public final class BlockEventSourceFactory {
      * Used only for testing. Sets the factory function for creating event sources.
      * @param newFactoryFn New factory function.
      */
-    static void setFactoryFunction(Function<Channel, BlockEventSource> newFactoryFn) {
+    static void setFactoryFunction(Function<Channel, ContractEventSource> newFactoryFn) {
         factoryFn = newFactoryFn;
     }
 
-    private BlockEventSourceFactory() { }
+    private ContractEventSourceFactory() { }
 
     /**
      * Create an event source for a given channel. The event source is owned and should be closed by the caller.
      * @return Event source instance.
      */
-    public BlockEventSource newBlockEventSource(Channel channel) {
+    public ContractEventSource newContractEventSource(Channel channel) {
         return factoryFn.apply(channel);
     }
 }
