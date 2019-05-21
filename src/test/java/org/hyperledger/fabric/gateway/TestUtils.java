@@ -27,8 +27,10 @@ import org.hyperledger.fabric.gateway.impl.event.PeerDisconnectEvent;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.ChaincodeResponse;
 import org.hyperledger.fabric.sdk.Channel;
+import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.ProposalResponse;
+import org.hyperledger.fabric.sdk.User;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ServiceDiscoveryException;
 import org.mockito.Mockito;
@@ -37,8 +39,10 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileAttribute;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -49,16 +53,19 @@ import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public final class TestUtils {
     private static final TestUtils INSTANCE = new TestUtils();
-
-    private final Path networkConfigPath = Paths.get("src", "test", "java", "org", "hyperledger", "fabric", "gateway", "connection.json");
+    private static final String TEST_FILE_PREFIX = "fgj-test-";
+    private static final String UNUSED_FILE_PREFIX = "fgj-unused-";
+    private static final Path NETWORK_CONFIG_PATH = Paths.get("src", "test", "java", "org", "hyperledger", "fabric", "gateway", "connection.json");
 
     public static TestUtils getInstance() {
         return INSTANCE;
@@ -75,7 +82,7 @@ public final class TestUtils {
         Wallet wallet = Wallet.createInMemoryWallet();
         wallet.put("user", Wallet.Identity.createIdentity("msp1", certificate, privateKey));
         builder.identity(wallet, "user")
-                .networkConfig(networkConfigPath)
+                .networkConfig(NETWORK_CONFIG_PATH)
                 // Simple query handler so things work out-of-the-box
                 .queryHandler(network -> (query -> {
                     Peer peer = network.getChannel().getPeers(EnumSet.of(Peer.PeerRole.CHAINCODE_QUERY)).iterator().next();
@@ -86,6 +93,56 @@ public final class TestUtils {
                     return response;
                 }));
         return builder;
+    }
+
+    public HFClient newMockClient() throws OperatorCreationException, CertificateException, NoSuchAlgorithmException, NoSuchProviderException, IOException {
+        Enrollment enrollment = newEnrollment();
+        User user = new User() {
+            @Override
+            public String getName() {
+                return "user";
+            }
+
+            @Override
+            public Set<String> getRoles() {
+                return Collections.emptySet();
+            }
+
+            @Override
+            public String getAccount() {
+                return "";
+            }
+
+            @Override
+            public String getAffiliation() {
+                return "";
+            }
+
+            @Override
+            public org.hyperledger.fabric.sdk.Enrollment getEnrollment() {
+                return new org.hyperledger.fabric.sdk.Enrollment() {
+                    @Override
+                    public PrivateKey getKey() {
+                        return enrollment.getPrivateKey();
+                    }
+
+                    @Override
+                    public String getCert() {
+                        return enrollment.getCertificate();
+                    }
+                };
+            }
+
+            @Override
+            public String getMspId() {
+                return "msp1";
+            }
+        };
+
+        HFClient mockClient = Mockito.mock(HFClient.class);
+        Mockito.when(mockClient.getUserContext()).thenReturn(user);
+
+        return mockClient;
     }
 
     public Peer newMockPeer(String name) {
@@ -263,4 +320,81 @@ public final class TestUtils {
             public void accept(ContractEvent contractEvent) {}
         };
     }
+
+    /**
+     * Create a new temporary directory that will be deleted when the JVM exits.
+     * @param attributes Attributes to be assigned to the directory.
+     * @return The temporary directory.
+     * @throws IOException On error.
+     */
+    public Path createTempDirectory(FileAttribute<?>... attributes) throws IOException {
+        Path tempDir = Files.createTempDirectory(TEST_FILE_PREFIX, attributes);
+        tempDir.toFile().deleteOnExit();
+        return tempDir;
+    }
+
+    /**
+     * Create a new temporary file within a specific directory that will be deleted when the JVM exits.
+     * @param directory A directory in which to create the file.
+     * @param attributes Attributes to be assigned to the file.
+     * @return The temporary file.
+     * @throws IOException On error.
+     */
+    public Path createTempFile(Path directory, FileAttribute<?>... attributes) throws IOException {
+        Path tempFile = Files.createTempFile(directory, TEST_FILE_PREFIX, null, attributes);
+        tempFile.toFile().deleteOnExit();
+        return tempFile;
+    }
+
+    /**
+     * Create a new temporary file that will be deleted when the JVM exits.
+     * @param attributes Attributes to be assigned to the file.
+     * @return The temporary file.
+     * @throws IOException On error.
+     */
+    public Path createTempFile(FileAttribute<?>... attributes) throws IOException {
+        Path tempFile = Files.createTempFile(TEST_FILE_PREFIX, null, attributes);
+        tempFile.toFile().deleteOnExit();
+        return tempFile;
+    }
+
+    /**
+     * Get a temporary file name within a specific directory that currently does not exist, and mark the file for
+     * deletion when the JVM exits.
+     * @param directory Parent directory for the file.
+     * @return The temporary file.
+     * @throws IOException On error.
+     */
+    public Path getUnusedFilePath(Path directory) throws IOException {
+        Path tempFile = Files.createTempFile(directory, UNUSED_FILE_PREFIX, null);
+        Files.delete(tempFile);
+        tempFile.toFile().deleteOnExit();
+        return tempFile;
+    }
+
+    /**
+     * Get a temporary file name that currently does not exist, and mark the file for deletion when the JVM exits.
+     * @return The temporary file.
+     * @throws IOException On error.
+     */
+    public Path getUnusedFilePath() throws IOException {
+        Path tempFile = Files.createTempFile(UNUSED_FILE_PREFIX, null);
+        Files.delete(tempFile);
+        tempFile.toFile().deleteOnExit();
+        return tempFile;
+    }
+
+    /**
+     * Get a temporary directory name that currently does not exist, and mark the directory for deletion when the JVM
+     * exits.
+     * @return The temporary directory.
+     * @throws IOException On error.
+     */
+    public Path getUnusedDirectoryPath() throws IOException {
+        Path tempDir = Files.createTempDirectory(UNUSED_FILE_PREFIX);
+        tempDir.toFile().deleteOnExit();
+        Files.delete(tempDir);
+        return tempDir;
+    }
+
 }

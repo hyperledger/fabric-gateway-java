@@ -51,9 +51,9 @@ public class TransactionTest {
         channel = testUtils.newMockChannel("channel");
         when(channel.sendTransaction(anyCollection(), any(Channel.TransactionOptions.class)))
                 .thenReturn(CompletableFuture.completedFuture(null));
-        when(channel.getPeers(any())).thenReturn(Arrays.asList(peer));
+        when(channel.getPeers(any())).thenReturn(Collections.singletonList(peer));
 
-        HFClient client = mock(HFClient.class);
+        HFClient client = testUtils.newMockClient();
         when(client.getChannel(anyString())).thenReturn(channel);
         when(client.newTransactionProposalRequest()).thenReturn(HFClient.createNewInstance().newTransactionProposalRequest());
         when(client.newQueryProposalRequest()).thenReturn(HFClient.createNewInstance().newQueryProposalRequest());

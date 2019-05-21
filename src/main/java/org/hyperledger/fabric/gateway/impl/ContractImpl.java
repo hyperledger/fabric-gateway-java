@@ -15,7 +15,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
-public class ContractImpl implements Contract {
+public final class ContractImpl implements Contract {
     private final NetworkImpl network;
     private final GatewayImpl gateway;
     private final String chaincodeId;

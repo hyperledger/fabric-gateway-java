@@ -110,7 +110,7 @@ public class NetworkTest {
         String mspId = "MyMspId";
 
         Channel mockChannel = testUtils.newMockChannel(channelName);
-        HFClient mockClient = Mockito.mock(HFClient.class);
+        HFClient mockClient = testUtils.newMockClient();
         Mockito.when(mockClient.getChannel(channelName)).thenReturn(mockChannel);
 
         gateway = testUtils.newGatewayBuilder()

@@ -12,7 +12,7 @@ import org.hyperledger.fabric.sdk.Peer;
 
 import java.util.Collection;
 
-public class AnyCommitStrategy implements CommitStrategy {
+public final class AnyCommitStrategy implements CommitStrategy {
     private final Collection<Peer> peers;
     private int totalCount = 0;
 

@@ -12,9 +12,10 @@ Feature: Configure Fabric using SDK and submit/evaluate using a network Gateway
  	Scenario: Using a Gateway I can submit and evaluate transactions on instantiated node chaincode
 		Given I have a gateway as user User1 using the tls connection profile
 		And I connect the gateway
-		When I prepare a transaction named createCar for contract fabcar on network mychannel
+		And I use the mychannel network
+		When I prepare a createCar transaction for contract fabcar
 	 	And I submit the transaction with arguments ["CAR10", "Trabant", "601 Estate", "brown", "Simon"]
-		And I prepare a transaction named queryCar for contract fabcar on network mychannel
+		And I prepare a queryCar transaction for contract fabcar
 	 	And I evaluate the transaction with arguments ["CAR10"]
 		Then the response should be JSON matching
 		    """

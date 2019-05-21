@@ -9,7 +9,7 @@ package org.hyperledger.fabric.gateway.spi;
 import org.hyperledger.fabric.gateway.Network;
 
 /**
- * Functional interface describing a factory method for constructing commit handler instances.
+ * Functional interface describing a factory function for constructing {@link CommitHandler} instances.
  */
 @FunctionalInterface
 public interface CommitHandlerFactory {

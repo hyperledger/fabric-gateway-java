@@ -14,9 +14,10 @@ Feature: Configure Fabric using SDK using discovery service and submit/evaluate 
  	Scenario: Using a Gateway with discovery I can submit and evaluate transactions on instantiated node chaincode
 		Given I have a gateway as user User1 using the discovery connection profile
 		And I connect the gateway
-	 	When I prepare a transaction named initMarble for contract marbles0 on network mychannel
+		And I use the mychannel network
+	 	When I prepare an initMarble transaction for contract marbles0
 	 	And I submit the transaction with arguments ["marble1", "blue", "50", "bob"]
-	 	And I prepare a transaction named readMarble for contract marbles0 on network mychannel
+	 	And I prepare a readMarble transaction for contract marbles0
 	 	And I evaluate the transaction with arguments ["marble1"]
 	 	Then the response should be JSON matching
 		"""

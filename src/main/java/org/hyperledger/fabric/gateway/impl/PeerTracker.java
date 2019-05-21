@@ -12,17 +12,15 @@ import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ServiceDiscoveryException;
 
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.WeakHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Track additional configuration information for network peers.
  */
-class PeerTracker {
+final class PeerTracker {
     private final Channel channel;
     private final Map<Peer, String> peerOrgMap = Collections.synchronizedMap(new WeakHashMap<>());
     private final Channel.SDPeerAddition peerDiscoveryHandler;
@@ -40,17 +38,18 @@ class PeerTracker {
     }
 
     public void loadNetworkConfig(NetworkConfig networkConfig) {
-        Collection<Peer> channelPeers = channel.getPeers();
-        Map<String, Peer> channelPeersByName = new HashMap<>(channelPeers.size());
-        channelPeers.forEach(peer -> channelPeersByName.put(peer.getName(), peer));
+        Map<String, Peer> channelPeersByName = channel.getPeers().stream()
+                .collect(Collectors.toMap(Peer::getName, peer -> peer));
 
-        networkConfig.getOrganizationInfos().forEach(orgInfo -> {
+        for (NetworkConfig.OrgInfo orgInfo : networkConfig.getOrganizationInfos()) {
             String mspId = orgInfo.getMspId();
-            orgInfo.getPeerNames().stream()
-                    .map(channelPeersByName::get)
-                    .filter(Objects::nonNull) // Ignore peers not in this channel
-                    .forEach(peer -> peerOrgMap.putIfAbsent(peer, mspId));
-        });
+            for (String peerName : orgInfo.getPeerNames()) {
+                Peer peer = channelPeersByName.get(peerName);
+                if (peer != null) { // Ignore peers not in this channel
+                    peerOrgMap.putIfAbsent(peer, mspId);
+                }
+            }
+        }
     }
 
     public String getPeerOrganization(Peer peer) {

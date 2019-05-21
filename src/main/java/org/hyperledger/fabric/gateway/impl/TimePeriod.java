@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
  * Encapsulates the value and time unit for timeouts typically required on blocking method calls in the Java
  * concurrency libraries.
  */
-public class TimePeriod {
+public final class TimePeriod {
     private final long time;
     private final TimeUnit timeUnit;
 

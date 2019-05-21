@@ -6,14 +6,6 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
-import static org.hyperledger.fabric.sdk.Channel.DiscoveryOptions.createDiscoveryOptions;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hyperledger.fabric.gateway.GatewayException;
@@ -32,6 +24,14 @@ import org.hyperledger.fabric.sdk.TransactionProposalRequest;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
 import org.hyperledger.fabric.sdk.exception.ServiceDiscoveryException;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import static org.hyperledger.fabric.sdk.Channel.DiscoveryOptions.createDiscoveryOptions;
 
 public final class TransactionImpl implements Transaction {
     private static final Log logger = LogFactory.getLog(TransactionImpl.class);
@@ -84,7 +84,7 @@ public final class TransactionImpl implements Transaction {
             	request.setTransientMap(transientData);
             }
 
-            Collection<ProposalResponse> proposalResponses;
+            final Collection<ProposalResponse> proposalResponses;
             if(network.getGateway().isDiscoveryEnabled()) {
             	proposalResponses = channel.sendTransactionProposalToEndorsers(request,
                         createDiscoveryOptions().setEndorsementSelector(ServiceDiscovery.EndorsementSelector.ENDORSEMENT_SELECTION_RANDOM)

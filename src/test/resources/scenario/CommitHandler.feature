@@ -13,9 +13,10 @@ Feature: Commit handler strategies for submitting transactions
 		Given I have a gateway as user User1 using the tls connection profile
 		And I configure the gateway to use the default MSPID_SCOPE_ALLFORTX commit handler
 		And I connect the gateway
-		When I prepare a transaction named createCar for contract fabcar on network mychannel
+		And I use the mychannel network
+		When I prepare a createCar transaction for contract fabcar
 	 	And I submit the transaction with arguments ["MSPID_SCOPE_ALLFORTX", "Trabant", "601 Estate", "brown", "Simon"]
-		And I prepare a transaction named queryCar for contract fabcar on network mychannel
+		And I prepare a queryCar transaction for contract fabcar
 	 	And I evaluate the transaction with arguments ["MSPID_SCOPE_ALLFORTX"]
 		Then the response should be JSON matching
 		    """
@@ -32,9 +33,10 @@ Feature: Commit handler strategies for submitting transactions
 		Given I have a gateway as user User1 using the tls connection profile
 		And I configure the gateway to use the default MSPID_SCOPE_ANYFORTX commit handler
 		And I connect the gateway
-		When I prepare a transaction named createCar for contract fabcar on network mychannel
+		And I use the mychannel network
+		When I prepare a createCar transaction for contract fabcar
 	 	And I submit the transaction with arguments ["MSPID_SCOPE_ANYFORTX", "Trabant", "601 Estate", "brown", "Simon"]
-		And I prepare a transaction named queryCar for contract fabcar on network mychannel
+		And I prepare a queryCar transaction for contract fabcar
 	 	And I evaluate the transaction with arguments ["MSPID_SCOPE_ANYFORTX"]
 		Then the response should be JSON matching
 		    """
@@ -51,9 +53,10 @@ Feature: Commit handler strategies for submitting transactions
 		Given I have a gateway as user User1 using the tls connection profile
 		And I configure the gateway to use the default NETWORK_SCOPE_ALLFORTX commit handler
 		And I connect the gateway
-		When I prepare a transaction named createCar for contract fabcar on network mychannel
+		And I use the mychannel network
+		When I prepare a createCar transaction for contract fabcar
 	 	And I submit the transaction with arguments ["NETWORK_SCOPE_ALLFORTX", "Trabant", "601 Estate", "brown", "Simon"]
-		And I prepare a transaction named queryCar for contract fabcar on network mychannel
+		And I prepare a queryCar transaction for contract fabcar
 	 	And I evaluate the transaction with arguments ["NETWORK_SCOPE_ALLFORTX"]
 		Then the response should be JSON matching
 		    """
@@ -70,7 +73,8 @@ Feature: Commit handler strategies for submitting transactions
 		Given I have a gateway as user User1 using the tls connection profile
 		And I configure the gateway to use the default NETWORK_SCOPE_ANYFORTX commit handler
 		And I connect the gateway
-		When I prepare a transaction named createCar for contract fabcar on network mychannel
+		And I use the mychannel network
+		When I prepare a createCar transaction for contract fabcar
 	 	And I submit the transaction with arguments ["NETWORK_SCOPE_ANYFORTX", "Trabant", "601 Estate", "brown", "Simon"]
 	 	# Can't evaluate as the peer we query may not have commited the transaction
 	 	Then a response should be received

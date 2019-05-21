@@ -6,6 +6,14 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import org.apache.commons.io.FileUtils;
+import org.hyperledger.fabric.gateway.GatewayException;
+import org.hyperledger.fabric.gateway.Wallet;
+
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonWriter;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -23,16 +31,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonWriter;
-
-import org.apache.commons.io.FileUtils;
-import org.hyperledger.fabric.gateway.GatewayException;
-import org.hyperledger.fabric.gateway.Wallet;
-
-public class FileSystemWallet implements Wallet {
+public final class FileSystemWallet implements Wallet {
   private Path basePath;
 
   public FileSystemWallet(Path path) throws IOException {

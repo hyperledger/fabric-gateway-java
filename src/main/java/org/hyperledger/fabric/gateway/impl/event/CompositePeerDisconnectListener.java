@@ -16,7 +16,7 @@ import java.util.Collection;
  * This implementation is thread-safe.
  * </p>
  */
-public class CompositePeerDisconnectListener implements AutoCloseable {
+public final class CompositePeerDisconnectListener implements AutoCloseable {
     private final Collection<PeerDisconnectEventSource> eventSources;
     private final PeerDisconnectListener listener;
 

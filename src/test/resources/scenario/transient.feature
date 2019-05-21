@@ -12,7 +12,8 @@ Feature: Configure Fabric using SDK and submit/evaluate using a network Gateway
  	Scenario: Using a Gateway I can send transient data to instantiated node chaincode
 		Given I have a gateway as user User1 using the tls connection profile
 		And I connect the gateway
-		When I prepare a transaction named echoTransient for contract fabcar on network mychannel
+		And I use the mychannel network
+		When I prepare an echoTransient transaction for contract fabcar
 		And I set transient data on the transaction to
 			| key1 | value1 |
 			| key2 | value2 |

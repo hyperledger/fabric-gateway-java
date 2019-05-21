@@ -18,11 +18,11 @@ import java.util.function.Consumer;
  * Listens to an existing block event source and ensures that its own listeners receive block events in order and
  * without duplicates.
  */
-public class OrderedBlockEventSource implements BlockEventSource {
+public final class OrderedBlockEventSource implements BlockEventSource {
     private static final Comparator<BlockEvent> eventComparator = Comparator.comparingLong(BlockEvent::getBlockNumber);
 
     private final BlockEventSource blockSource;
-    private final ListenerSet<Consumer<BlockEvent>> listeners = new ListenerSet<Consumer<BlockEvent>>();
+    private final ListenerSet<Consumer<BlockEvent>> listeners = new ListenerSet<>();
     private final Consumer<BlockEvent> blockListener;
     private long lastBlockNumber = -1;
     private final SortedSet<BlockEvent> queuedEvents = new TreeSet<>(eventComparator);

@@ -10,10 +10,10 @@ import org.hyperledger.fabric.sdk.BlockEvent;
 
 import java.util.function.Consumer;
 
-public class TransactionEventSourceImpl implements TransactionEventSource {
+public final class TransactionEventSourceImpl implements TransactionEventSource {
     private final BlockEventSource blockSource;
     private final Consumer<BlockEvent> blockListener;
-    private final ListenerSet<Consumer<BlockEvent.TransactionEvent>> listeners = new ListenerSet<Consumer<BlockEvent.TransactionEvent>>();
+    private final ListenerSet<Consumer<BlockEvent.TransactionEvent>> listeners = new ListenerSet<>();
 
     public TransactionEventSourceImpl(BlockEventSource blockSource) {
         this.blockSource = blockSource;

@@ -6,21 +6,6 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
-import java.io.FileReader;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
-import javax.json.Json;
-import javax.json.JsonReader;
-import javax.json.stream.JsonParsingException;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
@@ -30,6 +15,7 @@ import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.Wallet;
 import org.hyperledger.fabric.gateway.Wallet.Identity;
+import org.hyperledger.fabric.gateway.spi.CheckpointerFactory;
 import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
 import org.hyperledger.fabric.gateway.spi.QueryHandlerFactory;
 import org.hyperledger.fabric.sdk.Channel;
@@ -44,7 +30,22 @@ import org.hyperledger.fabric.sdk.identity.X509Enrollment;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.hyperledger.fabric.sdk.security.CryptoSuiteFactory;
 
-public class GatewayImpl implements Gateway {
+import javax.json.Json;
+import javax.json.JsonReader;
+import javax.json.stream.JsonParsingException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+public final class GatewayImpl implements Gateway {
     private static final Log LOG = LogFactory.getLog(Gateway.class);
 
     private final HFClient client;
@@ -55,8 +56,9 @@ public class GatewayImpl implements Gateway {
     private final TimePeriod commitTimeout;
     private final QueryHandlerFactory queryHandlerFactory;
     private final boolean discovery;
+    private final CheckpointerFactory checkpointerFactory;
 
-    public static class Builder implements Gateway.Builder {
+    public static final class Builder implements Gateway.Builder {
         private CommitHandlerFactory commitHandlerFactory = DefaultCommitHandlers.MSPID_SCOPE_ALLFORTX;
         private TimePeriod commitTimeout = new TimePeriod(5, TimeUnit.MINUTES);
         private QueryHandlerFactory queryHandlerFactory = DefaultQueryHandlers.MSPID_SCOPE_SINGLE;
@@ -64,6 +66,7 @@ public class GatewayImpl implements Gateway {
         private Identity identity = null;
         private HFClient client;
         private boolean discovery = false;
+        private CheckpointerFactory checkpointerFactory = new FileCheckpointerFactory(Paths.get(System.getProperty("user.home"), ".hlf-checkpoint"));
 
         public Builder() {
         }
@@ -116,48 +119,65 @@ public class GatewayImpl implements Gateway {
 			return this;
 		}
 
-		public Builder client(HFClient client) {
+		@Override
+        public Builder checkpointer(CheckpointerFactory factory) {
+            this.checkpointerFactory = factory;
+            return this;
+        }
+
+        public Builder client(HFClient client) {
             this.client = client;
             return this;
         }
 
         @Override
-        public Gateway connect() throws GatewayException {
+        public GatewayImpl connect() throws GatewayException {
             return new GatewayImpl(this);
         }
     }
 
-
     private GatewayImpl(Builder builder) throws GatewayException {
-        try {
-            this.commitHandlerFactory = builder.commitHandlerFactory;
-            this.commitTimeout = builder.commitTimeout;
-            this.queryHandlerFactory = builder.queryHandlerFactory;
-            this.discovery = builder.discovery;
-            if (builder.client != null) {
-                this.client = builder.client;
-                this.identity = null;
-                this.networkConfig = Optional.empty();
-            } else {
-                if (builder.identity == null) {
-                    throw new GatewayException("The gateway identity must be set");
-                }
-                if (builder.ccp == null) {
-                    throw new GatewayException("The network configuration must be specified");
-                }
-                this.client = HFClient.createNewInstance();
-                CryptoSuite cryptoSuite = CryptoSuiteFactory.getDefault().getCryptoSuite();
-                this.client.setCryptoSuite(cryptoSuite);
-                this.networkConfig = Optional.of(builder.ccp);
-                this.identity = builder.identity;
-                configureUserContext();
+        this.commitHandlerFactory = builder.commitHandlerFactory;
+        this.commitTimeout = builder.commitTimeout;
+        this.queryHandlerFactory = builder.queryHandlerFactory;
+        this.discovery = builder.discovery;
+        this.checkpointerFactory = builder.checkpointerFactory;
+
+        if (builder.client != null) {
+            // Only for testing!
+            this.client = builder.client;
+            this.networkConfig = Optional.empty();
+
+            User user = client.getUserContext();
+            Enrollment enrollment = user.getEnrollment();
+            this.identity = Identity.createIdentity(user.getMspId(), enrollment.getCert(), enrollment.getKey());
+        } else {
+            if (null == builder.identity) {
+                throw new GatewayException("The gateway identity must be set");
             }
-        } catch (InvalidArgumentException | CryptoException | ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
-            throw new GatewayException(e);
+            if (null == builder.ccp) {
+                throw new GatewayException("The network configuration must be specified");
+            }
+            this.networkConfig = Optional.of(builder.ccp);
+            this.identity = builder.identity;
+
+            this.client = createClient();
         }
     }
 
-    private void configureUserContext() throws GatewayException {
+    private GatewayImpl(GatewayImpl that) throws GatewayException {
+        this.commitHandlerFactory = that.commitHandlerFactory;
+        this.commitTimeout = that.commitTimeout;
+        this.queryHandlerFactory = that.queryHandlerFactory;
+        this.discovery = that.discovery;
+        this.checkpointerFactory = that.checkpointerFactory;
+        this.networkConfig = that.networkConfig;
+        this.identity = that.identity;
+
+        this.client = createClient();
+    }
+
+    private HFClient createClient() throws GatewayException {
         Enrollment enrollment = new X509Enrollment(identity.getPrivateKey(), identity.getCertificate());
         User user = new User() {
             @Override
@@ -190,11 +210,19 @@ public class GatewayImpl implements Gateway {
                 return identity.getMspId();
             }
         };
+
+        HFClient client = HFClient.createNewInstance();
+
         try {
+            CryptoSuite cryptoSuite = CryptoSuiteFactory.getDefault().getCryptoSuite();
+            client.setCryptoSuite(cryptoSuite);
             client.setUserContext(user);
-        } catch (InvalidArgumentException e) {
-            throw new GatewayException("Failed to set user context", e);
+        } catch (ClassNotFoundException | CryptoException | IllegalAccessException | NoSuchMethodException |
+                InstantiationException | InvalidArgumentException | InvocationTargetException  e) {
+            throw new GatewayException("Failed to configure client", e);
         }
+
+        return client;
     }
 
     @Override
@@ -202,7 +230,7 @@ public class GatewayImpl implements Gateway {
     }
 
     @Override
-    public synchronized Network getNetwork(String networkName) throws GatewayException {
+    public synchronized Network getNetwork(final String networkName) throws GatewayException {
         if (networkName == null || networkName.isEmpty()) {
             throw new IllegalArgumentException("Channel name must be a non-empty string");
         }
@@ -259,4 +287,11 @@ public class GatewayImpl implements Gateway {
         return networkConfig;
     }
 
+    public GatewayImpl newInstance() throws GatewayException {
+        return new GatewayImpl(this);
+    }
+
+    public CheckpointerFactory getCheckpointerFactory() {
+        return checkpointerFactory;
+    }
 }

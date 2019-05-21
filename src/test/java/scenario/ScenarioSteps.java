@@ -9,8 +9,11 @@ import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
+import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.gateway.Transaction;
 import org.hyperledger.fabric.gateway.Wallet;
+import org.hyperledger.fabric.gateway.impl.FileCheckpointer;
+import org.hyperledger.fabric.gateway.spi.Checkpointer;
 import org.hyperledger.fabric.sdk.BlockEvent;
 
 import javax.json.Json;
@@ -44,7 +47,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class ScenarioSteps implements En {
 	private static final long EVENT_TIMEOUT_SECONDS = 30;
@@ -54,14 +58,19 @@ public class ScenarioSteps implements En {
 	private String fabricNetworkType = null;
 	private Gateway.Builder gatewayBuilder = null;
 	private Gateway gateway = null;
+	private Network network = null;
 	private String response = null;
 	private Transaction transaction = null;
 	private Consumer<BlockEvent> blockListener = null;
 	private final BlockingQueue<BlockEvent> blockEvents = new LinkedBlockingQueue<>();
 	private Consumer<ContractEvent> contractListener = null;
 	private final BlockingQueue<ContractEvent> contractEvents = new LinkedBlockingQueue<>();
+	private final Path checkpointFile;
+	private Checkpointer checkpointer = null;
 
-	public ScenarioSteps() {
+	public ScenarioSteps() throws IOException {
+		checkpointFile = TestUtils.getInstance().getUnusedFilePath();
+
 		Given("I have deployed a {word} Fabric network", (String tlsType) -> {
 			// tlsType is either "tls" or "non-tls"
 			fabricNetworkType = tlsType;
@@ -212,16 +221,16 @@ public class ScenarioSteps implements En {
 					throw new cucumber.api.PendingException();
 				});
 
-		When("I prepare a transaction named {word} for contract {word} on network {word}",
-				(String txnFn, String ccName, String channelName) -> {
-					Network network = gateway.getNetwork(channelName);
-					Contract contract = network.getContract(ccName);
-					transaction = contract.createTransaction(txnFn);
+		Given("I use the {word} network", (String networkName) -> network = gateway.getNetwork(networkName));
+
+		When("I prepare a(n) {word} transaction for contract {word}",
+				(String transactionName, String contractName) -> {
+					Contract contract = network.getContract(contractName);
+					transaction = contract.createTransaction(transactionName);
 				});
 
 		When("^I (submit|evaluate) the transaction with arguments (.+)$",
 				(String action, String argsJson) -> {
-
 					String[] args = newStringArray(parseJsonArray(argsJson));
 
 					final byte[] result;
@@ -240,17 +249,29 @@ public class ScenarioSteps implements En {
 			transaction.setTransient(transientMap);
 		});
 
-		When("I add a block listener to network {word}", (String networkName) -> {
-			blockEvents.clear();
-			blockListener = gateway.getNetwork(networkName).addBlockListener(blockEvents::add);
+		When("I add a block listener", () -> {
+			clearBlockListener();
+			blockListener = network.addBlockListener(blockEvents::add);
 		});
 
-		When("I add a contract listener to contract {word} on network {word} for events matching {string}",
-				(String contractName, String networkName, String eventName) -> {
+		When("I add a block listener with a file checkpointer", () -> {
+			clearBlockListener();
+			if (checkpointer != null) {
+				checkpointer.close();
+			}
+			checkpointer = new FileCheckpointer(checkpointFile);
+			blockListener = network.addBlockListener(blockEvents::add, checkpointer);
+		});
+
+		When("I wait for a block event to be received", this::getBlockEvent);
+
+		When("I remove the block listener", () -> network.removeBlockListener(blockListener));
+
+		When("I add a contract listener to contract {word} for events matching {string}",
+				(String contractName, String eventName) -> {
 					contractEvents.clear();
 					Pattern eventNamePattern = Pattern.compile(eventName);
-					contractListener = gateway.getNetwork(networkName)
-							.getContract(contractName)
+					contractListener = network.getContract(contractName)
 							.addContractListener(contractEvents::add, eventNamePattern);
 				});
 
@@ -268,10 +289,7 @@ public class ScenarioSteps implements En {
 			}
 		});
 
-		Then("a block event should be received", () -> {
-			BlockEvent event = blockEvents.poll(EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-			assertNotNull(event);
-		});
+		Then("a block event should be received", this::getBlockEvent);
 
 		Then("a contract event with payload {string} should be received", (String expected) -> {
 			List<String> payloads = new ArrayList<>();
@@ -403,4 +421,16 @@ public class ScenarioSteps implements En {
 		return wallet;
 	}
 
+	private BlockEvent getBlockEvent() throws InterruptedException {
+		BlockEvent event = blockEvents.poll(EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+		assertNotNull(event);
+		return event;
+	}
+
+	private void clearBlockListener() {
+		if (blockListener != null) {
+			network.removeBlockListener(blockListener);
+		}
+		blockEvents.clear();
+	}
 }

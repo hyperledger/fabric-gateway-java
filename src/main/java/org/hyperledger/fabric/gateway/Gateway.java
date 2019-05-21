@@ -7,6 +7,7 @@
 package org.hyperledger.fabric.gateway;
 
 import org.hyperledger.fabric.gateway.impl.GatewayImpl;
+import org.hyperledger.fabric.gateway.spi.CheckpointerFactory;
 import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
 import org.hyperledger.fabric.gateway.spi.QueryHandlerFactory;
 
@@ -28,7 +29,6 @@ import java.util.concurrent.TimeUnit;
  * @see <a href="https://hyperledger-fabric.readthedocs.io/en/release-1.4/developapps/application.html#gateway">Developing Fabric Applications - Gateway</a>
  */
 public interface Gateway extends AutoCloseable {
-
 	/**
 	 * Returns an object representing a network
 	 *
@@ -69,7 +69,6 @@ public interface Gateway extends AutoCloseable {
 	 *
 	 */
 	interface Builder {
-
 		/**
 		 * Specifies the path to the common connection profile.
 		 * @param config The path to the common connection profile.
@@ -122,6 +121,13 @@ public interface Gateway extends AutoCloseable {
 		 * @return The builder instance, allowing multiple configuration options to be chained.
 		 */
 		Builder discovery(boolean enabled);
+
+		/**
+		 * <em>Optional</em> - Set the default checkpointer implementation to use for persistent tracking of events.
+		 * @param factory A factory for creating checkpointer instances.
+		 * @return The builder instance, allowing multiple configuration options to be chained.
+		 */
+		Builder checkpointer(CheckpointerFactory factory);
 
 		/**
 		 * Connects to the gateway using the specified options.
