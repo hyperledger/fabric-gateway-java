@@ -49,7 +49,7 @@ timestamps { // set the timestamps on the jenkins console
 
     // Publish jar files from merge job
     if (env.JOB_TYPE == "merge") {
-    //  publishJar()  Disabling the jar publish until the credentials are set
+      publishJar()
       apiDocs()
    } else {
       echo "------> Don't publish jar files from VERIFY job"
