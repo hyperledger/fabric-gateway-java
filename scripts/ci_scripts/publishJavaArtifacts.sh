@@ -7,29 +7,33 @@
 # Get the version from pom.xml
 cd $WORKSPACE/$BASE_DIR
 version_check=$(cat pom.xml | grep "version" | grep -c "SNAPSHOT")
-version=$(xmllint --xpath "//*[local-name()='project']/*[local-name()='version']/text()" pom.xml)
+version=$(mvn -q \
+    -Dexec.executable=echo \
+    -Dexec.args='${project.version}' \
+    --non-recursive \
+    exec:exec)
 
 if [ $version_check -gt 0 ]; then
-
     # Publish gateway-java jar files to nexus
-    echo "Pushing  fabric-gateway-java-$version-SNAPSHOT.jar to maven releases.."
-    mvn org.apache.maven.plugins:maven-deploy-plugin:deploy-file \
-      -DupdateReleaseInfo=true \
-      -Dfile=$WORKSPACE/$BASE_DIR/target/fabric-gateway-java-$version.jar \
-      -DrepositoryId=hyperledger-snapshots \
-      -Durl=https://nexus.hyperledger.org/content/repositories/snapshots/ \
-      -DgroupId=org.hyperledger.fabric-gateway-java \
-      -Dversion= $version\
-      -DartifactId=fabric-gateway-java \
-      -DgeneratePom=true \
-      -DuniqueVersion=false \
-      -Dpackaging=jar \
-      -gs $GLOBAL_SETTINGS_FILE -s $SETTINGS_FILE
-      echo "========> DONE <======="
+    for artifacts in $version $version-javadoc; do
+        echo "Pushing fabric-gateway-java-$artifacts-SNAPSHOT.jar to Nexus.."
+        mvn org.apache.maven.plugins:maven-deploy-plugin:deploy-file \
+          -DupdateReleaseInfo=true \
+          -Dfile=$WORKSPACE/$BASE_DIR/target/fabric-gateway-java-$artifacts.jar \
+          -DrepositoryId=hyperledger-snapshots \
+          -Durl=https://nexus.hyperledger.org/content/repositories/snapshots/ \
+          -DgroupId=org.hyperledger.fabric-gateway-java \
+          -Dversion=$artifacts\
+          -DartifactId=fabric-gateway-java \
+          -DgeneratePom=true \
+          -DuniqueVersion=false \
+          -Dpackaging=jar \
+          -gs $GLOBAL_SETTINGS_FILE -s $SETTINGS_FILE
+          echo "========> DONE <======="
+    done
 else
-
     # Publish gateway-java jar files to nexus
-    echo "Pushing  fabric-gateway-java-$version-SNAPSHOT.jar to maven releases.."
+    echo "Pushing fabric-gateway-java-$version-SNAPSHOT.jar to Nexus releases.."
     mvn org.apache.maven.plugins:maven-deploy-plugin:deploy-file \
       -DupdateReleaseInfo=true \
       -Dfile=$WORKSPACE/$BASE_DIR/target/fabric-gateway-java-$version.jar \
