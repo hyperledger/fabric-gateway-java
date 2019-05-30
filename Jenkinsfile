@@ -88,8 +88,8 @@ def publishJar() {
     sh 'echo "-------> Publish Jar files"'
     def ROOTDIR = pwd()
     configFileProvider([
-      configFile(fileId: 'fabric-gateway-java-settings', variable: 'SETTINGS_FILE'),
-      configFile(fileId: 'global-settings', variable: 'GLOBAL_SETTINGS_FILE')]) {
+      configFile(fileId: 'fabric-gateway-java-settings', variable: 'MAVEN_SETTINGS_LOCATION'),
+      configFile(fileId: 'fabric-gateway-java-settings', variable: 'GLOBAL_SETTINGS_FILE')]) {
 
     try {
       dir("${ROOTDIR}/$PROJECT_DIR/scripts/ci_scripts") {

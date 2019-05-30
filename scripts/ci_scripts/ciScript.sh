@@ -23,17 +23,17 @@ Parse_Arguments() {
   done
 }
 
-# Publish java artifacts after successful merge on amd64
+# Publish java artifacts after successful merge
 publishJavaArtifacts() {
         echo
-        echo -e "\033[32m -----------> Publish npm modules from amd64" "\033[0m"
+        echo  "-----------> Publish gateway jar artifacts after successful merge"
         ./publishJavaArtifacts.sh
 }
 
-# Publish Javadocs after successful merge on amd64
+# Publish javadocs after successful merge
 publishJavaApiDocs() {
         echo
-        echo -e "\033[32m -----------> Publish Javadocs after successful merge on amd64" "\033[0m"
+        echo  "-----------> Publish Javadocs after successful merge"
         ./publishJavaApiDocs.sh
 }
 Parse_Arguments $@
