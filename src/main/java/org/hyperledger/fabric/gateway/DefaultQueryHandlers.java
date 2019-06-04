@@ -11,10 +11,10 @@ import org.hyperledger.fabric.gateway.impl.SingleQueryHandler;
 import org.hyperledger.fabric.gateway.spi.QueryHandler;
 import org.hyperledger.fabric.gateway.spi.QueryHandlerFactory;
 import org.hyperledger.fabric.sdk.Peer;
+import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 
 import java.util.Collection;
 import java.util.EnumSet;
-import java.util.stream.Collectors;
 
 /**
  * Default query handler implementations. Instances can be referenced directly or looked up by name, for example
@@ -48,15 +48,24 @@ public enum DefaultQueryHandlers implements QueryHandlerFactory {
     }
 
     private static Collection<Peer> getChaincodeQueryPeersForOrganization(Network network) {
-        String mspId = network.getGateway().getIdentity().getMspId();
-        Collection<Peer> peers = getChaincodeQueryPeers(network).stream()
-                .filter(peer -> network.getPeerOrganization(peer).equals(mspId))
-                .collect(Collectors.toList());
-        return peers;
+        Collection<Peer> queryPeers = getChaincodeQueryPeers(network);
+        Collection<Peer> orgPeers = getPeersForOrganization(network);
+        orgPeers.retainAll(queryPeers);
+        return orgPeers;
     }
 
     private static Collection<Peer> getChaincodeQueryPeers(Network network) {
         return network.getChannel().getPeers(QUERY_ROLES);
+    }
+
+    private static Collection<Peer> getPeersForOrganization(Network network) {
+        String mspId = network.getGateway().getIdentity().getMspId();
+        try {
+            return network.getChannel().getPeersForOrganization(mspId);
+        } catch (InvalidArgumentException e) {
+            // This should never happen as mspId should not be null
+            throw new RuntimeException(e);
+        }
     }
 
     public QueryHandler create(Network network) {

@@ -11,6 +11,7 @@ import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.gateway.Wallet;
 import org.hyperledger.fabric.sdk.HFClient;
+import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,7 +20,8 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -71,10 +73,14 @@ public class GatewayBuilderTest {
         Wallet wallet = Wallet.createInMemoryWallet();
         wallet.put("admin", Wallet.Identity.createIdentity("msp1", enrollment.getCertificate(), enrollment.getPrivateKey()));
         builder.identity(wallet, "admin");
-        Path yamlPath = Paths.get("src", "test", "java", "org", "hyperledger", "fabric", "gateway", "connection.json");
+        builder.queryHandler(network -> (query -> null));
+        Path yamlPath = Paths.get("src", "test", "java", "org", "hyperledger", "fabric", "gateway", "connection.yaml");
         builder.networkConfig(yamlPath);
         try (Gateway gateway = builder.connect()) {
-            assertThat(((GatewayImpl)gateway).getNetworkConfig().get().getClientOrganization().getMspId()).isEqualTo("Org1MSP");
+            Collection<String> peerNames = gateway.getNetwork("mychannel").getChannel().getPeers().stream()
+                    .map(Peer::getName)
+                    .collect(Collectors.toList());
+            assertThat(peerNames).containsExactly("peer0.org1.example.com");
         }
     }
 

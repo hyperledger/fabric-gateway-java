@@ -41,7 +41,6 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -49,7 +48,7 @@ public final class GatewayImpl implements Gateway {
     private static final Log LOG = LogFactory.getLog(Gateway.class);
 
     private final HFClient client;
-    private final Optional<NetworkConfig> networkConfig;
+    private final NetworkConfig networkConfig;
     private final Identity identity;
     private final Map<String, Network> networks = new HashMap<>();
     private final CommitHandlerFactory commitHandlerFactory;
@@ -146,7 +145,7 @@ public final class GatewayImpl implements Gateway {
         if (builder.client != null) {
             // Only for testing!
             this.client = builder.client;
-            this.networkConfig = Optional.empty();
+            this.networkConfig = null;
 
             User user = client.getUserContext();
             Enrollment enrollment = user.getEnrollment();
@@ -158,7 +157,7 @@ public final class GatewayImpl implements Gateway {
             if (null == builder.ccp) {
                 throw new GatewayException("The network configuration must be specified");
             }
-            this.networkConfig = Optional.of(builder.ccp);
+            this.networkConfig = builder.ccp;
             this.identity = builder.identity;
 
             this.client = createClient();
@@ -237,9 +236,9 @@ public final class GatewayImpl implements Gateway {
         Network network = networks.get(networkName);
         if (network == null) {
             Channel channel = client.getChannel(networkName);
-            if (channel == null && networkConfig.isPresent()) {
+            if (channel == null && networkConfig != null) {
                 try {
-                    channel = client.loadChannelFromConfig(networkName, networkConfig.get());
+                    channel = client.loadChannelFromConfig(networkName, networkConfig);
                 } catch (InvalidArgumentException | NetworkConfigurationException ex) {
                     LOG.info("Unable to load channel configuration from connection profile: ", ex);
                 }
@@ -281,10 +280,6 @@ public final class GatewayImpl implements Gateway {
 
     public boolean isDiscoveryEnabled() {
         return discovery;
-    }
-
-    public Optional<NetworkConfig> getNetworkConfig() {
-        return networkConfig;
     }
 
     public GatewayImpl newInstance() throws GatewayException {

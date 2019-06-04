@@ -10,7 +10,6 @@ import org.hyperledger.fabric.gateway.impl.event.TransactionEventSource;
 import org.hyperledger.fabric.gateway.spi.Checkpointer;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Channel;
-import org.hyperledger.fabric.sdk.Peer;
 
 import java.io.IOException;
 import java.util.function.Consumer;
@@ -49,7 +48,6 @@ public interface Network {
 	/**
 	 * Get the low-level chanel object associated with this network.
 	 * @return A channel.
-	 * @deprecated
 	 */
 	Channel getChannel();
 
@@ -59,15 +57,6 @@ public interface Network {
 	 * @deprecated
 	 */
 	TransactionEventSource getTransactionEventSource();
-
-	/**
-	 * Get the membership services provider ID for a given peer.
-	 * @param peer a peer.
-	 * @return A member services provider ID.
-	 * @throws IllegalArgumentException if the peer is not associated with the network.
-	 * @deprecated
-	 */
-	String getPeerOrganization(Peer peer);
 
 	/**
 	 * Add a listener to receive block events from the network.

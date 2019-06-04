@@ -14,9 +14,9 @@ import org.hyperledger.fabric.gateway.impl.NoOpCommitHandler;
 import org.hyperledger.fabric.gateway.spi.CommitHandler;
 import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
 import org.hyperledger.fabric.sdk.Peer;
+import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 
 import java.util.Collection;
-import java.util.stream.Collectors;
 
 /**
  * Default commit handler implementations. Instances can be referenced directly or looked up by name, for example
@@ -78,10 +78,12 @@ public enum DefaultCommitHandlers implements CommitHandlerFactory {
 
     private static Collection<Peer> getPeersForOrganization(Network network) {
         String mspId = network.getGateway().getIdentity().getMspId();
-        Collection<Peer> peers = network.getChannel().getPeers().stream()
-                .filter(peer -> network.getPeerOrganization(peer).equals(mspId))
-                .collect(Collectors.toList());
-        return peers;
+        try {
+            return network.getChannel().getPeersForOrganization(mspId);
+        } catch (InvalidArgumentException e) {
+            // This should never happen as mspId should not be null
+            throw new RuntimeException(e);
+        }
     }
 
     public CommitHandler create(String transactionId, Network network) {

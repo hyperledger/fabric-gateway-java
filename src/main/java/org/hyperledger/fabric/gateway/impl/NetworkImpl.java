@@ -24,7 +24,6 @@ import org.hyperledger.fabric.gateway.spi.Checkpointer;
 import org.hyperledger.fabric.gateway.spi.QueryHandler;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Channel;
-import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.TransactionException;
 
@@ -41,15 +40,12 @@ public final class NetworkImpl implements Network {
     private final BlockEventSource blockSource;
     private final TransactionEventSource transactionSource;
     private final QueryHandler queryHandler;
-    private final PeerTracker peerTracker;
     private final ContractEventSource contractEventSource;
     private final Map<Consumer<BlockEvent>, ListenerSession> blockListenerSessions = new HashMap<>();
 
     NetworkImpl(Channel channel, GatewayImpl gateway) throws GatewayException {
         this.channel = channel;
         this.gateway = gateway;
-        this.peerTracker = new PeerTracker(channel);
-        gateway.getNetworkConfig().ifPresent(peerTracker::loadNetworkConfig);
 
         initializeChannel();
 
@@ -99,15 +95,6 @@ public final class NetworkImpl implements Network {
     @Override
     public TransactionEventSource getTransactionEventSource() {
         return transactionSource;
-    }
-
-    @Override
-    public String getPeerOrganization(Peer peer) {
-        String mspId = peerTracker.getPeerOrganization(peer);
-        if (mspId == null) {
-            throw new IllegalArgumentException("Peer is not a network member: " + peer);
-        }
-        return mspId;
     }
 
     @Override
