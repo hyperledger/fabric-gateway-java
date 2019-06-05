@@ -8,11 +8,24 @@
 	<groupId>org.hyperledger.fabric</groupId>
 	<artifactId>fabric-gateway-java</artifactId>
 	<version>1.4.0-SNAPSHOT</version>
+	<packaging>jar</packaging>
 
 	<name>fabric-gateway-java</name>
-	<description>A simple fabric-java.</description>
-	<!-- FIXME change it to the project's website -->
-	<url>http://www.example.com</url>
+	<description>Simple API for interacting with Hyperledger Fabric blockchain networks</description>
+	<url>https://fabric-gateway-java.github.io/</url>
+
+	<licenses>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+
+	<scm>
+		<connection>scm:git:https://gerrit.hyperledger.org/r/fabric-gateway-java</connection>
+		<url>https://gerrit.hyperledger.org/r/gitweb?p=fabric-gateway-java.git</url>
+	</scm>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
