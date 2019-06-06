@@ -56,10 +56,10 @@ public interface Network {
 	 * @return A transaction event source.
 	 * @deprecated
 	 */
-	TransactionEventSource getTransactionEventSource();
+	TransactionEventSource getCommitEventSource();
 
 	/**
-	 * Add a listener to receive block events from the network.
+	 * Add a listener to receive block events from the network. Events are received in order and without duplication.
 	 * @param listener A block listener.
 	 * @return The block listener argument.
 	 */
@@ -68,22 +68,13 @@ public interface Network {
 	/**
 	 * Add a listener to receive block events from the network with checkpointing. Re-adding a listener with the same
 	 * checkpointer on subsequent application invocations will resume listening from the previous block position.
-	 * @param listener A block listener.
+	 * Events are received in order and without duplication.
 	 * @param checkpointer Checkpointer to persist block position.
+	 * @param listener A block listener.
 	 * @return The block listener argument.
 	 * @throws IOException if an errors occurs establishing checkpointing.
 	 */
-	Consumer<BlockEvent> addBlockListener(Consumer<BlockEvent> listener, Checkpointer checkpointer) throws GatewayException, IOException;
-
-//	/**
-//	 * Add a listener to receive block events from the network with checkpointing. Re-adding a listener with the same
-//	 * checkpointer name on subsequent application invocations will resume listening from the previous block position.
-//	 * @param listener A block listener.
-//	 * @param checkpointerName Name used to uniquely identify the checkpointer within this network.
-//	 * @return The block listener argument.
-//	 * @throws IOException if an errors occurs establishing checkpointing.
-//	 */
-//	Consumer<BlockEvent> addBlockListener(Consumer<BlockEvent> listener, String checkpointerName) throws GatewayException, IOException;
+	Consumer<BlockEvent> addBlockListener(Checkpointer checkpointer, Consumer<BlockEvent> listener) throws GatewayException, IOException;
 
 	/**
 	 * Removes a previously added block listener. Any associated checkpointer will be closed.

@@ -7,7 +7,6 @@
 package org.hyperledger.fabric.gateway;
 
 import org.hyperledger.fabric.gateway.impl.GatewayImpl;
-import org.hyperledger.fabric.gateway.spi.CheckpointerFactory;
 import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
 import org.hyperledger.fabric.gateway.spi.QueryHandlerFactory;
 
@@ -121,13 +120,6 @@ public interface Gateway extends AutoCloseable {
 		 * @return The builder instance, allowing multiple configuration options to be chained.
 		 */
 		Builder discovery(boolean enabled);
-
-		/**
-		 * <em>Optional</em> - Set the default checkpointer implementation to use for persistent tracking of events.
-		 * @param factory A factory for creating checkpointer instances.
-		 * @return The builder instance, allowing multiple configuration options to be chained.
-		 */
-		Builder checkpointer(CheckpointerFactory factory);
 
 		/**
 		 * Connects to the gateway using the specified options.

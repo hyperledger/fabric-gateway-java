@@ -9,6 +9,7 @@ package org.hyperledger.fabric.gateway.impl.event;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.impl.GatewayImpl;
 import org.hyperledger.fabric.gateway.impl.NetworkImpl;
+import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.Peer;
@@ -16,21 +17,20 @@ import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 
 import java.util.Collection;
 import java.util.EnumSet;
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 /**
  * Maintains an isolated client connection for event replay using a listener created by a supplied factory function.
  */
-public final class ReplayBlockListenerSession implements ListenerSession {
+public final class ReplayListenerSession implements ListenerSession {
     private final GatewayImpl gateway;
     private final Channel channel;
     private final BlockEventSource blockSource;
-    private final ListenerSession replaySession;
 
-    public ReplayBlockListenerSession(NetworkImpl network, Function<BlockEventSource, ListenerSession> listenerSessionFactory, long startBlock) throws GatewayException {
-        this.gateway = network.getGateway().newInstance();
+    public ReplayListenerSession(NetworkImpl network, Consumer<BlockEvent> listener, long startBlock) throws GatewayException {
+        gateway = network.getGateway().newInstance();
         String channelName = network.getChannel().getName();
-        this.channel = gateway.newInstance().getNetwork(channelName).getChannel();
+        channel = gateway.newInstance().getNetwork(channelName).getChannel();
 
         // Remove old peers first to avoid receiving spurious events from them
         Collection<Peer> eventingPeers = channel.getPeers(EnumSet.of(Peer.PeerRole.EVENT_SOURCE));
@@ -38,8 +38,8 @@ public final class ReplayBlockListenerSession implements ListenerSession {
 
         // Attach listener before replay peers to ensure no replay events are missed
         BlockEventSource channelBlockSource = BlockEventSourceFactory.getInstance().newBlockEventSource(channel);
-        this.blockSource =  new OrderedBlockEventSource(channelBlockSource);
-        this.replaySession = listenerSessionFactory.apply(blockSource);
+        blockSource =  new OrderedBlockEventSource(channelBlockSource);
+        blockSource.addBlockListener(listener);
 
         addReplayPeers(eventingPeers, startBlock);
     }
@@ -68,9 +68,9 @@ public final class ReplayBlockListenerSession implements ListenerSession {
             throw new GatewayException(e);
         }
     }
+
     @Override
     public void close() {
-        replaySession.close();
         blockSource.close();
         gateway.close();
     }

@@ -22,7 +22,7 @@ Feature: Event listening
  	    Given I have a gateway as user User1 using the tls connection profile
 		And I connect the gateway
 		And I use the mychannel network
-		When I add a contract listener to contract fabcar for events matching "^createCar$"
+		When I add a contract listener to contract fabcar for events matching "createCar"
 		And I prepare a createCar transaction for contract fabcar
 	 	And I submit the transaction with arguments ["contract_event_test", "Volvo", "XC40", "black", "Simon"]
 	 	Then a contract event with payload "contract_event_test" should be received
@@ -40,3 +40,17 @@ Feature: Event listening
 	 	And I submit the transaction with arguments ["block_checkpoint2", "Volvo", "XC40", "black", "Simon"]
 		And I add a block listener with a file checkpointer
 	 	Then a block event should be received
+
+	Scenario: Checkpoint replay of contract events
+		Given I have a gateway as user User1 using the tls connection profile
+		And I connect the gateway
+		And I use the mychannel network
+		When I add a contract listener to contract fabcar for events matching "createCar" with a file checkpointer
+		And I prepare a createCar transaction for contract fabcar
+		And I submit the transaction with arguments ["contract_checkpoint1", "Volvo", "XC40", "black", "Simon"]
+		Then a contract event with payload "contract_checkpoint1" should be received
+		And I remove the contract listener from contract fabcar
+		And I prepare a createCar transaction for contract fabcar
+		And I submit the transaction with arguments ["contract_checkpoint2", "Volvo", "XC40", "black", "Simon"]
+		When I add a contract listener to contract fabcar for events matching "createCar" with a file checkpointer
+		Then a contract event with payload "contract_checkpoint2" should be received

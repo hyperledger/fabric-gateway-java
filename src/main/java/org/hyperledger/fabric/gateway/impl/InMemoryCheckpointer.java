@@ -13,10 +13,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Stub {@link Checkpointer} for testing. Essentially an in-memory checkpointer implementation with no persistent
- * storage.
+ * Transient in-memory checkpointer implementation with no persistent storage. Can be used for event replay.
  */
-public class StubCheckpointer implements Checkpointer {
+public class InMemoryCheckpointer implements Checkpointer {
     private long blockNumber = Checkpointer.UNSET_BLOCK_NUMBER;
     private Set<String> transactionIds = new HashSet<>();
 

@@ -8,37 +8,41 @@ package org.hyperledger.fabric.gateway.impl.event;
 
 import org.hyperledger.fabric.sdk.BlockEvent;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 public final class TransactionEventSourceImpl implements TransactionEventSource {
     private final BlockEventSource blockSource;
-    private final Consumer<BlockEvent> blockListener;
-    private final ListenerSet<Consumer<BlockEvent.TransactionEvent>> listeners = new ListenerSet<>();
+    private final Map<Consumer<BlockEvent.TransactionEvent>, ListenerSession> listenerSessions = new ConcurrentHashMap<>();
 
     public TransactionEventSourceImpl(BlockEventSource blockSource) {
         this.blockSource = blockSource;
-        this.blockListener = blockSource.addBlockListener(this::receivedBlock);
     }
 
     @Override
     public Consumer<BlockEvent.TransactionEvent> addTransactionListener(Consumer<BlockEvent.TransactionEvent> listener) {
-        return listeners.add(listener);
+        listenerSessions.computeIfAbsent(listener, k -> newListenerSession(listener));
+        return listener;
     }
 
-    @Override
-    public void removeTransactionListener(Consumer<BlockEvent.TransactionEvent> listener) {
-        listeners.remove(listener);
-    }
-
-    private void receivedBlock(BlockEvent blockEvent) {
-        blockEvent.getTransactionEvents().forEach(txEvent -> {
-            listeners.forEach(listener -> listener.accept(txEvent));
+    private ListenerSession newListenerSession(Consumer<BlockEvent.TransactionEvent> listener) {
+        return new BlockListenerSession(blockSource, blockEvent -> {
+            blockEvent.getTransactionEvents().forEach(listener);
         });
     }
 
     @Override
+    public void removeTransactionListener(Consumer<BlockEvent.TransactionEvent> listener) {
+        ListenerSession session = listenerSessions.remove(listener);
+        if (session != null) {
+            session.close();
+        }
+    }
+
+    @Override
     public void close() {
-        listeners.clear();
-        blockSource.removeBlockListener(blockListener);
+        listenerSessions.forEach((listener, session) -> session.close());
+        listenerSessions.clear();
     }
 }

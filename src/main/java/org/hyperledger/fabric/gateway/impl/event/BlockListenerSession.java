@@ -13,11 +13,11 @@ import java.util.function.Consumer;
 /**
  * Simply adds and removes the listener from a block event source.
  */
-public final class SimpleBlockListenerSession implements ListenerSession {
+public final class BlockListenerSession implements ListenerSession {
     private final BlockEventSource blockSource;
     private final Consumer<BlockEvent> listener;
 
-    public SimpleBlockListenerSession(BlockEventSource blockSource, Consumer<BlockEvent> listener) {
+    public BlockListenerSession(BlockEventSource blockSource, Consumer<BlockEvent> listener) {
         this.blockSource = blockSource;
         this.listener = listener;
         blockSource.addBlockListener(listener);

@@ -15,7 +15,6 @@ import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.Wallet;
 import org.hyperledger.fabric.gateway.Wallet.Identity;
-import org.hyperledger.fabric.gateway.spi.CheckpointerFactory;
 import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
 import org.hyperledger.fabric.gateway.spi.QueryHandlerFactory;
 import org.hyperledger.fabric.sdk.Channel;
@@ -37,7 +36,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,7 +53,6 @@ public final class GatewayImpl implements Gateway {
     private final TimePeriod commitTimeout;
     private final QueryHandlerFactory queryHandlerFactory;
     private final boolean discovery;
-    private final CheckpointerFactory checkpointerFactory;
 
     public static final class Builder implements Gateway.Builder {
         private CommitHandlerFactory commitHandlerFactory = DefaultCommitHandlers.MSPID_SCOPE_ALLFORTX;
@@ -65,7 +62,6 @@ public final class GatewayImpl implements Gateway {
         private Identity identity = null;
         private HFClient client;
         private boolean discovery = false;
-        private CheckpointerFactory checkpointerFactory = new FileCheckpointerFactory(Paths.get(System.getProperty("user.home"), ".hlf-checkpoint"));
 
         public Builder() {
         }
@@ -118,12 +114,6 @@ public final class GatewayImpl implements Gateway {
 			return this;
 		}
 
-		@Override
-        public Builder checkpointer(CheckpointerFactory factory) {
-            this.checkpointerFactory = factory;
-            return this;
-        }
-
         public Builder client(HFClient client) {
             this.client = client;
             return this;
@@ -140,7 +130,6 @@ public final class GatewayImpl implements Gateway {
         this.commitTimeout = builder.commitTimeout;
         this.queryHandlerFactory = builder.queryHandlerFactory;
         this.discovery = builder.discovery;
-        this.checkpointerFactory = builder.checkpointerFactory;
 
         if (builder.client != null) {
             // Only for testing!
@@ -169,7 +158,6 @@ public final class GatewayImpl implements Gateway {
         this.commitTimeout = that.commitTimeout;
         this.queryHandlerFactory = that.queryHandlerFactory;
         this.discovery = that.discovery;
-        this.checkpointerFactory = that.checkpointerFactory;
         this.networkConfig = that.networkConfig;
         this.identity = that.identity;
 
@@ -284,9 +272,5 @@ public final class GatewayImpl implements Gateway {
 
     public GatewayImpl newInstance() throws GatewayException {
         return new GatewayImpl(this);
-    }
-
-    public CheckpointerFactory getCheckpointerFactory() {
-        return checkpointerFactory;
     }
 }

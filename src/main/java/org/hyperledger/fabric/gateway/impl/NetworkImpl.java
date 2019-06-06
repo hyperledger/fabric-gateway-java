@@ -11,13 +11,11 @@ import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.impl.event.BlockEventSource;
 import org.hyperledger.fabric.gateway.impl.event.BlockEventSourceFactory;
-import org.hyperledger.fabric.gateway.impl.event.CheckpointBlockListenerSession;
-import org.hyperledger.fabric.gateway.impl.event.ContractEventSource;
-import org.hyperledger.fabric.gateway.impl.event.ContractEventSourceFactory;
+import org.hyperledger.fabric.gateway.impl.event.BlockListenerSession;
 import org.hyperledger.fabric.gateway.impl.event.ListenerSession;
+import org.hyperledger.fabric.gateway.impl.event.Listeners;
 import org.hyperledger.fabric.gateway.impl.event.OrderedBlockEventSource;
-import org.hyperledger.fabric.gateway.impl.event.ReplayBlockListenerSession;
-import org.hyperledger.fabric.gateway.impl.event.SimpleBlockListenerSession;
+import org.hyperledger.fabric.gateway.impl.event.ReplayListenerSession;
 import org.hyperledger.fabric.gateway.impl.event.TransactionEventSource;
 import org.hyperledger.fabric.gateway.impl.event.TransactionEventSourceImpl;
 import org.hyperledger.fabric.gateway.spi.Checkpointer;
@@ -37,10 +35,9 @@ public final class NetworkImpl implements Network {
     private final Channel channel;
     private final GatewayImpl gateway;
     private final Map<String, Contract> contracts = new ConcurrentHashMap<>();
-    private final BlockEventSource blockSource;
-    private final TransactionEventSource transactionSource;
+    private final BlockEventSource orderedBlockSource;
+    private final TransactionEventSource commitSource;
     private final QueryHandler queryHandler;
-    private final ContractEventSource contractEventSource;
     private final Map<Consumer<BlockEvent>, ListenerSession> blockListenerSessions = new HashMap<>();
 
     NetworkImpl(Channel channel, GatewayImpl gateway) throws GatewayException {
@@ -50,9 +47,8 @@ public final class NetworkImpl implements Network {
         initializeChannel();
 
         BlockEventSource channelBlockSource = BlockEventSourceFactory.getInstance().newBlockEventSource(channel);
-        blockSource = new OrderedBlockEventSource(channelBlockSource);
-        transactionSource = new TransactionEventSourceImpl(channelBlockSource);
-        contractEventSource = ContractEventSourceFactory.getInstance().newContractEventSource(channel);
+        orderedBlockSource = new OrderedBlockEventSource(channelBlockSource);
+        commitSource = new TransactionEventSourceImpl(channelBlockSource);
         queryHandler = gateway.getQueryHandlerFactory().create(this);
     }
 
@@ -93,33 +89,24 @@ public final class NetworkImpl implements Network {
     }
 
     @Override
-    public TransactionEventSource getTransactionEventSource() {
-        return transactionSource;
+    public TransactionEventSource getCommitEventSource() {
+        return commitSource;
     }
 
     @Override
     public Consumer<BlockEvent> addBlockListener(Consumer<BlockEvent> listener) {
         synchronized (blockListenerSessions) {
-            blockListenerSessions.computeIfAbsent(listener, k -> new SimpleBlockListenerSession(blockSource, listener));
+            blockListenerSessions.computeIfAbsent(listener, k -> new BlockListenerSession(orderedBlockSource, listener));
         }
         return listener;
     }
 
     @Override
-    public Consumer<BlockEvent> addBlockListener(Consumer<BlockEvent> listener, Checkpointer checkpointer) throws GatewayException, IOException {
-        final long blockNumber = checkpointer.getBlockNumber();
-
+    public Consumer<BlockEvent> addBlockListener(Checkpointer checkpointer, Consumer<BlockEvent> listener) throws GatewayException, IOException {
         synchronized (blockListenerSessions) {
             if (!blockListenerSessions.containsKey(listener)) {
-                final ListenerSession session;
-                if (blockNumber == Checkpointer.UNSET_BLOCK_NUMBER) {
-                    // New checkpointer so can attach to the shared block source
-                    session = new CheckpointBlockListenerSession(blockSource, listener, checkpointer);
-                } else {
-                    session = new ReplayBlockListenerSession(this,
-                            blockSource -> new CheckpointBlockListenerSession(blockSource, listener, checkpointer),
-                            blockNumber);
-                }
+                Consumer<BlockEvent> checkpointListener = Listeners.checkpointBlock(checkpointer, listener);
+                ListenerSession session = newCheckpointListenerSession(checkpointer, checkpointListener);
                 blockListenerSessions.put(listener, session);
             }
         }
@@ -127,10 +114,16 @@ public final class NetworkImpl implements Network {
         return listener;
     }
 
-//    @Override
-    public Consumer<BlockEvent> addBlockListener(Consumer<BlockEvent> listener, String checkpointerName) throws GatewayException, IOException {
-        Checkpointer checkpointer = gateway.getCheckpointerFactory().create(channel.getName(), checkpointerName);
-        return addBlockListener(listener, checkpointer);
+    public ListenerSession newCheckpointListenerSession(Checkpointer checkpointer, Consumer<BlockEvent> listener) throws IOException, GatewayException {
+        final long blockNumber;
+        synchronized (checkpointer) {
+            blockNumber = checkpointer.getBlockNumber();
+        }
+        if (blockNumber == Checkpointer.UNSET_BLOCK_NUMBER) {
+            // New checkpointer so can attach to the shared block source
+            return new BlockListenerSession(orderedBlockSource, listener);
+        }
+        return new ReplayListenerSession(this, listener, blockNumber);
     }
 
     @Override
@@ -148,7 +141,7 @@ public final class NetworkImpl implements Network {
         return queryHandler;
     }
 
-    public ContractEventSource getContractEventSource() {
-        return contractEventSource;
+    public BlockEventSource getBlockSource() {
+        return orderedBlockSource;
     }
 }

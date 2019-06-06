@@ -45,7 +45,7 @@ public final class CommitHandlerImpl implements CommitHandler {
 
     @Override
     public void startListening() {
-        network.getTransactionEventSource().addTransactionListener(txListener);
+        network.getCommitEventSource().addTransactionListener(txListener);
 
         PeerDisconnectEventSourceFactory disconnectSourceFactory = PeerDisconnectEventSourceFactory.getInstance();
         Collection<PeerDisconnectEventSource> disconnectEventSources = peers.stream()
@@ -73,7 +73,7 @@ public final class CommitHandlerImpl implements CommitHandler {
     @Override
     public synchronized void cancelListening() {
         latch.countDown();
-        network.getTransactionEventSource().removeTransactionListener(txListener);
+        network.getCommitEventSource().removeTransactionListener(txListener);
         disconnectListener.get().close();
         peers.clear();
     }

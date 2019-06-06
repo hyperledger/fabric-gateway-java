@@ -4,6 +4,7 @@ import cucumber.api.java8.En;
 import io.cucumber.datatable.DataTable;
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.ContractEvent;
+import org.hyperledger.fabric.gateway.DefaultCheckpointers;
 import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
 import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
 import org.hyperledger.fabric.gateway.Gateway;
@@ -12,7 +13,6 @@ import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.gateway.Transaction;
 import org.hyperledger.fabric.gateway.Wallet;
-import org.hyperledger.fabric.gateway.impl.FileCheckpointer;
 import org.hyperledger.fabric.gateway.spi.Checkpointer;
 import org.hyperledger.fabric.sdk.BlockEvent;
 
@@ -256,11 +256,8 @@ public class ScenarioSteps implements En {
 
 		When("I add a block listener with a file checkpointer", () -> {
 			clearBlockListener();
-			if (checkpointer != null) {
-				checkpointer.close();
-			}
-			checkpointer = new FileCheckpointer(checkpointFile);
-			blockListener = network.addBlockListener(blockEvents::add, checkpointer);
+			initFileCheckpointer();
+			blockListener = network.addBlockListener(checkpointer, blockEvents::add);
 		});
 
 		When("I wait for a block event to be received", this::getBlockEvent);
@@ -274,6 +271,18 @@ public class ScenarioSteps implements En {
 					contractListener = network.getContract(contractName)
 							.addContractListener(contractEvents::add, eventNamePattern);
 				});
+
+		When("I add a contract listener to contract {word} for events matching {string} with a file checkpointer",
+				(String contractName, String eventName) -> {
+					contractEvents.clear();
+					initFileCheckpointer();
+					Pattern eventNamePattern = Pattern.compile(eventName);
+					contractListener = network.getContract(contractName)
+							.addContractListener(checkpointer, contractEvents::add, eventNamePattern);
+				});
+
+		When("I remove the contract listener from contract {word}",
+				(String contractName) -> network.getContract(contractName).removeContractListener(contractListener));
 
 		Then("a response should be received", () -> assertNotNull(response));
 
@@ -300,6 +309,14 @@ public class ScenarioSteps implements En {
 			});
 			assertNotNull("No contract events with payload \"" + expected + "\": " + payloads, matchingEvent);
 		});
+	}
+
+	private Checkpointer initFileCheckpointer() throws IOException {
+		if (checkpointer != null) {
+			checkpointer.close();
+		}
+		checkpointer = DefaultCheckpointers.newFileCheckpointer(checkpointFile);
+		return checkpointer;
 	}
 
 	private Path getNetworkConfigPath(String configType) {

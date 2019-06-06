@@ -52,7 +52,7 @@ public class CommitHandlerImplTest {
         peers = Arrays.asList(peer);
 
         Network network = mock(Network.class);
-        when(network.getTransactionEventSource()).thenReturn(new TransactionEventSourceImpl(blockSource));
+        when(network.getCommitEventSource()).thenReturn(new TransactionEventSourceImpl(blockSource));
 
         strategy = mock(CommitStrategy.class);
         when(strategy.getPeers()).thenReturn(peers);

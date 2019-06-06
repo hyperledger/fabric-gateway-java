@@ -6,6 +6,9 @@
 
 package org.hyperledger.fabric.gateway;
 
+import org.hyperledger.fabric.gateway.spi.Checkpointer;
+
+import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
@@ -62,13 +65,63 @@ public interface Contract {
 	byte[] evaluateTransaction(String name, String... args) throws GatewayException;
 
 	/**
-	 * Add a listener to receive contract events emitted by transactions. The listener is only notified of events
-	 * with names matching the given pattern.
+	 * Add a listener to receive all contract events emitted by transactions.
 	 * @param listener A contract listener.
-	 * @param eventName Event name pattern.
 	 * @return The contract listener argument.
 	 */
-	Consumer<ContractEvent> addContractListener(Consumer<ContractEvent> listener, Pattern eventName);
+	Consumer<ContractEvent> addContractListener(Consumer<ContractEvent> listener);
+
+	/**
+	 * Add a listener to receive contract events emitted by transactions. The listener is only notified of events
+	 * with exactly the given name.
+	 * @param listener A contract listener.
+	 * @param eventName Event name.
+	 * @return The contract listener argument.
+	 */
+	Consumer<ContractEvent> addContractListener(Consumer<ContractEvent> listener, String eventName);
+
+	/**
+	 * Add a listener to receive contract events emitted by transactions. The listener is only notified of events
+	 * with names that entirely match the given pattern.
+	 * @param listener A contract listener.
+	 * @param eventNamePattern Event name pattern.
+	 * @return The contract listener argument.
+	 */
+	Consumer<ContractEvent> addContractListener(Consumer<ContractEvent> listener, Pattern eventNamePattern);
+
+	/**
+	 * Add a listener to receive all contract events emitted by transactions with checkpointing. Re-adding a listener
+	 * with the same checkpointer on subsequent application invocations will resume listening from the previous block
+	 * and transaction position.
+	 * @param checkpointer Checkpointer to persist block and transaction position.
+	 * @param listener A contract listener.
+	 * @return The contract listener argument.
+	 */
+	Consumer<ContractEvent> addContractListener(Checkpointer checkpointer, Consumer<ContractEvent> listener) throws IOException, GatewayException;
+
+	/**
+	 * Add a listener to receive contract events emitted by transactions with checkpointing. The listener is only
+	 * notified of events with names that exactly match the given pattern. Re-adding a listener with the same
+	 * checkpointer on subsequent application invocations will resume listening from the previous block and transaction
+	 * position.
+	 * @param checkpointer Checkpointer to persist block and transaction position.
+	 * @param listener A contract listener.
+	 * @param eventName Event name.
+	 * @return The contract listener argument.
+	 */
+	Consumer<ContractEvent> addContractListener(Checkpointer checkpointer, Consumer<ContractEvent> listener, String eventName) throws IOException, GatewayException;
+
+	/**
+	 * Add a listener to receive contract events emitted by transactions with checkpointing. The listener is only
+	 * notified of events with names that entirely match the given pattern. Re-adding a listener with the same
+	 * checkpointer on subsequent application invocations will resume listening from the previous block and transaction
+	 * position.
+	 * @param checkpointer Checkpointer to persist block and transaction position.
+	 * @param listener A contract listener.
+	 * @param eventNamePattern Event name pattern.
+	 * @return The contract listener argument.
+	 */
+	Consumer<ContractEvent> addContractListener(Checkpointer checkpointer, Consumer<ContractEvent> listener, Pattern eventNamePattern) throws IOException, GatewayException;
 
 	/**
 	 * Remove a previously registered contract listener.

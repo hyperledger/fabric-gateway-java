@@ -53,6 +53,7 @@ import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
@@ -203,10 +204,14 @@ public final class TestUtils {
     }
 
     public BlockEvent newMockBlockEvent(Peer peer, long blockNumber, BlockEvent.TransactionEvent... transactionEvents) {
+        return newMockBlockEvent(peer, blockNumber, Arrays.asList(transactionEvents));
+    }
+
+    public BlockEvent newMockBlockEvent(Peer peer, long blockNumber, Collection<BlockEvent.TransactionEvent> transactionEvents) {
         BlockEvent mockEvent = Mockito.mock(BlockEvent.class);
         Mockito.when(mockEvent.getPeer()).thenReturn(peer);
         Mockito.when(mockEvent.getBlockNumber()).thenReturn(blockNumber);
-        Mockito.when(mockEvent.getTransactionEvents()).thenReturn(Arrays.asList(transactionEvents));
+        Mockito.when(mockEvent.getTransactionEvents()).thenReturn(transactionEvents);
         return mockEvent;
     }
 

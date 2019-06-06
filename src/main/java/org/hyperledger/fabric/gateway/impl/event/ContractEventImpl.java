@@ -17,11 +17,11 @@ import java.util.Optional;
  */
 public final class ContractEventImpl implements ContractEvent {
     private final ChaincodeEvent chaincodeEvent;
-    private final BlockEvent blockEvent;
+    private final BlockEvent.TransactionEvent transactionEvent;
 
-    public ContractEventImpl(ChaincodeEvent chaincodeEvent, BlockEvent blockEvent) {
+    public ContractEventImpl(BlockEvent.TransactionEvent transactionEvent, ChaincodeEvent chaincodeEvent) {
         this.chaincodeEvent = chaincodeEvent;
-        this.blockEvent = blockEvent;
+        this.transactionEvent = transactionEvent;
     }
 
     @Override
@@ -35,17 +35,12 @@ public final class ContractEventImpl implements ContractEvent {
     }
 
     @Override
-    public String getTransactionId() {
-        return chaincodeEvent.getTxId();
+    public BlockEvent.TransactionEvent getTransactionEvent() {
+        return transactionEvent;
     }
 
     @Override
     public Optional<byte[]> getPayload() {
         return Optional.ofNullable(chaincodeEvent.getPayload());
-    }
-
-    @Override
-    public BlockEvent getBlockEvent() {
-        return blockEvent;
     }
 }

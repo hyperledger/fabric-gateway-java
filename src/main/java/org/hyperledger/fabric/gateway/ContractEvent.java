@@ -25,19 +25,13 @@ public interface ContractEvent {
 
     /**
      * Get the identifier of the transaction invocation that emitted this event.
-     * @return A transaction ID.
+     * @return The associated transaction event.
      */
-    String getTransactionId();
+    BlockEvent.TransactionEvent getTransactionEvent();
 
     /**
      * Any binary data associated with this event by the chaincode.
      * @return A binary payload.
      */
     Optional<byte[]> getPayload();
-
-    /**
-     * Get the block that contained this event.
-     * @return A block event.
-     */
-    BlockEvent getBlockEvent();
 }

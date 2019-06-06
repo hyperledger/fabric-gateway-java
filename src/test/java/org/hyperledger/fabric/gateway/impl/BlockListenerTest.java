@@ -139,9 +139,9 @@ public class BlockListenerTest {
     @Test
     public void add_checkpoint_listener_returns_the_listener() throws GatewayException, IOException {
         Consumer<BlockEvent> listener = blockEvent -> {};
-        Checkpointer checkpointer = new StubCheckpointer();
+        Checkpointer checkpointer = new InMemoryCheckpointer();
 
-        Consumer<BlockEvent> result = network.addBlockListener(listener, checkpointer);
+        Consumer<BlockEvent> result = network.addBlockListener(checkpointer, listener);
 
         assertThat(result).isSameAs(listener);
     }
@@ -149,10 +149,10 @@ public class BlockListenerTest {
     @Test
     public void listener_with_new_checkpointer_receives_events() throws GatewayException, IOException {
         Consumer<BlockEvent> listener = Mockito.spy(testUtils.stubBlockListener());
-        Checkpointer checkpointer = new StubCheckpointer();
+        Checkpointer checkpointer = new InMemoryCheckpointer();
         BlockEvent event = testUtils.newMockBlockEvent(peer1, 2);
 
-        network.addBlockListener(listener, checkpointer);
+        network.addBlockListener(checkpointer, listener);
         stubBlockEventSource.sendEvent(event);
 
         Mockito.verify(listener).accept(event);
@@ -161,10 +161,10 @@ public class BlockListenerTest {
     @Test
     public void removed_checkpoint_listener_does_not_receive_events() throws GatewayException, IOException {
         Consumer<BlockEvent> listener = Mockito.spy(testUtils.stubBlockListener());
-        Checkpointer checkpointer = new StubCheckpointer();
+        Checkpointer checkpointer = new InMemoryCheckpointer();
         BlockEvent event = testUtils.newMockBlockEvent(peer1, 2);
 
-        network.addBlockListener(listener, checkpointer);
+        network.addBlockListener(checkpointer, listener);
         network.removeBlockListener(listener);
         stubBlockEventSource.sendEvent(event);
 
@@ -174,66 +174,17 @@ public class BlockListenerTest {
     @Test
     public void listener_with_saved_checkpointer_resumes_from_previous_event() throws GatewayException, IOException {
         Consumer<BlockEvent> listener = Mockito.spy(testUtils.stubBlockListener());
-        Checkpointer checkpointer = new StubCheckpointer();
+        Checkpointer checkpointer = new InMemoryCheckpointer();
         BlockEvent event1 = testUtils.newMockBlockEvent(peer1, 1);
         BlockEvent event2 = testUtils.newMockBlockEvent(peer1, 2);
 
-        network.addBlockListener(listener, checkpointer);
+        network.addBlockListener(checkpointer, listener);
         stubBlockEventSource.sendEvent(event1);
         network.removeBlockListener(listener);
         stubBlockEventSource.sendEvent(event2);
-        network.addBlockListener(listener, checkpointer);
+        network.addBlockListener(checkpointer, listener);
         stubBlockEventSource.sendEvent(event2); // Without checkpoint this will be ignored as a duplicate
 
         Mockito.verify(listener, Mockito.times(1)).accept(event2);
     }
-
-//    @Test
-//    public void add_checkpoint_name_listener_returns_the_listener() throws IOException {
-//        Consumer<BlockEvent> listener = blockEvent -> {};
-//
-//        Consumer<BlockEvent> result = network.addBlockListener(listener, "checkpoint");
-//
-//        assertThat(result).isSameAs(listener);
-//    }
-
-//    @Test
-//    public void checkpoint_name_listener_receives_events() throws IOException {
-//        Consumer<BlockEvent> listener = Mockito.spy(testUtils.stubBlockListener());
-//        BlockEvent event = testUtils.newMockBlockEvent(peer1, 2);
-//
-//        network.addBlockListener(listener, "checkpoint");
-//        stubBlockEventSource.sendEvent(event);
-//
-//        Mockito.verify(listener).accept(event);
-//    }
-
-//    @Test
-//    public void removed_checkpoint_listener_does_not_receive_events() throws IOException {
-//        Consumer<BlockEvent> listener = Mockito.spy(testUtils.stubBlockListener());
-//        BlockEvent event = testUtils.newMockBlockEvent(peer1, 1);
-//
-//        network.addBlockListener(listener, "checkpoint");
-//        network.removeBlockListener(listener);
-//        stubBlockEventSource.sendEvent(event);
-//
-//        Mockito.verify(listener, Mockito.never()).accept(event);
-//    }
-
-//    @Test
-//    public void checkpoint_name_listener_resumes_from_previous_event() throws IOException {
-//        Consumer<BlockEvent> listener = Mockito.spy(testUtils.stubBlockListener());
-//        BlockEvent event1 = testUtils.newMockBlockEvent(peer1, 1);
-//        BlockEvent event2 = testUtils.newMockBlockEvent(peer1, 2);
-//        String checkpointerName = "checkpoint";
-//
-//        network.addBlockListener(listener, checkpointerName);
-//        stubBlockEventSource.sendEvent(event1);
-//        network.removeBlockListener(listener);
-//        stubBlockEventSource.sendEvent(event2); // Without checkpointing this event has been missed
-//        network.addBlockListener(listener, checkpointerName);
-//        stubBlockEventSource.sendEvent(event2); // Without checkpoint this will be ignored as a duplicate
-//
-//        Mockito.verify(listener, Mockito.times(1)).accept(event2);
-//    }
 }
