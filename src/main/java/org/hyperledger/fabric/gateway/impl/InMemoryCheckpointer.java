@@ -16,17 +16,26 @@ import java.util.Set;
  * Transient in-memory checkpointer implementation with no persistent storage. Can be used for event replay.
  */
 public class InMemoryCheckpointer implements Checkpointer {
-    private long blockNumber = Checkpointer.UNSET_BLOCK_NUMBER;
-    private Set<String> transactionIds = new HashSet<>();
+    private long blockNumber;
+    private final Set<String> transactionIds = new HashSet<>();
+
+    public InMemoryCheckpointer() {
+        this(Checkpointer.UNSET_BLOCK_NUMBER);
+    }
+
+    public InMemoryCheckpointer(long blockNumber) {
+        this.blockNumber = blockNumber;
+    }
 
     @Override
-    public long getBlockNumber() {
+    public synchronized long getBlockNumber() {
         return blockNumber;
     }
 
     @Override
     public void setBlockNumber(long blockNumber) {
         this.blockNumber = blockNumber;
+        this.transactionIds.clear();
     }
 
     @Override
@@ -37,12 +46,6 @@ public class InMemoryCheckpointer implements Checkpointer {
     @Override
     public void addTransactionId(String transactionId) {
         transactionIds.add(transactionId);
-    }
-
-    @Override
-    public void delete() {
-        blockNumber = Checkpointer.UNSET_BLOCK_NUMBER;
-        transactionIds.clear();
     }
 
     @Override

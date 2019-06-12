@@ -181,19 +181,4 @@ public class FileCheckpointerTest {
                 .hasMessageContaining("Unsupported checkpoint data version")
                 .hasMessageContaining(file.toString());
     }
-
-    @Test void delete_removes_data() throws IOException {
-        Path file = testUtils.getUnusedFilePath();
-
-        try (Checkpointer checkpointer = new FileCheckpointer(file)) {
-            checkpointer.setBlockNumber(1L);
-            checkpointer.delete();
-        }
-
-        try (Checkpointer checkpointer = new FileCheckpointer(file)) {
-            long blockNumber = checkpointer.getBlockNumber();
-            assertThat(blockNumber).isEqualTo(Checkpointer.UNSET_BLOCK_NUMBER);
-        }
-    }
-
 }

@@ -50,12 +50,6 @@ public interface Checkpointer extends AutoCloseable {
      */
     void addTransactionId(String transactionId) throws IOException;
 
-    /**
-     * Delete associated persistent state and close the checkpointer.
-     * @throws IOException if the delete fails.
-     */
-    void delete() throws IOException;
-
     @Override
     void close() throws IOException;
 }

@@ -93,6 +93,8 @@ public interface Contract {
 	 * Add a listener to receive all contract events emitted by transactions with checkpointing. Re-adding a listener
 	 * with the same checkpointer on subsequent application invocations will resume listening from the previous block
 	 * and transaction position.
+	 * <p>Event replay from a given start block can be achieved using the {@link DefaultCheckpointers#replay(long)}
+	 * checkpointer.</p>
 	 * @param checkpointer Checkpointer to persist block and transaction position.
 	 * @param listener A contract listener.
 	 * @return The contract listener argument.
@@ -104,6 +106,8 @@ public interface Contract {
 	 * notified of events with names that exactly match the given pattern. Re-adding a listener with the same
 	 * checkpointer on subsequent application invocations will resume listening from the previous block and transaction
 	 * position.
+	 * <p>Event replay from a given start block can be achieved using the {@link DefaultCheckpointers#replay(long)}
+	 * checkpointer.</p>
 	 * @param checkpointer Checkpointer to persist block and transaction position.
 	 * @param listener A contract listener.
 	 * @param eventName Event name.
@@ -116,6 +120,8 @@ public interface Contract {
 	 * notified of events with names that entirely match the given pattern. Re-adding a listener with the same
 	 * checkpointer on subsequent application invocations will resume listening from the previous block and transaction
 	 * position.
+	 * <p>Event replay from a given start block can be achieved using the {@link DefaultCheckpointers#replay(long)}
+	 * checkpointer.</p>
 	 * @param checkpointer Checkpointer to persist block and transaction position.
 	 * @param listener A contract listener.
 	 * @param eventNamePattern Event name pattern.

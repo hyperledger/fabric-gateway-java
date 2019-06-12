@@ -6,7 +6,10 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
+import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
 import org.hyperledger.fabric.sdk.Peer;
+
+import java.util.function.Consumer;
 
 /**
  * Sets a new disconnect handler for a given peer, which notifies this object's listeners of any disconnect before
@@ -18,7 +21,7 @@ import org.hyperledger.fabric.sdk.Peer;
  * </p>
  */
 public final class PeerDisconnectInterceptor implements PeerDisconnectEventSource {
-    private final ListenerSet<PeerDisconnectListener> listeners = new ListenerSet<>();
+    private final ListenerSet<Consumer<PeerDisconnectEvent>> listeners = new ListenerSet<>();
     private final Peer peer;
     private final Peer.PeerEventingServiceDisconnected disconnectHandler;
 
@@ -36,12 +39,12 @@ public final class PeerDisconnectInterceptor implements PeerDisconnectEventSourc
     }
 
     @Override
-    public PeerDisconnectListener addDisconnectListener(PeerDisconnectListener listener) {
+    public Consumer<PeerDisconnectEvent> addDisconnectListener(Consumer<PeerDisconnectEvent> listener) {
         return listeners.add(listener);
     }
 
     @Override
-    public void removeDisconnectListener(PeerDisconnectListener listener) {
+    public void removeDisconnectListener(Consumer<PeerDisconnectEvent> listener) {
         listeners.remove(listener);
     }
 
@@ -58,7 +61,7 @@ public final class PeerDisconnectInterceptor implements PeerDisconnectEventSourc
             }
         };
 
-        listeners.forEach(listener -> listener.peerDisconnected(ourEvent));
+        listeners.forEach(listener -> listener.accept(ourEvent));
     }
 
     @Override

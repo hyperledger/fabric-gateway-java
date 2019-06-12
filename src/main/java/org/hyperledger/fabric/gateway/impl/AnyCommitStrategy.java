@@ -6,7 +6,7 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
-import org.hyperledger.fabric.gateway.impl.event.PeerDisconnectEvent;
+import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Peer;
 

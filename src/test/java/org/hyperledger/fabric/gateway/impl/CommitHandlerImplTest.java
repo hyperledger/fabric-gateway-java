@@ -6,14 +6,14 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.TestUtils;
-import org.hyperledger.fabric.gateway.impl.event.PeerDisconnectEvent;
 import org.hyperledger.fabric.gateway.impl.event.StubBlockEventSource;
 import org.hyperledger.fabric.gateway.impl.event.StubPeerDisconnectEventSource;
-import org.hyperledger.fabric.gateway.impl.event.TransactionEventSourceImpl;
 import org.hyperledger.fabric.gateway.spi.CommitHandler;
+import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Peer;
 import org.junit.jupiter.api.AfterEach;
@@ -36,6 +36,7 @@ public class CommitHandlerImplTest {
     private final TimeUnit timeUnit = TimeUnit.SECONDS;
     private StubBlockEventSource blockSource;
     private Peer peer;
+    private Gateway gateway;
     private Collection<Peer> peers;
     private CommitHandler commitHandler;
     private CommitStrategy strategy;
@@ -43,7 +44,7 @@ public class CommitHandlerImplTest {
     private Map<Peer, StubPeerDisconnectEventSource> peerDisconnectSources = new HashMap<>();
 
     @BeforeEach
-    public void beforeEach() {
+    public void beforeEach() throws Exception {
         blockSource = new StubBlockEventSource();
 
         peer = testUtils.newMockPeer("peer");
@@ -51,8 +52,8 @@ public class CommitHandlerImplTest {
 
         peers = Arrays.asList(peer);
 
-        Network network = mock(Network.class);
-        when(network.getCommitEventSource()).thenReturn(new TransactionEventSourceImpl(blockSource));
+        gateway = testUtils.newGatewayBuilder().connect();
+        Network network = gateway.getNetwork("ch1");
 
         strategy = mock(CommitStrategy.class);
         when(strategy.getPeers()).thenReturn(peers);

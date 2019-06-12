@@ -6,12 +6,16 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
+import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
+
+import java.util.function.Consumer;
+
 /**
  * Allows observing peer disconnect events.
  */
 public interface PeerDisconnectEventSource extends AutoCloseable {
-    PeerDisconnectListener addDisconnectListener(PeerDisconnectListener listener);
-    void removeDisconnectListener(PeerDisconnectListener listener);
+    Consumer<PeerDisconnectEvent> addDisconnectListener(Consumer<PeerDisconnectEvent> listener);
+    void removeDisconnectListener(Consumer<PeerDisconnectEvent> listener);
 
     @Override
     void close();

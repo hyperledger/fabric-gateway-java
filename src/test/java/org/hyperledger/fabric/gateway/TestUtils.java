@@ -23,7 +23,7 @@ import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
 import org.hyperledger.fabric.gateway.impl.Enrollment;
 import org.hyperledger.fabric.gateway.impl.GatewayImpl;
-import org.hyperledger.fabric.gateway.impl.event.PeerDisconnectEvent;
+import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.ChaincodeResponse;
 import org.hyperledger.fabric.sdk.Channel;
@@ -323,6 +323,13 @@ public final class TestUtils {
         return new Consumer<ContractEvent>() {
             @Override
             public void accept(ContractEvent contractEvent) {}
+        };
+    }
+
+    public Consumer<PeerDisconnectEvent> stubPeerDisconnectListener() {
+        return new Consumer<PeerDisconnectEvent>() {
+            @Override
+            public void accept(PeerDisconnectEvent peerDisconnectEvent) {}
         };
     }
 

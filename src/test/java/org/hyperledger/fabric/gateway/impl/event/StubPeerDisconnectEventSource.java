@@ -6,7 +6,10 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
+import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
 import org.hyperledger.fabric.sdk.Peer;
+
+import java.util.function.Consumer;
 
 /**
  * Stub implementation of a PeerDisconnectEventSource to allow tests to drive events into the system.
@@ -17,7 +20,7 @@ import org.hyperledger.fabric.sdk.Peer;
  * </p>
  */
 public class StubPeerDisconnectEventSource implements PeerDisconnectEventSource {
-    private final ListenerSet<PeerDisconnectListener> listeners = new ListenerSet<>();
+    private final ListenerSet<Consumer<PeerDisconnectEvent>> listeners = new ListenerSet<>();
     private final Peer peer;
 
     public StubPeerDisconnectEventSource(Peer peer) {
@@ -26,12 +29,12 @@ public class StubPeerDisconnectEventSource implements PeerDisconnectEventSource 
     }
 
     @Override
-    public PeerDisconnectListener addDisconnectListener(PeerDisconnectListener listener) {
+    public Consumer<PeerDisconnectEvent> addDisconnectListener(Consumer<PeerDisconnectEvent> listener) {
         return listeners.add(listener);
     }
 
     @Override
-    public void removeDisconnectListener(PeerDisconnectListener listener) {
+    public void removeDisconnectListener(Consumer<PeerDisconnectEvent> listener) {
         listeners.remove(listener);
     }
 
@@ -42,6 +45,6 @@ public class StubPeerDisconnectEventSource implements PeerDisconnectEventSource 
     }
 
     public void sendEvent(PeerDisconnectEvent event) {
-        listeners.forEach(listener -> listener.peerDisconnected(event));
+        listeners.forEach(listener -> listener.accept(event));
     }
 }

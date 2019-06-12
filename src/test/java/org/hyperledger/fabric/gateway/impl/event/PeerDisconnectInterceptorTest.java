@@ -7,18 +7,23 @@
 package org.hyperledger.fabric.gateway.impl.event;
 
 import org.hyperledger.fabric.gateway.TestUtils;
+import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
 import org.hyperledger.fabric.sdk.Peer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.util.function.Consumer;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 public class PeerDisconnectInterceptorTest {
+    private static TestUtils testUtils = TestUtils.getInstance();
+
     private Peer peer;
     private Peer.PeerEventingServiceDisconnected originalDisconnectHandler;
-    private PeerDisconnectListener listener;
+    private Consumer<PeerDisconnectEvent> listener;
     private Peer.PeerEventingServiceDisconnectEvent sdkEvent;
     private PeerDisconnectEventSource eventSource;
 
@@ -31,7 +36,7 @@ public class PeerDisconnectInterceptorTest {
         peer = TestUtils.getInstance().newMockPeer("mockPeer");
         originalDisconnectHandler = peer.getPeerEventingServiceDisconnected();
 
-        listener = mock(PeerDisconnectListener.class);
+        listener = spy(testUtils.stubPeerDisconnectListener());
         sdkEvent = mock(Peer.PeerEventingServiceDisconnectEvent.class);
 
         eventSource = new PeerDisconnectInterceptor(peer);
@@ -43,7 +48,7 @@ public class PeerDisconnectInterceptorTest {
         fireEvent(sdkEvent);
 
         ArgumentCaptor<PeerDisconnectEvent> argument = ArgumentCaptor.forClass(PeerDisconnectEvent.class);
-        verify(listener).peerDisconnected(argument.capture());
+        verify(listener).accept(argument.capture());
         assertThat(argument.getValue().getPeer()).isEqualTo(peer);
     }
 
@@ -55,7 +60,7 @@ public class PeerDisconnectInterceptorTest {
         fireEvent(sdkEvent);
 
         ArgumentCaptor<PeerDisconnectEvent> argument = ArgumentCaptor.forClass(PeerDisconnectEvent.class);
-        verify(listener).peerDisconnected(argument.capture());
+        verify(listener).accept(argument.capture());
         assertThat(argument.getValue().getCause()).isEqualTo(expectedCause);
     }
 
@@ -64,7 +69,7 @@ public class PeerDisconnectInterceptorTest {
         eventSource.removeDisconnectListener(listener);
         fireEvent(sdkEvent);
 
-        verify(listener, never()).peerDisconnected(any());
+        verify(listener, never()).accept(any());
     }
 
     @Test
@@ -78,7 +83,7 @@ public class PeerDisconnectInterceptorTest {
         eventSource.close();
         fireEvent(sdkEvent);
 
-        verify(listener, never()).peerDisconnected(any());
+        verify(listener, never()).accept(any());
     }
 
     @Test
@@ -90,7 +95,7 @@ public class PeerDisconnectInterceptorTest {
 
     @Test
     public void original_handler_invoked_on_event_if_listener_throws() {
-        doThrow(new RuntimeException("fail")).when(listener).peerDisconnected(any());
+        doThrow(new RuntimeException("fail")).when(listener).accept(any());
 
         fireEvent(sdkEvent);
 
@@ -99,17 +104,18 @@ public class PeerDisconnectInterceptorTest {
 
     @Test
     public void listener_can_unregister_during_event_handling() {
-        PeerDisconnectListener listener = mock(PeerDisconnectListener.class);
-        doAnswer(invocation -> {
-            eventSource.removeDisconnectListener(listener);
-            return null;
-        }).when(listener).peerDisconnected(any());
+        Consumer<PeerDisconnectEvent> listener = spy(new Consumer<PeerDisconnectEvent>() {
+            @Override
+            public void accept(PeerDisconnectEvent peerDisconnectEvent) {
+                eventSource.removeDisconnectListener(this);
+            }
+        });
         eventSource.addDisconnectListener(listener);
 
         fireEvent(sdkEvent);
-        verify(listener, times(1)).peerDisconnected(any());
+        verify(listener, times(1)).accept(any());
 
         fireEvent(sdkEvent);
-        verify(listener, times(1)).peerDisconnected(any());
+        verify(listener, times(1)).accept(any());
     }
 }

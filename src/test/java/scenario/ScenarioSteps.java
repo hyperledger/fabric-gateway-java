@@ -156,7 +156,7 @@ public class ScenarioSteps implements En {
 
 		Given("I connect the gateway", () -> gateway = gatewayBuilder.connect());
 
-		Given("^I deploy (.+) chaincode named (.+) at version (.+) for all organizations on channel (.+) with endorsement policy (.+) and arguments (.+)$",
+		Given("I deploy {word} chaincode named {word} at version {word} for all organizations on channel {word} with endorsement policy {} and arguments {}",
 				(String ccType, String ccName, String version, String channelName,
 						String policyType, String argsJson) -> {
 					String mangledName = ccName + version + channelName;
@@ -260,6 +260,11 @@ public class ScenarioSteps implements En {
 			blockListener = network.addBlockListener(checkpointer, blockEvents::add);
 		});
 
+		When("I add a block listener with replay from block {int}", (Integer startBlock) -> {
+			clearBlockListener();
+			blockListener = network.addBlockListener(DefaultCheckpointers.replay(startBlock), blockEvents::add);
+		});
+
 		When("I wait for a block event to be received", this::getBlockEvent);
 
 		When("I remove the block listener", () -> network.removeBlockListener(blockListener));
@@ -281,12 +286,22 @@ public class ScenarioSteps implements En {
 							.addContractListener(checkpointer, contractEvents::add, eventNamePattern);
 				});
 
+		When("I add a contract listener to contract {word} for events matching {string} with replay from block {int}",
+				(String contractName, String eventName, Integer startBlock) -> {
+					contractEvents.clear();
+					Pattern eventNamePattern = Pattern.compile(eventName);
+					contractListener = network.getContract(contractName)
+							.addContractListener(DefaultCheckpointers.replay(startBlock), contractEvents::add, eventNamePattern);
+				});
+
+		When("I wait for a contract event with payload {string} to be received", this::getContractEvent);
+
 		When("I remove the contract listener from contract {word}",
 				(String contractName) -> network.getContract(contractName).removeContractListener(contractListener));
 
 		Then("a response should be received", () -> assertNotNull(response));
 
-		Then("^the response should match (.+)$",	(String expected) -> assertEquals(expected, response));
+		Then("the response should match {}",	(String expected) -> assertEquals(expected, response));
 
 		Then("the response should be JSON matching", (String expected) -> {
 			assertNotNull(response);
@@ -300,15 +315,7 @@ public class ScenarioSteps implements En {
 
 		Then("a block event should be received", this::getBlockEvent);
 
-		Then("a contract event with payload {string} should be received", (String expected) -> {
-			List<String> payloads = new ArrayList<>();
-			ContractEvent matchingEvent = removeFirstMatch(contractEvents, event -> {
-				String payload = event.getPayload().map(this::newString).orElse("");
-				payloads.add(payload);
-				return expected.equals(payload);
-			});
-			assertNotNull("No contract events with payload \"" + expected + "\": " + payloads, matchingEvent);
-		});
+		Then("a contract event with payload {string} should be received", this::getContractEvent);
 	}
 
 	private Checkpointer initFileCheckpointer() throws IOException {
@@ -351,6 +358,17 @@ public class ScenarioSteps implements En {
 
 	private String newString(byte[] bytes) {
 		return new String(bytes, StandardCharsets.UTF_8);
+	}
+
+	private ContractEvent getContractEvent(String expectedPayload) throws InterruptedException {
+		List<String> payloads = new ArrayList<>();
+		ContractEvent matchingEvent = removeFirstMatch(contractEvents, event -> {
+			String eventPayload = event.getPayload().map(this::newString).orElse("");
+			payloads.add(eventPayload);
+			return expectedPayload.equals(eventPayload);
+		});
+		assertNotNull("No contract events with payload \"" + expectedPayload + "\": " + payloads, matchingEvent);
+		return matchingEvent;
 	}
 
 	/**

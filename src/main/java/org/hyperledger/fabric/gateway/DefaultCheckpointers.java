@@ -12,6 +12,7 @@ import org.hyperledger.fabric.gateway.spi.Checkpointer;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.function.Consumer;
 
 public final class DefaultCheckpointers {
     /**
@@ -27,11 +28,17 @@ public final class DefaultCheckpointers {
     }
 
     /**
-     * Transient in-memory checkpointer implementation with no persistent storage. Can be used for event replay.
+     * Transient in-memory checkpointer implementation with no persistent storage. Can be used for event replay in
+     * combination with listener methods such as {@link Network#addBlockListener(Checkpointer, Consumer)}. For example,
+     * to replay from block 1:
+     * <pre>{@code
+     * network.addBlockListener(Checkpointers.replay(1), blockListener);
+     * }</pre>
+     * @param startBlockNumber Initial block number.
      * @return A checkpointer.
      */
-    public static Checkpointer newInMemoryCheckpointer() {
-        return new InMemoryCheckpointer();
+    public static Checkpointer replay(long startBlockNumber) {
+        return new InMemoryCheckpointer(startBlockNumber);
     }
 
     private DefaultCheckpointers() { }

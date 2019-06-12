@@ -31,7 +31,6 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public final class FileCheckpointer implements Checkpointer {
     private static final Set<OpenOption> OPEN_OPTIONS = Collections.unmodifiableSet(EnumSet.of(
@@ -49,7 +48,7 @@ public final class FileCheckpointer implements Checkpointer {
     private final Reader fileReader;
     private final Writer fileWriter;
     private long blockNumber = Checkpointer.UNSET_BLOCK_NUMBER;
-    private Set<String> transactionIds = new HashSet<>();
+    private final Set<String> transactionIds = new HashSet<>();
 
     public FileCheckpointer(Path checkpointFile) throws IOException {
         boolean isFileAlreadyPresent = Files.exists(checkpointFile);
@@ -104,11 +103,18 @@ public final class FileCheckpointer implements Checkpointer {
     }
 
     private void parseDataV1(JsonObject json) throws IOException {
+        // Version 1 JSON format:
+        // {
+        //     version: 1,
+        //     block: 1,
+        //     transactions: ["a", "b"]
+        // }
         try {
             blockNumber = json.getJsonNumber(CONFIG_KEY_BLOCK).longValue();
-            transactionIds = json.getJsonArray(CONFIG_KEY_TRANSACTIONS).getValuesAs(JsonString.class).stream()
+            transactionIds.clear();
+            json.getJsonArray(CONFIG_KEY_TRANSACTIONS).getValuesAs(JsonString.class).stream()
                     .map(JsonString::getString)
-                    .collect(Collectors.toCollection(HashSet::new));
+                    .forEach(transactionIds::add);
         } catch (RuntimeException e) {
             throw new IOException("Bad format of checkpoint data from file: " + filePath, e);
         }
@@ -160,12 +166,6 @@ public final class FileCheckpointer implements Checkpointer {
     public void addTransactionId(String transactionId) throws IOException {
         transactionIds.add(transactionId);
         save();
-    }
-
-    @Override
-    public void delete() throws IOException {
-        close();
-        Files.delete(filePath);
     }
 
     @Override

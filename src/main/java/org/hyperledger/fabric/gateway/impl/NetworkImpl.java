@@ -12,20 +12,22 @@ import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.impl.event.BlockEventSource;
 import org.hyperledger.fabric.gateway.impl.event.BlockEventSourceFactory;
 import org.hyperledger.fabric.gateway.impl.event.BlockListenerSession;
+import org.hyperledger.fabric.gateway.impl.event.CommitListenerSession;
 import org.hyperledger.fabric.gateway.impl.event.ListenerSession;
 import org.hyperledger.fabric.gateway.impl.event.Listeners;
 import org.hyperledger.fabric.gateway.impl.event.OrderedBlockEventSource;
 import org.hyperledger.fabric.gateway.impl.event.ReplayListenerSession;
-import org.hyperledger.fabric.gateway.impl.event.TransactionEventSource;
-import org.hyperledger.fabric.gateway.impl.event.TransactionEventSourceImpl;
 import org.hyperledger.fabric.gateway.spi.Checkpointer;
+import org.hyperledger.fabric.gateway.spi.CommitListener;
 import org.hyperledger.fabric.gateway.spi.QueryHandler;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Channel;
+import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.TransactionException;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,10 +37,11 @@ public final class NetworkImpl implements Network {
     private final Channel channel;
     private final GatewayImpl gateway;
     private final Map<String, Contract> contracts = new ConcurrentHashMap<>();
+    private final BlockEventSource channelBlockSource;
     private final BlockEventSource orderedBlockSource;
-    private final TransactionEventSource commitSource;
     private final QueryHandler queryHandler;
     private final Map<Consumer<BlockEvent>, ListenerSession> blockListenerSessions = new HashMap<>();
+    private final Map<CommitListener, CommitListenerSession> commitListenerSessions = new ConcurrentHashMap<>();
 
     NetworkImpl(Channel channel, GatewayImpl gateway) throws GatewayException {
         this.channel = channel;
@@ -46,9 +49,8 @@ public final class NetworkImpl implements Network {
 
         initializeChannel();
 
-        BlockEventSource channelBlockSource = BlockEventSourceFactory.getInstance().newBlockEventSource(channel);
+        channelBlockSource = BlockEventSourceFactory.getInstance().newBlockEventSource(channel);
         orderedBlockSource = new OrderedBlockEventSource(channelBlockSource);
-        commitSource = new TransactionEventSourceImpl(channelBlockSource);
         queryHandler = gateway.getQueryHandlerFactory().create(this);
     }
 
@@ -86,11 +88,6 @@ public final class NetworkImpl implements Network {
     @Override
     public Channel getChannel() {
         return channel;
-    }
-
-    @Override
-    public TransactionEventSource getCommitEventSource() {
-        return commitSource;
     }
 
     @Override
@@ -132,6 +129,21 @@ public final class NetworkImpl implements Network {
         synchronized (blockListenerSessions) {
             session = blockListenerSessions.remove(listener);
         }
+        if (session != null) {
+            session.close();
+        }
+    }
+
+    @Override
+    public CommitListener addCommitListener(CommitListener listener, Collection<Peer> peers, String transactionId) {
+        commitListenerSessions.computeIfAbsent(listener, k ->
+                new CommitListenerSession(channelBlockSource, listener, peers, transactionId));
+        return listener;
+    }
+
+    @Override
+    public void removeCommitListener(CommitListener listener) {
+        CommitListenerSession session = commitListenerSessions.remove(listener);
         if (session != null) {
             session.close();
         }

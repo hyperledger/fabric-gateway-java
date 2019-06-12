@@ -8,12 +8,17 @@ package org.hyperledger.fabric.gateway.impl.event;
 
 import org.hyperledger.fabric.gateway.ContractEvent;
 import org.hyperledger.fabric.gateway.spi.Checkpointer;
+import org.hyperledger.fabric.gateway.spi.CommitListener;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.BlockInfo;
+import org.hyperledger.fabric.sdk.Peer;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
@@ -93,5 +98,14 @@ public final class Listeners {
                 listener.accept(contractEvent);
             }
         }, chaincodeId);
+    }
+
+    public static Consumer<BlockEvent.TransactionEvent> transaction(CommitListener listener, Collection<Peer> peers, String transactionId) {
+        Set<Peer> peerSet = new HashSet<>(peers);
+        return transactionEvent -> {
+            if (transactionEvent.getTransactionID().equals(transactionId) && peerSet.contains(transactionEvent.getPeer())) {
+                listener.acceptCommit(transactionEvent);
+            }
+        };
     }
 }
