@@ -15,8 +15,8 @@ version=$(mvn -q \
 
 if [ $version_check -gt 0 ]; then
     # Publish gateway-java jar files to nexus
-    for artifacts in $version $version-javadoc; do
-        echo "Pushing fabric-gateway-java-$artifacts-SNAPSHOT.jar to Nexus.."
+    for artifacts in $version javadoc-$version; do
+        echo "Pushing fabric-gateway-java-$artifacts.jar to Nexus.."
         mvn org.apache.maven.plugins:maven-deploy-plugin:deploy-file \
           -DupdateReleaseInfo=true \
           -Dfile=$WORKSPACE/$BASE_DIR/target/fabric-gateway-java-$artifacts.jar \
