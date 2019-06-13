@@ -15,7 +15,7 @@ version=$(mvn -q \
 
 if [ $version_check -gt 0 ]; then
     # Publish gateway-java jar files to nexus
-    for artifacts in $version javadoc-$version; do
+    for artifacts in $version $version-javadoc; do
         echo "Pushing fabric-gateway-java-$artifacts.jar to Nexus.."
         mvn org.apache.maven.plugins:maven-deploy-plugin:deploy-file \
           -DupdateReleaseInfo=true \
@@ -23,7 +23,7 @@ if [ $version_check -gt 0 ]; then
           -DrepositoryId=hyperledger-snapshots \
           -Durl=https://nexus.hyperledger.org/content/repositories/snapshots/ \
           -DgroupId=org.hyperledger.fabric-gateway-java \
-          -Dversion=$artifacts\
+          -Dversion=$version \
           -DartifactId=fabric-gateway-java \
           -DgeneratePom=true \
           -DuniqueVersion=false \
