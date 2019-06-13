@@ -111,9 +111,9 @@ def apiDocs() {
     sh 'echo "--------> Publish JavaApiDocs"'
     def ROOTDIR = pwd()
     withCredentials([[$class: 'UsernamePasswordMultiBinding',
-      credentialsId: 'gateway-java-credentials',
-      usernameVariable: 'GATEWAY_JAVA_USERNAME',
-      passwordVariable: 'GATEWAY_JAVA_PASSWORD']]) {
+      credentialsId: 'fabric-gateway-java-gh',
+      usernameVariable: 'GATEWAY_JAVA_GH_USERNAME',
+      passwordVariable: 'GATEWAY_JAVA_GH_PASSWORD']]) {
     try {
       dir("${ROOTDIR}/$PROJECT_DIR/scripts/ci_scripts") {
         sh './ciScript.sh --publishJavaApiDocs'
