@@ -6,10 +6,10 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
+import java.util.function.Consumer;
+
 import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
 import org.hyperledger.fabric.sdk.Peer;
-
-import java.util.function.Consumer;
 
 /**
  * Sets a new disconnect handler for a given peer, which notifies this object's listeners of any disconnect before
@@ -70,5 +70,11 @@ public final class PeerDisconnectInterceptor implements PeerDisconnectEventSourc
 
         // Restore original disconnect handler
         peer.setPeerEventingServiceDisconnected(disconnectHandler);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
+                "(peer=" + peer + ')';
     }
 }

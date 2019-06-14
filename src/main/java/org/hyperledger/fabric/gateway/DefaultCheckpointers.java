@@ -6,13 +6,13 @@
 
 package org.hyperledger.fabric.gateway;
 
-import org.hyperledger.fabric.gateway.impl.FileCheckpointer;
-import org.hyperledger.fabric.gateway.impl.InMemoryCheckpointer;
-import org.hyperledger.fabric.gateway.spi.Checkpointer;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.function.Consumer;
+
+import org.hyperledger.fabric.gateway.impl.FileCheckpointer;
+import org.hyperledger.fabric.gateway.impl.InMemoryCheckpointer;
+import org.hyperledger.fabric.gateway.spi.Checkpointer;
 
 public final class DefaultCheckpointers {
     /**
@@ -23,7 +23,7 @@ public final class DefaultCheckpointers {
      * @return A checkpointer.
      * @throws IOException
      */
-    public static Checkpointer newFileCheckpointer(Path path) throws IOException {
+    public static Checkpointer file(Path path) throws IOException {
         return new FileCheckpointer(path);
     }
 
@@ -38,7 +38,9 @@ public final class DefaultCheckpointers {
      * @return A checkpointer.
      */
     public static Checkpointer replay(long startBlockNumber) {
-        return new InMemoryCheckpointer(startBlockNumber);
+        InMemoryCheckpointer checkpointer = new InMemoryCheckpointer();
+        checkpointer.setBlockNumber(startBlockNumber);
+        return checkpointer;
     }
 
     private DefaultCheckpointers() { }

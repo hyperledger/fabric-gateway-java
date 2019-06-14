@@ -6,10 +6,10 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
+import java.util.function.Consumer;
+
 import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
 import org.hyperledger.fabric.sdk.Peer;
-
-import java.util.function.Consumer;
 
 /**
  * Simply adds and removes the listener from a peer disconnect event source.
@@ -27,5 +27,12 @@ public final class PeerDisconnectListenerSession implements ListenerSession {
     @Override
     public void close() {
         disconnectSource.removeDisconnectListener(listener);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
+                "(disconnectSource=" + disconnectSource +
+                ", listener=" + listener + ')';
     }
 }

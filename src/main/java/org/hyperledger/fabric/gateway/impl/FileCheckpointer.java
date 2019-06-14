@@ -6,13 +6,6 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
-import org.hyperledger.fabric.gateway.spi.Checkpointer;
-
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonString;
-import javax.json.JsonWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -29,8 +22,16 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonString;
+import javax.json.JsonWriter;
+
+import org.hyperledger.fabric.gateway.spi.Checkpointer;
 
 public final class FileCheckpointer implements Checkpointer {
     private static final Set<OpenOption> OPEN_OPTIONS = Collections.unmodifiableSet(EnumSet.of(
@@ -47,8 +48,8 @@ public final class FileCheckpointer implements Checkpointer {
     private final FileChannel fileChannel;
     private final Reader fileReader;
     private final Writer fileWriter;
-    private long blockNumber = Checkpointer.UNSET_BLOCK_NUMBER;
-    private final Set<String> transactionIds = new HashSet<>();
+    private final AtomicLong blockNumber = new AtomicLong(Checkpointer.UNSET_BLOCK_NUMBER);
+    private final Set<String> transactionIds = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     public FileCheckpointer(Path checkpointFile) throws IOException {
         boolean isFileAlreadyPresent = Files.exists(checkpointFile);
@@ -82,7 +83,7 @@ public final class FileCheckpointer implements Checkpointer {
         }
     }
 
-    private void load() throws IOException {
+    private synchronized void load() throws IOException {
         fileChannel.position(0);
         JsonObject savedData = loadJson();
         final int version = savedData.getInt(CONFIG_KEY_VERSION, 0);
@@ -110,7 +111,7 @@ public final class FileCheckpointer implements Checkpointer {
         //     transactions: ["a", "b"]
         // }
         try {
-            blockNumber = json.getJsonNumber(CONFIG_KEY_BLOCK).longValue();
+            blockNumber.set(json.getJsonNumber(CONFIG_KEY_BLOCK).longValue());
             transactionIds.clear();
             json.getJsonArray(CONFIG_KEY_TRANSACTIONS).getValuesAs(JsonString.class).stream()
                     .map(JsonString::getString)
@@ -120,7 +121,7 @@ public final class FileCheckpointer implements Checkpointer {
         }
     }
 
-    private void save() throws IOException {
+    private synchronized void save() throws IOException {
         JsonObject jsonData = buildJson();
         fileChannel.position(0);
         saveJson(jsonData);
@@ -130,7 +131,7 @@ public final class FileCheckpointer implements Checkpointer {
     private JsonObject buildJson() {
         return Json.createObjectBuilder()
                     .add(CONFIG_KEY_VERSION, VERSION)
-                    .add(CONFIG_KEY_BLOCK, blockNumber)
+                    .add(CONFIG_KEY_BLOCK, blockNumber.get())
                     .add(CONFIG_KEY_TRANSACTIONS, Json.createArrayBuilder(transactionIds))
                     .build();
     }
@@ -147,12 +148,12 @@ public final class FileCheckpointer implements Checkpointer {
 
     @Override
     public long getBlockNumber() {
-        return blockNumber;
+        return blockNumber.get();
     }
 
     @Override
-    public void setBlockNumber(long blockNumber) throws IOException {
-        this.blockNumber = blockNumber;
+    public synchronized void setBlockNumber(long blockNumber) throws IOException {
+        this.blockNumber.set(blockNumber);
         transactionIds.clear();
         save();
     }
@@ -163,7 +164,7 @@ public final class FileCheckpointer implements Checkpointer {
     }
 
     @Override
-    public void addTransactionId(String transactionId) throws IOException {
+    public synchronized void addTransactionId(String transactionId) throws IOException {
         transactionIds.add(transactionId);
         save();
     }
@@ -175,8 +176,9 @@ public final class FileCheckpointer implements Checkpointer {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "(file=" + filePath +
-                ", blockNumber=" + blockNumber +
-                ", transactionIds=" + transactionIds + ")";
+        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
+                "(file=" + filePath +
+                ", blockNumber=" + blockNumber.get() +
+                ", transactionIds=" + transactionIds + ')';
     }
 }

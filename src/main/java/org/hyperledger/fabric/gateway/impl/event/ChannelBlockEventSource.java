@@ -6,13 +6,13 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
-import org.hyperledger.fabric.sdk.BlockEvent;
-import org.hyperledger.fabric.sdk.Channel;
-import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+
+import org.hyperledger.fabric.sdk.BlockEvent;
+import org.hyperledger.fabric.sdk.Channel;
+import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 
 /**
  * Used to add and remove block listeners for an underlying Channel.
@@ -62,5 +62,11 @@ public final class ChannelBlockEventSource implements BlockEventSource {
     @Override
     public void close() {
         handleMap.forEach((listener, handle) -> removeBlockListener(listener));
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
+                "(channel=" + channel + ')';
     }
 }

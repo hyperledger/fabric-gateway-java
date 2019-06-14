@@ -11,8 +11,7 @@ import java.util.Set;
 
 /**
  * Persists block and transaction events to enable event replay to be resumed in the event of an application outage.
- * Implementations are not required to be thread-safe but must be usable in a thread-safe manner with external
- * synchronization.
+ * Implementations must be thread-safe.
  */
 public interface Checkpointer extends AutoCloseable {
     /**

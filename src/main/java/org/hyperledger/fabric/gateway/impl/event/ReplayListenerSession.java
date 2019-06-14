@@ -6,6 +6,10 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.function.Consumer;
+
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.impl.GatewayImpl;
 import org.hyperledger.fabric.gateway.impl.NetworkImpl;
@@ -14,10 +18,6 @@ import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
-
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.function.Consumer;
 
 /**
  * Maintains an isolated client connection for event replay using a listener created by a supplied factory function.
@@ -30,7 +30,7 @@ public final class ReplayListenerSession implements ListenerSession {
     public ReplayListenerSession(NetworkImpl network, Consumer<BlockEvent> listener, long startBlock) throws GatewayException {
         gateway = network.getGateway().newInstance();
         String channelName = network.getChannel().getName();
-        channel = gateway.newInstance().getNetwork(channelName).getChannel();
+        channel = gateway.getNetwork(channelName).getChannel();
 
         // Remove old peers first to avoid receiving spurious events from them
         Collection<Peer> eventingPeers = channel.getPeers(EnumSet.of(Peer.PeerRole.EVENT_SOURCE));
@@ -38,7 +38,7 @@ public final class ReplayListenerSession implements ListenerSession {
 
         // Attach listener before replay peers to ensure no replay events are missed
         BlockEventSource channelBlockSource = BlockEventSourceFactory.getInstance().newBlockEventSource(channel);
-        blockSource =  new OrderedBlockEventSource(channelBlockSource);
+        blockSource = new OrderedBlockEventSource(channelBlockSource);
         blockSource.addBlockListener(listener);
 
         addReplayPeers(eventingPeers, startBlock);
@@ -73,5 +73,13 @@ public final class ReplayListenerSession implements ListenerSession {
     public void close() {
         blockSource.close();
         gateway.close();
+        channel.shutdown(false);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
+                "(channel=" + channel.getName() +
+                ", blockSource=" + blockSource + ')';
     }
 }

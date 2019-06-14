@@ -13,9 +13,10 @@ Feature: Configure Fabric using SDK and submit/evaluate using a network Gateway
 		Given I have a gateway as user User1 using the tls connection profile
 		And I connect the gateway
 		And I use the mychannel network
-		When I prepare a createCar transaction for contract fabcar
+		And I use the fabcar contract
+		When I prepare a createCar transaction
 	 	And I submit the transaction with arguments ["CAR10", "Trabant", "601 Estate", "brown", "Simon"]
-		And I prepare a queryCar transaction for contract fabcar
+		And I prepare a queryCar transaction
 	 	And I evaluate the transaction with arguments ["CAR10"]
 		Then the response should be JSON matching
 		    """

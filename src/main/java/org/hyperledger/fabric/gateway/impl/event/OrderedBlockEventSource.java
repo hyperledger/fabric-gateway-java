@@ -6,13 +6,15 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
-import org.hyperledger.fabric.sdk.BlockEvent;
-
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import org.hyperledger.fabric.sdk.BlockEvent;
+import org.hyperledger.fabric.sdk.BlockInfo;
 
 /**
  * Listens to an existing block event source and ensures that its own listeners receive block events in order and
@@ -81,5 +83,15 @@ public final class OrderedBlockEventSource implements BlockEventSource {
 
     private boolean isNextBlockNumber(long blockNumber) {
         return lastBlockNumber < 0 || blockNumber == lastBlockNumber + 1;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
+                "(lastBlockNumber=" + lastBlockNumber +
+                ", queuedBlocks=" + queuedEvents.stream()
+                        .mapToLong(BlockInfo::getBlockNumber)
+                        .mapToObj(Long::toString)
+                        .collect(Collectors.joining(", ", "[", "]")) + ')';
     }
 }

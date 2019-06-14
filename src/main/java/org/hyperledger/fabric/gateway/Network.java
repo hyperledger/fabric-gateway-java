@@ -6,15 +6,15 @@
 
 package org.hyperledger.fabric.gateway;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.function.Consumer;
+
 import org.hyperledger.fabric.gateway.spi.Checkpointer;
 import org.hyperledger.fabric.gateway.spi.CommitListener;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.Peer;
-
-import java.io.IOException;
-import java.util.Collection;
-import java.util.function.Consumer;
 
 /**
  * A Network object represents the set of peers in a Fabric network (channel).

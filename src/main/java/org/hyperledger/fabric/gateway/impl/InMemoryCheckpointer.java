@@ -6,35 +6,30 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
-import org.hyperledger.fabric.gateway.spi.Checkpointer;
-
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+
+import org.hyperledger.fabric.gateway.spi.Checkpointer;
 
 /**
  * Transient in-memory checkpointer implementation with no persistent storage. Can be used for event replay.
  */
 public class InMemoryCheckpointer implements Checkpointer {
-    private long blockNumber;
-    private final Set<String> transactionIds = new HashSet<>();
+    private final AtomicLong blockNumber = new AtomicLong(Checkpointer.UNSET_BLOCK_NUMBER);
+    private final Set<String> transactionIds = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-    public InMemoryCheckpointer() {
-        this(Checkpointer.UNSET_BLOCK_NUMBER);
-    }
+    public InMemoryCheckpointer() { }
 
-    public InMemoryCheckpointer(long blockNumber) {
-        this.blockNumber = blockNumber;
+    @Override
+    public long getBlockNumber() {
+        return blockNumber.get();
     }
 
     @Override
-    public synchronized long getBlockNumber() {
-        return blockNumber;
-    }
-
-    @Override
-    public void setBlockNumber(long blockNumber) {
-        this.blockNumber = blockNumber;
+    public synchronized void setBlockNumber(long blockNumber) {
+        this.blockNumber.set(blockNumber);
         this.transactionIds.clear();
     }
 
@@ -53,7 +48,8 @@ public class InMemoryCheckpointer implements Checkpointer {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "(blockNumber=" + blockNumber +
-                ", transactionIds=" + transactionIds + ")";
+        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
+                "(blockNumber=" + blockNumber.get() +
+                ", transactionIds=" + transactionIds + ')';
     }
 }

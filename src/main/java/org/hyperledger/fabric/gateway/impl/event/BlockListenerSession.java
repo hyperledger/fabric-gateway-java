@@ -6,9 +6,9 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
-import org.hyperledger.fabric.sdk.BlockEvent;
-
 import java.util.function.Consumer;
+
+import org.hyperledger.fabric.sdk.BlockEvent;
 
 /**
  * Simply adds and removes the listener from a block event source.
@@ -26,5 +26,12 @@ public final class BlockListenerSession implements ListenerSession {
     @Override
     public void close() {
         blockSource.removeBlockListener(listener);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
+                "(blockSource=" + blockSource +
+                ", listener=" + listener + ')';
     }
 }

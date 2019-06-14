@@ -13,7 +13,8 @@ Feature: Configure Fabric using SDK and submit/evaluate using a network Gateway
 		Given I have a gateway as user User1 using the tls connection profile
 		And I connect the gateway
 		And I use the mychannel network
-		When I prepare an echoTransient transaction for contract fabcar
+		And I use the fabcar contract
+		When I prepare an echoTransient transaction
 		And I set transient data on the transaction to
 			| key1 | value1 |
 			| key2 | value2 |

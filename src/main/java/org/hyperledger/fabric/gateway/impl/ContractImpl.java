@@ -6,6 +6,13 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
+import java.util.regex.Pattern;
+
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.ContractEvent;
 import org.hyperledger.fabric.gateway.GatewayException;
@@ -15,13 +22,6 @@ import org.hyperledger.fabric.gateway.impl.event.ListenerSession;
 import org.hyperledger.fabric.gateway.impl.event.Listeners;
 import org.hyperledger.fabric.gateway.spi.Checkpointer;
 import org.hyperledger.fabric.sdk.BlockEvent;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
-import java.util.regex.Pattern;
 
 public final class ContractImpl implements Contract {
     private final NetworkImpl network;
@@ -140,5 +140,12 @@ public final class ContractImpl implements Contract {
 
     private String getQualifiedName(String tname) {
         return this.name.isEmpty() ? tname : this.name + ':' + tname;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
+                "(name=" + (name.isEmpty() ? chaincodeId : chaincodeId + ':' + name) +
+                ", contractListenerSessions=" + contractListenerSessions + ')';
     }
 }

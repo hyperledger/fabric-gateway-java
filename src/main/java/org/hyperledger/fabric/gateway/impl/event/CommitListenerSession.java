@@ -6,14 +6,14 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
+import java.util.Collection;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
 import org.hyperledger.fabric.gateway.spi.CommitListener;
 import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Peer;
-
-import java.util.Collection;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 /**
  * Adds and removes listeners to transactions commit events (from a given block source) and disconnect events (from given
@@ -38,5 +38,12 @@ public final class CommitListenerSession implements ListenerSession {
     public void close() {
         blockListenerSession.close();
         disconnectListenerSessions.forEach(PeerDisconnectListenerSession::close);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
+                "(blockListenerSession=" + blockListenerSession +
+                ", disconnectListenerSessions=" + disconnectListenerSessions + ')';
     }
 }

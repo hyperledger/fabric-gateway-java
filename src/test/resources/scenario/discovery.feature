@@ -15,9 +15,10 @@ Feature: Configure Fabric using SDK using discovery service and submit/evaluate 
 		Given I have a gateway as user User1 using the discovery connection profile
 		And I connect the gateway
 		And I use the mychannel network
-	 	When I prepare an initMarble transaction for contract marbles0
+		And I use the marbles0 contract
+	 	When I prepare an initMarble transaction
 	 	And I submit the transaction with arguments ["marble1", "blue", "50", "bob"]
-	 	And I prepare a readMarble transaction for contract marbles0
+	 	And I prepare a readMarble transaction
 	 	And I evaluate the transaction with arguments ["marble1"]
 	 	Then the response should be JSON matching
 		"""
