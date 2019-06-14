@@ -19,6 +19,7 @@ if [ $version_check -gt 0 ]; then
     mvn org.apache.maven.plugins:maven-deploy-plugin:deploy-file \
       -DupdateReleaseInfo=true \
       -Dfile=$WORKSPACE/$BASE_DIR/target/fabric-gateway-java-$version.jar \
+      -Djavadoc=$WORKSPACE/$BASE_DIR/target/fabric-gateway-java-$version-javadoc.jar \
       -DrepositoryId=hyperledger-snapshots \
       -Durl=https://nexus.hyperledger.org/content/repositories/snapshots/ \
       -DgroupId=org.hyperledger.fabric-gateway-java \
@@ -35,6 +36,7 @@ else
     mvn org.apache.maven.plugins:maven-deploy-plugin:deploy-file \
       -DupdateReleaseInfo=true \
       -Dfile=$WORKSPACE/$BASE_DIR/target/fabric-gateway-java-$version.jar \
+      -Djavadoc=$WORKSPACE/$BASE_DIR/target/fabric-gateway-java-$version-javadoc.jar \
       -DrepositoryId=hyperledger-releases \
       -Durl=https://nexus.hyperledger.org/content/repositories/releases/ \
       -DgroupId=org.hyperledger.fabric-gateway-java \
