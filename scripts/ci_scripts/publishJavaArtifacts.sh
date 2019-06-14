@@ -20,12 +20,12 @@ if [ $version_check -gt 0 ]; then
       -DupdateReleaseInfo=true \
       -Dfile=$WORKSPACE/$BASE_DIR/target/fabric-gateway-java-$version.jar \
       -Djavadoc=$WORKSPACE/$BASE_DIR/target/fabric-gateway-java-$version-javadoc.jar \
+      -DpomFile=$WORKSPACE/$BASE_DIR/pom.xml \
       -DrepositoryId=hyperledger-snapshots \
       -Durl=https://nexus.hyperledger.org/content/repositories/snapshots/ \
       -DgroupId=org.hyperledger.fabric-gateway-java \
       -Dversion=$version \
       -DartifactId=fabric-gateway-java \
-      -DgeneratePom=true \
       -DuniqueVersion=false \
       -Dpackaging=jar \
       -gs $GLOBAL_SETTINGS_FILE -s $SETTINGS_FILE
@@ -37,12 +37,12 @@ else
       -DupdateReleaseInfo=true \
       -Dfile=$WORKSPACE/$BASE_DIR/target/fabric-gateway-java-$version.jar \
       -Djavadoc=$WORKSPACE/$BASE_DIR/target/fabric-gateway-java-$version-javadoc.jar \
+      -DpomFile=$WORKSPACE/$BASE_DIR/pom.xml \
       -DrepositoryId=hyperledger-releases \
       -Durl=https://nexus.hyperledger.org/content/repositories/releases/ \
       -DgroupId=org.hyperledger.fabric-gateway-java \
       -Dversion= $version\
       -DartifactId=fabric-gateway-java \
-      -DgeneratePom=true \
       -DuniqueVersion=false \
       -Dpackaging=jar \
       -gs $GLOBAL_SETTINGS_FILE -s $SETTINGS_FILE
