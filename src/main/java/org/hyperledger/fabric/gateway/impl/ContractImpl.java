@@ -23,7 +23,7 @@ import org.hyperledger.fabric.gateway.impl.event.Listeners;
 import org.hyperledger.fabric.gateway.spi.Checkpointer;
 import org.hyperledger.fabric.sdk.BlockEvent;
 
-public final class ContractImpl implements Contract {
+public final class ContractImpl implements Contract, AutoCloseable {
     private final NetworkImpl network;
     private final String chaincodeId;
     private final String name;
@@ -140,6 +140,14 @@ public final class ContractImpl implements Contract {
 
     private String getQualifiedName(String tname) {
         return this.name.isEmpty() ? tname : this.name + ':' + tname;
+    }
+
+    @Override
+    public void close() {
+        synchronized (contractListenerSessions) {
+            contractListenerSessions.values().forEach(ListenerSession::close);
+            contractListenerSessions.clear();
+        }
     }
 
     @Override

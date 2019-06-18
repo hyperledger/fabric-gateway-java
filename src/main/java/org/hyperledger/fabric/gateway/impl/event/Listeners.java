@@ -19,7 +19,6 @@ import java.util.stream.StreamSupport;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hyperledger.fabric.gateway.ContractEvent;
-import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.spi.Checkpointer;
 import org.hyperledger.fabric.gateway.spi.CommitListener;
 import org.hyperledger.fabric.sdk.BlockEvent;
@@ -27,7 +26,7 @@ import org.hyperledger.fabric.sdk.BlockInfo;
 import org.hyperledger.fabric.sdk.Peer;
 
 public final class Listeners {
-    private static final Log LOG = LogFactory.getLog(Gateway.class);
+    private static final Log LOG = LogFactory.getLog(Listeners.class);
 
     public static Consumer<BlockEvent> fromTransaction(Consumer<BlockEvent.TransactionEvent> listener) {
         return blockEvent -> blockEvent.getTransactionEvents().forEach(listener);

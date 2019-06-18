@@ -11,6 +11,7 @@ import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.sdk.Channel;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -20,13 +21,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class NetworkTest {
     private static final TestUtils testUtils = TestUtils.getInstance();
 
-    private Gateway gateway = null;
-    private Network network = null;
+    private Gateway gateway;
+    private Network network;
 
     @BeforeEach
     public void beforeEach() throws Exception {
         gateway = testUtils.newGatewayBuilder().connect();
         network = gateway.getNetwork("ch1");
+    }
+
+    @AfterEach
+    public void afterEach() {
+        gateway.close();
     }
 
     @Test
@@ -73,5 +79,11 @@ public class NetworkTest {
         assertThatThrownBy(() -> network.getContract("id", null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("getContract: name must not be null");
+    }
+
+    @Test
+    public void testCloseNetworkShutsDownTheChannel() {
+        ((NetworkImpl)network).close();
+        assertThat(network.getChannel().isShutdown()).isTrue();
     }
 }

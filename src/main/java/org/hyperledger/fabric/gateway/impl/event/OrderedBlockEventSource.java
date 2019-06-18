@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -26,13 +27,18 @@ public final class OrderedBlockEventSource implements BlockEventSource {
     private final BlockEventSource blockSource;
     private final ListenerSet<Consumer<BlockEvent>> listeners = new ListenerSet<>();
     private final Consumer<BlockEvent> blockListener;
-    private long lastBlockNumber = -1;
+    private final AtomicLong blockNumber;
     private final SortedSet<BlockEvent> queuedEvents = new TreeSet<>(eventComparator);
     private final Object eventHandlingLock = new Object();
 
     public OrderedBlockEventSource(BlockEventSource blockSource) {
+        this(blockSource, -1);
+    }
+
+    public OrderedBlockEventSource(BlockEventSource blockSource, long startBlock) {
         this.blockSource = blockSource;
         this.blockListener = blockSource.addBlockListener(this::receivedBlock);
+        blockNumber = new AtomicLong(startBlock);
     }
 
     @Override
@@ -62,33 +68,34 @@ public final class OrderedBlockEventSource implements BlockEventSource {
         }
     }
 
-    private boolean isOldBlockNumber(long blockNumber) {
-        return blockNumber <= lastBlockNumber;
+    private boolean isOldBlockNumber(long eventBlockNumber) {
+        return eventBlockNumber < blockNumber.get();
     }
 
     private void notifyListeners() {
         for (Iterator<BlockEvent> eventIter = queuedEvents.iterator(); eventIter.hasNext(); ) {
             BlockEvent event = eventIter.next();
-            long blockNumber = event.getBlockNumber();
+            long eventBlockNumber = event.getBlockNumber();
 
-            if (!isNextBlockNumber(blockNumber)) {
+            if (!isNextBlockNumber(eventBlockNumber)) {
                 break;
             }
 
             eventIter.remove();
-            lastBlockNumber = blockNumber;
+            blockNumber.set(eventBlockNumber + 1);
             listeners.forEach(listener -> listener.accept(event));
         }
     }
 
-    private boolean isNextBlockNumber(long blockNumber) {
-        return lastBlockNumber < 0 || blockNumber == lastBlockNumber + 1;
+    private boolean isNextBlockNumber(long eventBlockNumber) {
+        final long nextBlockNumber = blockNumber.get();
+        return nextBlockNumber < 0 || nextBlockNumber == eventBlockNumber;
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
-                "(lastBlockNumber=" + lastBlockNumber +
+                "(blockNumber=" + blockNumber.get() +
                 ", queuedBlocks=" + queuedEvents.stream()
                         .mapToLong(BlockInfo::getBlockNumber)
                         .mapToObj(Long::toString)

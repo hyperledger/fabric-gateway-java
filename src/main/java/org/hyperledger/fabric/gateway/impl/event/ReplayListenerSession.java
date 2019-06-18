@@ -38,7 +38,7 @@ public final class ReplayListenerSession implements ListenerSession {
 
         // Attach listener before replay peers to ensure no replay events are missed
         BlockEventSource channelBlockSource = BlockEventSourceFactory.getInstance().newBlockEventSource(channel);
-        blockSource = new OrderedBlockEventSource(channelBlockSource);
+        blockSource = new OrderedBlockEventSource(channelBlockSource, startBlock);
         blockSource.addBlockListener(listener);
 
         addReplayPeers(eventingPeers, startBlock);
@@ -73,13 +73,12 @@ public final class ReplayListenerSession implements ListenerSession {
     public void close() {
         blockSource.close();
         gateway.close();
-        channel.shutdown(false);
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
-                "(channel=" + channel.getName() +
+                "(channel=" + channel +
                 ", blockSource=" + blockSource + ')';
     }
 }

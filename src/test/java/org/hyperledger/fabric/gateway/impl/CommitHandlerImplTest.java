@@ -6,6 +6,12 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
@@ -20,14 +26,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class CommitHandlerImplTest {
     private final TestUtils testUtils = TestUtils.getInstance();
@@ -67,6 +72,7 @@ public class CommitHandlerImplTest {
         peerDisconnectSources.values().forEach(StubPeerDisconnectEventSource::close);
         peerDisconnectSources.clear();
         commitHandler.cancelListening();
+        gateway.close();
     }
 
     private PeerDisconnectEvent sendPeerDisconnectEvent() {

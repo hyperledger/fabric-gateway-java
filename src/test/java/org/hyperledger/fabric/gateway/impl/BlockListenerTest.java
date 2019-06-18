@@ -6,6 +6,9 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import java.io.IOException;
+import java.util.function.Consumer;
+
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
@@ -20,29 +23,28 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
-import java.io.IOException;
-import java.util.function.Consumer;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class BlockListenerTest {
     private static final TestUtils testUtils = TestUtils.getInstance();
 
-    private Network network = null;
-    private StubBlockEventSource stubBlockEventSource = null;
+    private Gateway gateway;
+    private Network network;
+    private StubBlockEventSource stubBlockEventSource;
     private final Peer peer1 = testUtils.newMockPeer("peer1");
     private final Peer peer2 = testUtils.newMockPeer("peer2");
 
     @BeforeEach
     public void beforeEach() throws Exception {
         stubBlockEventSource = new StubBlockEventSource(); // Must be before network is created
-        Gateway gateway = testUtils.newGatewayBuilder().connect();
+        gateway = testUtils.newGatewayBuilder().connect();
         network = gateway.getNetwork("ch1");
     }
 
     @AfterEach
     public void afterEach() {
         stubBlockEventSource.close();
+        gateway.close();
     }
 
     @Test
@@ -186,5 +188,17 @@ public class BlockListenerTest {
         stubBlockEventSource.sendEvent(event2); // Without checkpoint this will be ignored as a duplicate
 
         Mockito.verify(listener, Mockito.times(1)).accept(event2);
+    }
+
+    @Test
+    public void close_network_removes_listeners() {
+        Consumer<BlockEvent> listener = Mockito.spy(testUtils.stubBlockListener());
+        BlockEvent event = testUtils.newMockBlockEvent(peer1, 1);
+
+        network.addBlockListener(listener);
+        ((NetworkImpl)network).close();
+        stubBlockEventSource.sendEvent(event);
+
+        Mockito.verify(listener, Mockito.never()).accept(event);
     }
 }

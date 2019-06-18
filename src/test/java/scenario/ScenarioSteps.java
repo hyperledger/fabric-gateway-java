@@ -72,6 +72,12 @@ public class ScenarioSteps implements En {
     public ScenarioSteps() throws IOException {
         checkpointFile = TestUtils.getInstance().getUnusedFilePath();
 
+        After(() -> {
+            if (gateway != null) {
+                gateway.close();
+            }
+        });
+
         Given("I have deployed a {word} Fabric network", (String tlsType) -> {
             // tlsType is either "tls" or "non-tls"
             fabricNetworkType = tlsType;
@@ -403,7 +409,8 @@ public class ScenarioSteps implements En {
     }
 
     private static void exec(String... commandArgs) throws IOException, InterruptedException {
-        System.err.println(Arrays.toString(commandArgs));
+        String commandString = Arrays.toString(commandArgs);
+        System.err.println(commandString);
         Process process = Runtime.getRuntime().exec(commandArgs);
         int exitCode = process.waitFor();
 
@@ -415,7 +422,7 @@ public class ScenarioSteps implements En {
             }
         }
 
-        assertEquals("Failed to execute command: " + commandArgs, exitCode, 0);
+        assertEquals("Failed to execute command: " + commandString, exitCode, 0);
 
     }
 

@@ -6,6 +6,19 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import java.io.FileReader;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import javax.json.Json;
+import javax.json.JsonReader;
+import javax.json.stream.JsonParsingException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
@@ -29,26 +42,13 @@ import org.hyperledger.fabric.sdk.identity.X509Enrollment;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.hyperledger.fabric.sdk.security.CryptoSuiteFactory;
 
-import javax.json.Json;
-import javax.json.JsonReader;
-import javax.json.stream.JsonParsingException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
 public final class GatewayImpl implements Gateway {
     private static final Log LOG = LogFactory.getLog(Gateway.class);
 
     private final HFClient client;
     private final NetworkConfig networkConfig;
     private final Identity identity;
-    private final Map<String, Network> networks = new HashMap<>();
+    private final Map<String, NetworkImpl> networks = new HashMap<>();
     private final CommitHandlerFactory commitHandlerFactory;
     private final TimePeriod commitTimeout;
     private final QueryHandlerFactory queryHandlerFactory;
@@ -213,7 +213,9 @@ public final class GatewayImpl implements Gateway {
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
+        networks.values().forEach(NetworkImpl::close);
+        networks.clear();
     }
 
     @Override
@@ -221,7 +223,7 @@ public final class GatewayImpl implements Gateway {
         if (networkName == null || networkName.isEmpty()) {
             throw new IllegalArgumentException("Channel name must be a non-empty string");
         }
-        Network network = networks.get(networkName);
+        NetworkImpl network = networks.get(networkName);
         if (network == null) {
             Channel channel = client.getChannel(networkName);
             if (channel == null && networkConfig != null) {

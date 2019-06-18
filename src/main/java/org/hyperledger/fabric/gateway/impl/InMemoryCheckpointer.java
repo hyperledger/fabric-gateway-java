@@ -17,10 +17,16 @@ import org.hyperledger.fabric.gateway.spi.Checkpointer;
  * Transient in-memory checkpointer implementation with no persistent storage. Can be used for event replay.
  */
 public class InMemoryCheckpointer implements Checkpointer {
-    private final AtomicLong blockNumber = new AtomicLong(Checkpointer.UNSET_BLOCK_NUMBER);
+    private final AtomicLong blockNumber;
     private final Set<String> transactionIds = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-    public InMemoryCheckpointer() { }
+    public InMemoryCheckpointer() {
+        this(Checkpointer.UNSET_BLOCK_NUMBER);
+    }
+
+    public InMemoryCheckpointer(long startBlock) {
+        blockNumber = new AtomicLong(startBlock);
+    }
 
     @Override
     public long getBlockNumber() {

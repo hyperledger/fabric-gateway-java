@@ -38,9 +38,7 @@ public final class DefaultCheckpointers {
      * @return A checkpointer.
      */
     public static Checkpointer replay(long startBlockNumber) {
-        InMemoryCheckpointer checkpointer = new InMemoryCheckpointer();
-        checkpointer.setBlockNumber(startBlockNumber);
-        return checkpointer;
+        return new InMemoryCheckpointer(startBlockNumber);
     }
 
     private DefaultCheckpointers() { }

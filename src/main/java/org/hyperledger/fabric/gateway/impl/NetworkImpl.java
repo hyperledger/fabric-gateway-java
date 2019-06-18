@@ -33,7 +33,7 @@ import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.TransactionException;
 
-public final class NetworkImpl implements Network {
+public final class NetworkImpl implements Network, AutoCloseable {
     private final Channel channel;
     private final GatewayImpl gateway;
     private final Map<String, Contract> contracts = new ConcurrentHashMap<>();
@@ -152,6 +152,21 @@ public final class NetworkImpl implements Network {
 
     public BlockEventSource getBlockSource() {
         return orderedBlockSource;
+    }
+
+    @Override
+    public void close() {
+        synchronized (blockListenerSessions) {
+            blockListenerSessions.values().forEach(ListenerSession::close);
+            blockListenerSessions.clear();
+        }
+        commitListenerSessions.values().forEach(ListenerSession::close);
+        commitListenerSessions.clear();
+
+        orderedBlockSource.close();
+        channelBlockSource.close();
+
+        channel.shutdown(false);
     }
 
     @Override

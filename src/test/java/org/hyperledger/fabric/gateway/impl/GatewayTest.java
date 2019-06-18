@@ -10,6 +10,7 @@ import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.TestUtils;
+import org.hyperledger.fabric.sdk.Channel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -17,11 +18,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class GatewayTest {
+    private static final TestUtils testUtils = TestUtils.getInstance();
+
     private Gateway.Builder builder = null;
 
     @BeforeEach
     public void beforeEach() throws Exception {
-        builder = TestUtils.getInstance().newGatewayBuilder();
+        builder = testUtils.newGatewayBuilder();
     }
 
     @Test
@@ -65,5 +68,15 @@ public class GatewayTest {
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Channel name must be a non-empty string");
         }
+    }
+
+    @Test
+    public void testCloseGatewayClosesNetworks() throws Exception {
+        Gateway gateway = builder.connect();
+        Channel channel = gateway.getNetwork("assumed").getChannel();
+
+        gateway.close();
+
+        assertThat(channel.isShutdown()).isTrue();
     }
 }

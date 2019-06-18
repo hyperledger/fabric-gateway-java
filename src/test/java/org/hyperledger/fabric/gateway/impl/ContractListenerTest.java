@@ -6,6 +6,17 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.cert.CertificateException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import org.bouncycastle.operator.OperatorCreationException;
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.ContractEvent;
@@ -23,23 +34,19 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.cert.CertificateException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class ContractListenerTest {
     private static final TestUtils testUtils = TestUtils.getInstance();
 
+    private Gateway gateway;
     private StubBlockEventSource blockSource;
     private Contract contract;
     private int transactionNumber = 1;
@@ -56,7 +63,7 @@ public class ContractListenerTest {
     @BeforeEach
     public void beforeEach() throws GatewayException, OperatorCreationException, CertificateException, NoSuchAlgorithmException, NoSuchProviderException, IOException {
         blockSource = new StubBlockEventSource(); // Must be created before network
-        Gateway gateway = testUtils.newGatewayBuilder().connect();
+        gateway = testUtils.newGatewayBuilder().connect();
         Network network = gateway.getNetwork("ch1");
         contract = network.getContract(chaincodeId);
     }
@@ -64,6 +71,7 @@ public class ContractListenerTest {
     @AfterEach
     public void afterEach() {
         blockSource.close();
+        gateway.close();
     }
 
     private ChaincodeEvent mockChaincodeEvent(String chaincodeId, String name) {
@@ -307,5 +315,17 @@ public class ContractListenerTest {
         blockSource.sendEvent(blockEvent);
 
         verify(listener, times(2)).accept(any(ContractEvent.class));
+    }
+
+    @Test
+    public void close_contract_removes_listeners() {
+        Consumer<ContractEvent> listener = spy(testUtils.stubContractListener());
+        ChaincodeEvent event = mockChaincodeEvent(chaincodeId, eventName);
+
+        contract.addContractListener(listener);
+        ((ContractImpl)contract).close();
+        fireEvents(event);
+
+        verify(listener, never()).accept(any(ContractEvent.class));
     }
 }

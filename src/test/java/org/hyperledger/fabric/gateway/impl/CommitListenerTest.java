@@ -6,6 +6,13 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.TestUtils;
@@ -19,19 +26,17 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public class CommitListenerTest {
     private static final TestUtils testUtils = TestUtils.getInstance();
 
+    private Gateway gateway;
     private Network network;
     private StubBlockEventSource stubBlockEventSource;
     private StubPeerDisconnectEventSource stubPeer1DisconnectEventSource;
@@ -53,13 +58,16 @@ public class CommitListenerTest {
         stubBlockEventSource = new StubBlockEventSource(); // Must be before network is created
         stubPeer1DisconnectEventSource = new StubPeerDisconnectEventSource(peer1);
         stubPeer2DisconnectEventSource = new StubPeerDisconnectEventSource(peer2);
-        Gateway gateway = testUtils.newGatewayBuilder().connect();
+        gateway = testUtils.newGatewayBuilder().connect();
         network = gateway.getNetwork("ch1");
     }
 
     @AfterEach
     public void afterEach() {
         stubBlockEventSource.close();
+        stubPeer1DisconnectEventSource.close();
+        stubPeer2DisconnectEventSource.close();
+        gateway.close();
     }
 
     private void fireCommitEvents(Peer peer, String... transactionIds) {
@@ -127,10 +135,24 @@ public class CommitListenerTest {
         CommitListener listener = spy(stubCommitListener);
         PeerDisconnectEvent peer1Event = testUtils.newPeerDisconnectedEvent(peer1);
 
-        network.addCommitListener(listener, Collections.singleton(peer1), transactionId);
+        network.addCommitListener(listener, peers, transactionId);
         network.removeCommitListener(listener);
         stubPeer1DisconnectEventSource.sendEvent(peer1Event);
 
+        verify(listener, never()).acceptDisconnect(any(PeerDisconnectEvent.class));
+    }
+
+    @Test
+    public void close_network_removes_listeners() {
+        CommitListener listener = spy(stubCommitListener);
+        PeerDisconnectEvent peer1Event = testUtils.newPeerDisconnectedEvent(peer1);
+
+        network.addCommitListener(listener, peers, transactionId);
+        ((NetworkImpl)network).close();
+        fireCommitEvents(peer1, transactionId);
+        stubPeer1DisconnectEventSource.sendEvent(peer1Event);
+
+        verify(listener, never()).acceptCommit(any(BlockEvent.TransactionEvent.class));
         verify(listener, never()).acceptDisconnect(any(PeerDisconnectEvent.class));
     }
 }
