@@ -8,6 +8,7 @@ package org.hyperledger.fabric.gateway.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -28,17 +29,18 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyCollection;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyCollection;
+import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
 
 public class TransactionTest {
     private final TestUtils testUtils = TestUtils.getInstance();
@@ -51,8 +53,13 @@ public class TransactionTest {
     private ProposalResponse failureResponse;
     private Map<String, byte[]> transientMap;
 
+    @Captor
+    private ArgumentCaptor<Collection<ProposalResponse>> proposalResponseCaptor;
+
     @BeforeEach
     public void setup() throws Exception {
+        MockitoAnnotations.initMocks(this);
+
         peer = testUtils.newMockPeer("peer");
         channel = testUtils.newMockChannel("channel");
         when(channel.sendTransaction(anyCollection(), any(Channel.TransactionOptions.class)))
@@ -152,9 +159,7 @@ public class TransactionTest {
     public void testSubmitSuccess() throws Exception {
         String expected = "successful result";
         ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
-        when(channel.sendTransactionProposal(ArgumentMatchers.any())).thenReturn(Arrays.asList(response));
-        when(channel.sendTransactionProposalToEndorsers(ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Arrays.asList(response));
-
+        when(channel.sendTransactionProposal(any())).thenReturn(Arrays.asList(response));
 
         byte[] result = contract.submitTransaction("txn", "arg1");
         assertThat(new String(result)).isEqualTo(expected);
@@ -164,9 +169,7 @@ public class TransactionTest {
     public void testSubmitSuccessWithTransient() throws Exception {
         String expected = "successful result";
         ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
-        when(channel.sendTransactionProposal(ArgumentMatchers.any())).thenReturn(Arrays.asList(response));
-        when(channel.sendTransactionProposalToEndorsers(ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Arrays.asList(response));
-
+        when(channel.sendTransactionProposal(any())).thenReturn(Arrays.asList(response));
 
         byte[] result = contract.createTransaction("txn").setTransient(transientMap).submit("arg1");
         assertThat(new String(result)).isEqualTo(expected);
@@ -176,10 +179,22 @@ public class TransactionTest {
     public void testUsesGatewayCommitTimeout() throws Exception {
         String expected = "successful result";
         ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
-        when(channel.sendTransactionProposal(ArgumentMatchers.any())).thenReturn(Arrays.asList(response));
+        when(channel.sendTransactionProposal(any())).thenReturn(Arrays.asList(response));
 
         contract.submitTransaction("txn", "arg1");
 
         verify(commitHandler).waitForEvents(timeout.getTime(), timeout.getTimeUnit());
+    }
+
+    @Test
+    public void testSubmitSuccessWithSomeBadProposalResponses() throws Exception {
+        String expected = "successful result";
+        ProposalResponse goodResponse = testUtils.newSuccessfulProposalResponse(expected.getBytes());
+        when(channel.sendTransactionProposal(any())).thenReturn(Arrays.asList(failureResponse, goodResponse));
+
+        contract.submitTransaction("txn", "arg1");
+
+        verify(channel).sendTransaction(proposalResponseCaptor.capture(), any(Channel.TransactionOptions.class));
+        assertThat(proposalResponseCaptor.getValue()).containsOnly(goodResponse);
     }
 }

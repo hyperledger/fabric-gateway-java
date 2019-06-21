@@ -6,6 +6,12 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hyperledger.fabric.gateway.GatewayException;
@@ -24,12 +30,6 @@ import org.hyperledger.fabric.sdk.TransactionProposalRequest;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
 import org.hyperledger.fabric.sdk.exception.ServiceDiscoveryException;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static org.hyperledger.fabric.sdk.Channel.DiscoveryOptions.createDiscoveryOptions;
 
@@ -107,7 +107,7 @@ public final class TransactionImpl implements Transaction {
             commitHandler.startListening();
 
             try {
-                channel.sendTransaction(proposalResponses, transactionOptions).get(60, TimeUnit.SECONDS);
+                channel.sendTransaction(validResponses, transactionOptions).get(60, TimeUnit.SECONDS);
             } catch (TimeoutException e) {
                 commitHandler.cancelListening();
                 throw e;

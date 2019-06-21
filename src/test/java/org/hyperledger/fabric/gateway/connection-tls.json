@@ -18,6 +18,12 @@
 				"orderer.example.com"
 			],
 			"peers": {
+				"badpeer.org1.example.com": {
+					"endorsingPeer": true,
+					"chaincodeQuery": true,
+					"ledgerQuery": true,
+					"eventSource": true
+				},
 				"peer0.org1.example.com": {
 					"endorsingPeer": true,
 					"chaincodeQuery": true,
@@ -79,6 +85,17 @@
 		}
 	},
 	"peers": {
+		"badpeer.org1.example.com": {
+			"url": "grpcs://localhost:9999",
+			"grpcOptions": {
+				"ssl-target-name-override": "badpeer.org1.example.com",
+				"hostnameOverride": "badpeer.org1.example.com",
+				"request-timeout": 120001
+			},
+			"tlsCACerts": {
+				"path": "src/test/fixtures/crypto-material/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt"
+			}
+		},
 		"peer0.org1.example.com": {
 			"url": "grpcs://localhost:7051",
 			"grpcOptions": {

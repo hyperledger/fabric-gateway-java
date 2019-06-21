@@ -117,4 +117,6 @@ public final class Listeners {
             }
         };
     }
+
+    private Listeners() { }
 }
