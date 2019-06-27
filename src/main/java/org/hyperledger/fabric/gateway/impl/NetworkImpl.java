@@ -111,6 +111,17 @@ public final class NetworkImpl implements Network, AutoCloseable {
         return listener;
     }
 
+    @Override
+    public Consumer<BlockEvent> addBlockListener(long startBlock, Consumer<BlockEvent> listener) throws GatewayException {
+        synchronized (blockListenerSessions) {
+            if (!blockListenerSessions.containsKey(listener)) {
+                ListenerSession session = new ReplayListenerSession(this, listener, startBlock);
+                blockListenerSessions.put(listener, session);
+            }
+        }
+        return listener;
+    }
+
     public ListenerSession newCheckpointListenerSession(Checkpointer checkpointer, Consumer<BlockEvent> listener) throws IOException, GatewayException {
         final long blockNumber = checkpointer.getBlockNumber();
         if (blockNumber == Checkpointer.UNSET_BLOCK_NUMBER) {

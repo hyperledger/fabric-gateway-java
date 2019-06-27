@@ -267,7 +267,7 @@ public class ScenarioSteps implements En {
 
         When("I add a block listener with replay from block {int}", (Integer startBlock) -> {
             clearBlockListener();
-            blockListener = network.addBlockListener(replayCheckpointer(startBlock), blockEvents::add);
+            blockListener = network.addBlockListener(startBlock, blockEvents::add);
         });
 
         When("I wait for a block event to be received", this::getBlockEvent);
@@ -291,7 +291,7 @@ public class ScenarioSteps implements En {
                 (String eventName, Integer startBlock) -> {
                     clearContractListener();
                     Pattern eventNamePattern = Pattern.compile(eventName);
-                    contractListener = contract.addContractListener(replayCheckpointer(startBlock), contractEvents::add, eventNamePattern);
+                    contractListener = contract.addContractListener(startBlock, contractEvents::add, eventNamePattern);
                 });
 
         When("I wait for a contract event with payload {string} to be received", this::getContractEvent);
@@ -320,12 +320,6 @@ public class ScenarioSteps implements En {
     private Checkpointer fileCheckpointer() throws IOException {
         closeCheckpointer();
         checkpointer = DefaultCheckpointers.file(checkpointFile);
-        return checkpointer;
-    }
-
-    private Checkpointer replayCheckpointer(long startBlock) throws IOException {
-        closeCheckpointer();
-        checkpointer = DefaultCheckpointers.replay(startBlock);
         return checkpointer;
     }
 

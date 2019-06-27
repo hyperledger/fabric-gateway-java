@@ -191,6 +191,31 @@ public class BlockListenerTest {
     }
 
     @Test
+    public void add_replay_listener_returns_the_listener() throws GatewayException, IOException {
+        Consumer<BlockEvent> listener = blockEvent -> {};
+
+        Consumer<BlockEvent> result = network.addBlockListener(1, listener);
+
+        assertThat(result).isSameAs(listener);
+    }
+
+    @Test
+    public void replay_listener_receives_replay_events() throws GatewayException, IOException {
+        Consumer<BlockEvent> realtimeListener = event -> {};
+        Consumer<BlockEvent> replayListener = Mockito.spy(testUtils.stubBlockListener());
+        BlockEvent event1 = testUtils.newMockBlockEvent(peer1, 1);
+        BlockEvent event2 = testUtils.newMockBlockEvent(peer1, 2);
+
+        network.addBlockListener(realtimeListener);
+        stubBlockEventSource.sendEvent(event2); // Non-replay listeners will only receive later blocks
+        network.addBlockListener(2, replayListener);
+        stubBlockEventSource.sendEvent(event1); // Should be ignored
+        stubBlockEventSource.sendEvent(event2); // Should be received
+
+        Mockito.verify(replayListener, Mockito.times(1)).accept(event2);
+    }
+
+    @Test
     public void close_network_removes_listeners() {
         Consumer<BlockEvent> listener = Mockito.spy(testUtils.stubBlockListener());
         BlockEvent event = testUtils.newMockBlockEvent(peer1, 1);

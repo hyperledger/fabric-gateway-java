@@ -6,9 +6,9 @@
 
 package org.hyperledger.fabric.gateway;
 
-import org.hyperledger.fabric.sdk.BlockEvent;
-
 import java.util.Optional;
+
+import org.hyperledger.fabric.sdk.BlockEvent;
 
 public interface ContractEvent {
     /**
@@ -24,7 +24,7 @@ public interface ContractEvent {
     String getChaincodeId();
 
     /**
-     * Get the identifier of the transaction invocation that emitted this event.
+     * Get the transaction event that included this contract event.
      * @return The associated transaction event.
      */
     BlockEvent.TransactionEvent getTransactionEvent();

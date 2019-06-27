@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.hyperledger.fabric.gateway.spi.Checkpointer;
 
 /**
- * Transient in-memory checkpointer implementation with no persistent storage. Can be used for event replay.
+ * Transient in-memory checkpointer implementation with no persistent storage.
  */
 public class InMemoryCheckpointer implements Checkpointer {
     private final AtomicLong blockNumber;

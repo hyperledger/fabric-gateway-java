@@ -64,8 +64,6 @@ public interface Network {
 	 * Add a listener to receive block events from the network with checkpointing. Re-adding a listener with the same
 	 * checkpointer on subsequent application invocations will resume listening from the previous block position.
 	 * Events are received in order and without duplication.
-	 * <p>Event replay from a given start block can be achieved using the {@link DefaultCheckpointers#replay(long)}
-	 * checkpointer.</p>
 	 * @param checkpointer Checkpointer to persist block position.
 	 * @param listener A block listener.
 	 * @return The block listener argument.
@@ -74,7 +72,15 @@ public interface Network {
 	Consumer<BlockEvent> addBlockListener(Checkpointer checkpointer, Consumer<BlockEvent> listener) throws GatewayException, IOException;
 
 	/**
-	 * Removes a previously added block listener. Any associated checkpointer will be closed.
+	 * Add a listener to replay block events from the network. Events are received in order and without duplication.
+	 * @param startBlock The number of the block from which events should be replayed.
+	 * @param listener A block listener.
+	 * @return The block listener argument.
+	 */
+	Consumer<BlockEvent> addBlockListener(long startBlock, Consumer<BlockEvent> listener) throws GatewayException;
+
+	/**
+	 * Removes a previously added block listener.
 	 * @param listener A block listener.
 	 */
 	void removeBlockListener(Consumer<BlockEvent> listener);

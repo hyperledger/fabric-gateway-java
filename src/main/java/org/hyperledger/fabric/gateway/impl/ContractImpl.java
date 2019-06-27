@@ -20,6 +20,7 @@ import org.hyperledger.fabric.gateway.Transaction;
 import org.hyperledger.fabric.gateway.impl.event.BlockListenerSession;
 import org.hyperledger.fabric.gateway.impl.event.ListenerSession;
 import org.hyperledger.fabric.gateway.impl.event.Listeners;
+import org.hyperledger.fabric.gateway.impl.event.ReplayListenerSession;
 import org.hyperledger.fabric.gateway.spi.Checkpointer;
 import org.hyperledger.fabric.sdk.BlockEvent;
 
@@ -113,6 +114,40 @@ public final class ContractImpl implements Contract, AutoCloseable {
             if (!contractListenerSessions.containsKey(listener)) {
                 Consumer<ContractEvent> contractListener = Listeners.contract(listener, chaincodeId, eventNamePattern);
                 ListenerSession session = newCheckpointListenerSession(checkpointer, contractListener);
+                contractListenerSessions.put(listener, session);
+            }
+        }
+        return listener;
+    }
+
+    @Override
+    public Consumer<ContractEvent> addContractListener(long startBlock, Consumer<ContractEvent> listener) throws GatewayException {
+        synchronized (contractListenerSessions) {
+            if (!contractListenerSessions.containsKey(listener)) {
+                Consumer<ContractEvent> contractListener = Listeners.contract(listener, chaincodeId);
+                ListenerSession session = newReplayListenerSession(startBlock, contractListener);
+                contractListenerSessions.put(listener, session);
+            }
+        }
+        return listener;
+    }
+
+    private ListenerSession newReplayListenerSession(long startBlock, Consumer<ContractEvent> contractListener) throws GatewayException {
+        Consumer<BlockEvent> blockListener = Listeners.fromContract(contractListener);
+        return new ReplayListenerSession(network, blockListener, startBlock);
+    }
+
+    @Override
+    public Consumer<ContractEvent> addContractListener(long startBlock, Consumer<ContractEvent> listener, String eventName) throws GatewayException {
+        return addContractListener(startBlock, listener, getEventNamePattern(eventName));
+    }
+
+    @Override
+    public Consumer<ContractEvent> addContractListener(long startBlock, Consumer<ContractEvent> listener, Pattern eventNamePattern) throws GatewayException {
+        synchronized (contractListenerSessions) {
+            if (!contractListenerSessions.containsKey(listener)) {
+                Consumer<ContractEvent> contractListener = Listeners.contract(listener, chaincodeId, eventNamePattern);
+                ListenerSession session = newReplayListenerSession(startBlock, contractListener);
                 contractListenerSessions.put(listener, session);
             }
         }

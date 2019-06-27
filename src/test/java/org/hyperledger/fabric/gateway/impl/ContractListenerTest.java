@@ -81,6 +81,14 @@ public class ContractListenerTest {
         return result;
     }
 
+    private ChaincodeEvent mockChaincodeEvent(String chaincodeId, String name, byte[] payload) {
+        ChaincodeEvent result = mock(ChaincodeEvent.class);
+        when(result.getChaincodeId()).thenReturn(chaincodeId);
+        when(result.getEventName()).thenReturn(name);
+        when(result.getPayload()).thenReturn(payload);
+        return result;
+    }
+
     private void fireEvents(ChaincodeEvent... chaincodeEvents) {
         BlockEvent event = newBlockEvent(1, chaincodeEvents);
         blockSource.sendEvent(event);
@@ -256,6 +264,26 @@ public class ContractListenerTest {
     }
 
     @Test
+    public void add_checkpoint_listener_with_event_name_returns_the_listener() throws IOException, GatewayException {
+        Consumer<ContractEvent> listener = event -> {};
+        Checkpointer checkpointer = new InMemoryCheckpointer();
+
+        Consumer<ContractEvent> result = contract.addContractListener(checkpointer, listener, eventName);
+
+        assertThat(result).isSameAs(listener);
+    }
+
+    @Test
+    public void add_checkpoint_listener_with_event_pattern_returns_the_listener() throws IOException, GatewayException {
+        Consumer<ContractEvent> listener = event -> {};
+        Checkpointer checkpointer = new InMemoryCheckpointer();
+
+        Consumer<ContractEvent> result = contract.addContractListener(checkpointer, listener, eventNamePattern);
+
+        assertThat(result).isSameAs(listener);
+    }
+
+    @Test
     public void listener_with_new_checkpointer_receives_all_events() throws IOException, GatewayException {
         Consumer<ContractEvent> listener = spy(testUtils.stubContractListener());
         Checkpointer checkpointer = new InMemoryCheckpointer();
@@ -271,7 +299,7 @@ public class ContractListenerTest {
 
     @Test
     public void listener_with_saved_checkpointer_resumes_from_previous_event() throws IOException, GatewayException {
-        Consumer<ContractEvent> realtimeListener = testUtils.stubContractListener();
+        Consumer<ContractEvent> realtimeListener = event -> {};
         Consumer<ContractEvent> replayListener = spy(testUtils.stubContractListener());
         Checkpointer checkpointer = new InMemoryCheckpointer();
         ChaincodeEvent chaincodeEvent = mockChaincodeEvent(chaincodeId, eventName);
@@ -315,6 +343,87 @@ public class ContractListenerTest {
         blockSource.sendEvent(blockEvent);
 
         verify(listener, times(2)).accept(any(ContractEvent.class));
+    }
+
+    @Test
+    public void add_replay_listener_returns_the_listener() throws IOException, GatewayException {
+        Consumer<ContractEvent> listener = event -> {};
+
+        Consumer<ContractEvent> result = contract.addContractListener(1, listener);
+
+        assertThat(result).isSameAs(listener);
+    }
+
+    @Test
+    public void add_replay_listener_with_event_name_returns_the_listener() throws IOException, GatewayException {
+        Consumer<ContractEvent> listener = event -> {};
+
+        Consumer<ContractEvent> result = contract.addContractListener(1, listener, eventName);
+
+        assertThat(result).isSameAs(listener);
+    }
+
+    @Test
+    public void add_replay_listener_with_event_pattern_returns_the_listener() throws IOException, GatewayException {
+        Consumer<ContractEvent> listener = event -> {};
+
+        Consumer<ContractEvent> result = contract.addContractListener(1, listener, eventNamePattern);
+
+        assertThat(result).isSameAs(listener);
+    }
+
+    @Test
+    public void replay_listener_receives_events_from_start_block() throws IOException, GatewayException {
+        Consumer<ContractEvent> replayListener = spy(testUtils.stubContractListener());
+        ChaincodeEvent chaincodeEvent = mockChaincodeEvent(chaincodeId, eventName);
+        BlockEvent blockEvent1 = newBlockEvent(1, chaincodeEvent);
+        BlockEvent blockEvent2 = newBlockEvent(2, chaincodeEvent);
+
+        contract.addContractListener(testUtils.stubContractListener());
+        blockSource.sendEvent(blockEvent2); // Non-replay listeners will now only receive later blocks
+        contract.addContractListener(2, replayListener);
+        blockSource.sendEvent(blockEvent1); // Should be ignored
+        blockSource.sendEvent(blockEvent2); // Should be received
+
+        verify(replayListener, times(1)).accept(any(ContractEvent.class));
+    }
+
+    @Test
+    public void replay_listener_with_event_name_receives_events_from_start_block() throws IOException, GatewayException {
+        Consumer<ContractEvent> replayListener = spy(testUtils.stubContractListener());
+        ChaincodeEvent goodEvent = mockChaincodeEvent(chaincodeId, eventName);
+        ChaincodeEvent badEvent = mockChaincodeEvent(chaincodeId, "BAD_" + eventName);
+        BlockEvent blockEvent1 = newBlockEvent(1, goodEvent);
+        BlockEvent blockEvent2 = newBlockEvent(2, goodEvent);
+        BlockEvent blockEvent3 = newBlockEvent(3, badEvent);
+
+        contract.addContractListener(testUtils.stubContractListener());
+        blockSource.sendEvent(blockEvent2); // Non-replay listeners will now only receive later blocks
+        contract.addContractListener(2, replayListener, eventName);
+        blockSource.sendEvent(blockEvent1); // Should be ignored
+        blockSource.sendEvent(blockEvent2); // Should be received
+        blockSource.sendEvent(blockEvent3); // Should be ignored
+
+        verify(replayListener, times(1)).accept(any(ContractEvent.class));
+    }
+
+    @Test
+    public void replay_listener_with_event_pattern_receives_events_from_start_block() throws IOException, GatewayException {
+        Consumer<ContractEvent> replayListener = spy(testUtils.stubContractListener());
+        ChaincodeEvent goodEvent = mockChaincodeEvent(chaincodeId, eventName);
+        ChaincodeEvent badEvent = mockChaincodeEvent(chaincodeId, "BAD_" + eventName);
+        BlockEvent blockEvent1 = newBlockEvent(1, goodEvent);
+        BlockEvent blockEvent2 = newBlockEvent(2, goodEvent);
+        BlockEvent blockEvent3 = newBlockEvent(3, badEvent);
+
+        contract.addContractListener(testUtils.stubContractListener());
+        blockSource.sendEvent(blockEvent2); // Non-replay listeners will now only receive later blocks
+        contract.addContractListener(2, replayListener, eventNamePattern);
+        blockSource.sendEvent(blockEvent1); // Should be ignored
+        blockSource.sendEvent(blockEvent2); // Should be received
+        blockSource.sendEvent(blockEvent3); // Should be ignored
+
+        verify(replayListener, times(1)).accept(any(ContractEvent.class));
     }
 
     @Test
