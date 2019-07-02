@@ -12,19 +12,6 @@
 			}
 		}
 	},
-	"channels": {
-		"mychannel": {
-			"peers": {
-				"peer0.org1.example.com": {
-					"endorsingPeer": true,
-					"chaincodeQuery": true,
-					"ledgerQuery": true,
-					"eventSource": true,
-					"discover": true
-				}
-			}
-		}
-	},
 	"organizations": {
 		"Org1": {
 			"mspid": "Org1MSP",

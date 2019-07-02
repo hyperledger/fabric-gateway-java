@@ -10,11 +10,16 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
 import javax.json.Json;
 import javax.json.JsonReader;
 import javax.json.stream.JsonParsingException;
@@ -31,9 +36,12 @@ import org.hyperledger.fabric.gateway.Wallet.Identity;
 import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
 import org.hyperledger.fabric.gateway.spi.QueryHandlerFactory;
 import org.hyperledger.fabric.sdk.Channel;
+import org.hyperledger.fabric.sdk.Channel.PeerOptions;
 import org.hyperledger.fabric.sdk.Enrollment;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.NetworkConfig;
+import org.hyperledger.fabric.sdk.Peer;
+import org.hyperledger.fabric.sdk.Peer.PeerRole;
 import org.hyperledger.fabric.sdk.User;
 import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
@@ -235,7 +243,19 @@ public final class GatewayImpl implements Gateway {
             }
             if (channel == null) {
                 try {
+                    // since this channel is not in the CCP, we'll assume it exists,
+                	// and the org's peer(s) has joined it with all roles
                     channel = client.newChannel(networkName);
+                    Collection<Peer> orgPeers = getPeersForOrg();
+                    for(Peer peer: orgPeers) {
+                    	channel.addPeer(peer,
+                    			PeerOptions.createPeerOptions()
+                    			.addPeerRole(PeerRole.CHAINCODE_QUERY)
+                    			.addPeerRole(PeerRole.ENDORSING_PEER)
+                    			.addPeerRole(PeerRole.EVENT_SOURCE)
+                    			.addPeerRole(PeerRole.LEDGER_QUERY)
+                    			.addPeerRole(PeerRole.SERVICE_DISCOVERY));
+                    }
                 } catch (InvalidArgumentException e) {
                     // we've already checked the channel status
                 	throw new GatewayException(e);
@@ -274,5 +294,20 @@ public final class GatewayImpl implements Gateway {
 
     public GatewayImpl newInstance() throws GatewayException {
         return new GatewayImpl(this);
+    }
+
+    private Collection<Peer> getPeersForOrg() {
+    	Collection<Peer> peers = new ArrayList<Peer>();
+		List<String> peerNames = networkConfig.getClientOrganization().getPeerNames();
+		for(String name: peerNames) {
+			try {
+				String url = networkConfig.getPeerUrl(name);
+				Properties props =networkConfig.getPeerProperties(name);
+				peers.add(client.newPeer(name, url, props));
+			} catch (InvalidArgumentException e) {
+				// log warning
+			}
+		}
+		return peers;
     }
 }
