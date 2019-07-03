@@ -74,3 +74,7 @@ All classes and methods have a high coverage (~90%) of unit tests.  These are wr
 ### Scenario tests
 
 Scenario tests are written using the [Cucumber](https://cucumber.io/) BDD framework
+
+## Documentation
+
+Full Javadoc documentation of the SDK is published [here](https://fabric-gateway-java.github.io/).
