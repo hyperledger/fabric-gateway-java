@@ -212,7 +212,7 @@ public class BlockListenerTest {
         stubBlockEventSource.sendEvent(event1); // Should be ignored
         stubBlockEventSource.sendEvent(event2); // Should be received
 
-        Mockito.verify(replayListener, Mockito.times(1)).accept(event2);
+        Mockito.verify(replayListener, Mockito.only()).accept(event2);
     }
 
     @Test

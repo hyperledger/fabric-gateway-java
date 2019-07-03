@@ -17,6 +17,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.hyperledger.fabric.gateway.Contract;
+import org.hyperledger.fabric.gateway.ContractException;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.TestUtils;
@@ -27,7 +28,6 @@ import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.ProposalResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -98,19 +98,19 @@ public class TransactionTest {
         assertThat(result).isEqualTo(name);
     }
 
-    @Disabled("Not sure if this is a valid scenario")
     @Test
-    public void testEvaluateNoResponses() throws Exception {
-        when(channel.queryByChaincode(any(), anyCollection())).thenReturn(Collections.emptyList());
+    public void testEvaluateNoResponse() throws Exception {
+        ProposalResponse noResponse = testUtils.newUnavailableProposalResponse("No response");
+        when(channel.queryByChaincode(any(), anyCollection())).thenReturn(Collections.singletonList(noResponse));
 
         assertThatThrownBy(() -> contract.evaluateTransaction("txn", "arg1"))
-                .isInstanceOf(GatewayException.class);
+                .isInstanceOf(ContractException.class);
     }
 
     @Test
     public void testEvaluateUnsuccessfulResponse() throws Exception {
         when(failureResponse.getPeer()).thenReturn(peer);
-        when(channel.queryByChaincode(any(), anyCollection())).thenReturn(Arrays.asList(failureResponse));
+        when(channel.queryByChaincode(any(), anyCollection())).thenReturn(Collections.singletonList(failureResponse));
 
         assertThatThrownBy(() -> contract.evaluateTransaction("txn", "arg1"))
                 .isInstanceOf(GatewayException.class);
@@ -121,7 +121,7 @@ public class TransactionTest {
         String expected = "successful result";
         ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
         when(response.getPeer()).thenReturn(peer);
-        when(channel.queryByChaincode(any(), anyCollection())).thenReturn(Arrays.asList(response));
+        when(channel.queryByChaincode(any(), anyCollection())).thenReturn(Collections.singletonList(response));
 
         byte[] result = contract.evaluateTransaction("txn", "arg1");
         assertThat(new String(result)).isEqualTo(expected);
@@ -132,7 +132,7 @@ public class TransactionTest {
         String expected = "successful result";
         ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
         when(response.getPeer()).thenReturn(peer);
-        when(channel.queryByChaincode(any(), anyCollection())).thenReturn(Arrays.asList(response));
+        when(channel.queryByChaincode(any(), anyCollection())).thenReturn(Collections.singletonList(response));
 
         byte[] result = contract.createTransaction("txn").setTransient(transientMap).evaluate("arg1");
         assertThat(new String(result)).isEqualTo(expected);
@@ -149,7 +149,7 @@ public class TransactionTest {
 
     @Test
     public void testSubmitUnsuccessfulResponse() throws Exception {
-        when(channel.sendTransactionProposal(any())).thenReturn(Arrays.asList(failureResponse));
+        when(channel.sendTransactionProposal(any())).thenReturn(Collections.singletonList(failureResponse));
 
         assertThatThrownBy(() -> contract.submitTransaction("txn", "arg1"))
                 .isInstanceOf(GatewayException.class);
@@ -159,7 +159,7 @@ public class TransactionTest {
     public void testSubmitSuccess() throws Exception {
         String expected = "successful result";
         ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
-        when(channel.sendTransactionProposal(any())).thenReturn(Arrays.asList(response));
+        when(channel.sendTransactionProposal(any())).thenReturn(Collections.singletonList(response));
 
         byte[] result = contract.submitTransaction("txn", "arg1");
         assertThat(new String(result)).isEqualTo(expected);
@@ -169,7 +169,7 @@ public class TransactionTest {
     public void testSubmitSuccessWithTransient() throws Exception {
         String expected = "successful result";
         ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
-        when(channel.sendTransactionProposal(any())).thenReturn(Arrays.asList(response));
+        when(channel.sendTransactionProposal(any())).thenReturn(Collections.singletonList(response));
 
         byte[] result = contract.createTransaction("txn").setTransient(transientMap).submit("arg1");
         assertThat(new String(result)).isEqualTo(expected);
@@ -179,7 +179,7 @@ public class TransactionTest {
     public void testUsesGatewayCommitTimeout() throws Exception {
         String expected = "successful result";
         ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
-        when(channel.sendTransactionProposal(any())).thenReturn(Arrays.asList(response));
+        when(channel.sendTransactionProposal(any())).thenReturn(Collections.singletonList(response));
 
         contract.submitTransaction("txn", "arg1");
 

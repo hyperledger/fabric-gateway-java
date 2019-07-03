@@ -10,7 +10,7 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.function.Consumer;
 
-import org.hyperledger.fabric.gateway.GatewayException;
+import org.hyperledger.fabric.gateway.GatewayRuntimeException;
 import org.hyperledger.fabric.gateway.impl.GatewayImpl;
 import org.hyperledger.fabric.gateway.impl.NetworkImpl;
 import org.hyperledger.fabric.sdk.BlockEvent;
@@ -27,7 +27,7 @@ public final class ReplayListenerSession implements ListenerSession {
     private final Channel channel;
     private final BlockEventSource blockSource;
 
-    public ReplayListenerSession(NetworkImpl network, Consumer<BlockEvent> listener, long startBlock) throws GatewayException {
+    public ReplayListenerSession(NetworkImpl network, Consumer<BlockEvent> listener, long startBlock) {
         gateway = network.getGateway().newInstance();
         String channelName = network.getChannel().getName();
         channel = gateway.getNetwork(channelName).getChannel();
@@ -44,17 +44,17 @@ public final class ReplayListenerSession implements ListenerSession {
         addReplayPeers(eventingPeers, startBlock);
     }
 
-    private void removeAllPeers() throws GatewayException {
+    private void removeAllPeers() {
         try {
             for (Peer peer : channel.getPeers()) {
                 channel.removePeer(peer);
             }
         } catch (InvalidArgumentException e) {
-            throw new GatewayException(e);
+            throw new GatewayRuntimeException("Failed to remove peers from channel", e);
         }
     }
 
-    private void addReplayPeers(Collection<Peer> eventingPeers, long startBlock) throws GatewayException {
+    private void addReplayPeers(Collection<Peer> eventingPeers, long startBlock) {
         HFClient client = gateway.getClient();
         try {
             for (Peer originalPeer : eventingPeers) {
@@ -65,7 +65,7 @@ public final class ReplayListenerSession implements ListenerSession {
                 channel.addPeer(replayPeer, options);
             }
         } catch (InvalidArgumentException e) {
-            throw new GatewayException(e);
+            throw new GatewayRuntimeException("Failed to add peers for event replay", e);
         }
     }
 

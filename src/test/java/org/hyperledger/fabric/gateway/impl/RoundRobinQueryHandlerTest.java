@@ -6,6 +6,10 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import java.util.Arrays;
+import java.util.Collections;
+
+import org.hyperledger.fabric.gateway.ContractException;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.gateway.spi.Query;
@@ -16,12 +20,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import java.util.Arrays;
-import java.util.Collections;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class RoundRobinQueryHandlerTest {
     private final TestUtils testUtils = TestUtils.getInstance();
@@ -29,6 +34,7 @@ class RoundRobinQueryHandlerTest {
     private Peer peer2;
     private ProposalResponse successfulResponse;
     private ProposalResponse failureResponse;
+    private ProposalResponse unavailableResponse;
 
     @BeforeEach
     public void beforeEach() {
@@ -36,6 +42,7 @@ class RoundRobinQueryHandlerTest {
         peer2 = testUtils.newMockPeer("peer2");
         successfulResponse = testUtils.newSuccessfulProposalResponse(new byte[0]);
         failureResponse = testUtils.newFailureProposalResponse("Epic fail");
+        unavailableResponse = testUtils.newUnavailableProposalResponse("No response from peer");
     }
 
     @Test
@@ -49,25 +56,39 @@ class RoundRobinQueryHandlerTest {
         Query query = mock(Query.class);
         when(query.evaluate(peer1)).thenReturn(successfulResponse);
 
-        QueryHandler handler = new RoundRobinQueryHandler(Arrays.asList(peer1));
+        QueryHandler handler = new RoundRobinQueryHandler(Collections.singletonList(peer1));
         ProposalResponse result = handler.evaluate(query);
 
         assertThat(result).isEqualTo(successfulResponse);
     }
 
     @Test
-    public void throws_if_all_peers_fail() throws GatewayException {
+    public void throws_on_failure_peer_response() {
         Query query = mock(Query.class);
-        when(query.evaluate(peer1)).thenReturn(failureResponse);
+        when(query.evaluate(any(Peer.class)))
+                .thenReturn(failureResponse)
+                .thenReturn(successfulResponse);
 
-        QueryHandler handler = new RoundRobinQueryHandler(Arrays.asList(peer1));
+        QueryHandler handler = new RoundRobinQueryHandler(Arrays.asList(peer1, peer2));
+
         assertThatThrownBy(() -> handler.evaluate(query))
-                .isInstanceOf(GatewayException.class)
+                .isInstanceOf(ContractException.class)
                 .hasMessageContaining(failureResponse.getMessage());
     }
 
     @Test
-    public void different_peers_for_two_successful_queries() throws GatewayException {
+    public void throws_if_all_peers_are_unavailable() {
+        Query query = mock(Query.class);
+        when(query.evaluate(peer1)).thenReturn(unavailableResponse);
+
+        QueryHandler handler = new RoundRobinQueryHandler(Collections.singletonList(peer1));
+        assertThatThrownBy(() -> handler.evaluate(query))
+                .isInstanceOf(ContractException.class)
+                .hasMessageContaining(unavailableResponse.getMessage());
+    }
+
+    @Test
+    public void different_peers_for_two_successful_queries() throws ContractException {
         Query query = mock(Query.class);
         when(query.evaluate(any(Peer.class))).thenReturn(successfulResponse);
 
@@ -83,10 +104,10 @@ class RoundRobinQueryHandlerTest {
     }
 
     @Test
-    public void failover_on_peer_failure() throws GatewayException {
+    public void failover_on_peer_failure() throws ContractException {
         Query query = mock(Query.class);
         when(query.evaluate(any(Peer.class)))
-                .thenReturn(failureResponse)
+                .thenReturn(unavailableResponse)
                 .thenReturn(successfulResponse);
 
         QueryHandler handler = new RoundRobinQueryHandler(Arrays.asList(peer1, peer2));

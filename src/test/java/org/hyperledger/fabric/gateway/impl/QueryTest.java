@@ -6,7 +6,14 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
-import org.hyperledger.fabric.gateway.GatewayException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.hyperledger.fabric.gateway.GatewayRuntimeException;
 import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.gateway.spi.Query;
 import org.hyperledger.fabric.sdk.Channel;
@@ -17,12 +24,6 @@ import org.hyperledger.fabric.sdk.exception.ProposalException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -66,7 +67,7 @@ class QueryTest {
         byte[] peerNameBytes = peer.getName().getBytes(StandardCharsets.UTF_8);
         ProposalResponse response = testUtils.newSuccessfulProposalResponse(peerNameBytes);
         Mockito.when(response.getPeer()).thenReturn(peer);
-        Collection<ProposalResponse> responses = Arrays.asList(response);
+        Collection<ProposalResponse> responses = Collections.singletonList(response);
         Mockito.when(channel.queryByChaincode(Mockito.any(), Mockito.anyCollection())).thenReturn(responses);
 
         ProposalResponse result = query.evaluate(peer);
@@ -79,7 +80,7 @@ class QueryTest {
     public void throw_on_bad_proposal_for_multiple_peers() throws Exception {
         Mockito.when(channel.queryByChaincode(request, peers)).thenThrow(ProposalException.class);
 
-        assertThatThrownBy(() -> query.evaluate(peers)).isInstanceOf(GatewayException.class);
+        assertThatThrownBy(() -> query.evaluate(peers)).isInstanceOf(GatewayRuntimeException.class);
     }
 
     @Test
@@ -87,6 +88,6 @@ class QueryTest {
         Peer peer = peers.iterator().next();
         Mockito.when(channel.queryByChaincode(Mockito.any(), Mockito.anyCollection())).thenThrow(ProposalException.class);
 
-        assertThatThrownBy(() -> query.evaluate(peer)).isInstanceOf(GatewayException.class);
+        assertThatThrownBy(() -> query.evaluate(peer)).isInstanceOf(GatewayRuntimeException.class);
     }
 }

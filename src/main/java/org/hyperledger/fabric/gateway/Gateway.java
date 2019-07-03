@@ -6,12 +6,12 @@
 
 package org.hyperledger.fabric.gateway;
 
+import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
+
 import org.hyperledger.fabric.gateway.impl.GatewayImpl;
 import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
 import org.hyperledger.fabric.gateway.spi.QueryHandlerFactory;
-
-import java.nio.file.Path;
-import java.util.concurrent.TimeUnit;
 
 /**
  * The Gateway provides the connection point for an application to access
@@ -124,8 +124,7 @@ public interface Gateway extends AutoCloseable {
 		/**
 		 * Connects to the gateway using the specified options.
 		 * @return The connected {@link Gateway} object.
-		 * @throws GatewayException on failure to connect the gateway using specified options.
 		 */
-		Gateway connect() throws GatewayException;
+		Gateway connect();
 	}
 }

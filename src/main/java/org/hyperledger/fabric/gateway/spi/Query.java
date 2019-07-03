@@ -6,12 +6,11 @@
 
 package org.hyperledger.fabric.gateway.spi;
 
-import org.hyperledger.fabric.gateway.GatewayException;
-import org.hyperledger.fabric.sdk.Peer;
-import org.hyperledger.fabric.sdk.ProposalResponse;
-
 import java.util.Collection;
 import java.util.Map;
+
+import org.hyperledger.fabric.sdk.Peer;
+import org.hyperledger.fabric.sdk.ProposalResponse;
 
 /**
  * Defines a query and provides methods to evaluate the query on specific peers.
@@ -21,8 +20,17 @@ public interface Query {
      * Evaluate the query on a specific peer.
      * @param peer A peer.
      * @return The query result from the peer.
-     * @throws GatewayException If no result can be obtained from the peer.
+     * @throws org.hyperledger.fabric.gateway.GatewayRuntimeException if misconfiguration of system state prevents
+     * queries from being sent.
      */
-    ProposalResponse evaluate(Peer peer) throws GatewayException;
-    Map<Peer, ProposalResponse> evaluate(Collection<Peer> peers) throws GatewayException;
+    ProposalResponse evaluate(Peer peer);
+
+    /**
+     * Evaluate the query on several peers.
+     * @param peers Peers to query.
+     * @return The query results from the peers.
+     * @throws org.hyperledger.fabric.gateway.GatewayRuntimeException if misconfiguration of system state prevents
+     * queries from being sent.
+     */
+    Map<Peer, ProposalResponse> evaluate(Collection<Peer> peers);
 }

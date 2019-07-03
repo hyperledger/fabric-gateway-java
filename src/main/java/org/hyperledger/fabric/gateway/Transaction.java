@@ -52,22 +52,23 @@ public interface Transaction {
 	 *
 	 * @param args Transaction function arguments.
 	 * @return Payload response from the transaction function.
-	 * @throws GatewayException if a error occurs submitting the transaction to the ledger.
+	 * @throws ContractException if the transaction is rejected.
 	 * @throws TimeoutException if the transaction was successfully submitted to the orderer but
 	 * timed out before a commit event was received from peers.
+	 * @throws GatewayRuntimeException if an underlying infrastructure failure occurs.
 	 */
-	byte[] submit(String... args) throws GatewayException, TimeoutException;
+	byte[] submit(String... args) throws ContractException, TimeoutException;
 
 	/**
 	 * Evaluate a transaction function and return its results.
 	 * The transaction function will be evaluated on the endorsing peers but
 	 * the responses will not be sent to the ordering service and hence will
-	 * not be committed to the ledger.
-	 * This is used for querying the world state.
+	 * not be committed to the ledger. This is used for querying the world state.
 	 *
 	 * @param args Transaction function arguments.
 	 * @return Payload response from the transaction function.
-	 * @throws GatewayException
+	 * @throws ContractException if no peers are reachable or an error response is returned.
+	 * @throws GatewayRuntimeException if an underlying infrastructure failure occurs.
 	 */
-	byte[] evaluate(String... args) throws GatewayException;
+	byte[] evaluate(String... args) throws ContractException;
 }

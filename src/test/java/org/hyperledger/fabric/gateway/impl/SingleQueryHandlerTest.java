@@ -6,7 +6,10 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
-import org.hyperledger.fabric.gateway.GatewayException;
+import java.util.Arrays;
+import java.util.Collections;
+
+import org.hyperledger.fabric.gateway.ContractException;
 import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.gateway.spi.Query;
 import org.hyperledger.fabric.gateway.spi.QueryHandler;
@@ -16,12 +19,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import java.util.Arrays;
-import java.util.Collections;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class SingleQueryHandlerTest {
     private final TestUtils testUtils = TestUtils.getInstance();
@@ -29,6 +33,7 @@ class SingleQueryHandlerTest {
     private Peer peer2;
     private ProposalResponse successfulResponse;
     private ProposalResponse failureResponse;
+    private ProposalResponse unavailableResponse;
 
     @BeforeEach
     public void beforeEach() {
@@ -36,6 +41,7 @@ class SingleQueryHandlerTest {
         peer2 = testUtils.newMockPeer("peer2");
         successfulResponse = testUtils.newSuccessfulProposalResponse(new byte[0]);
         failureResponse = testUtils.newFailureProposalResponse("Epic fail");
+        unavailableResponse = testUtils.newUnavailableProposalResponse("No response from peer");
     }
 
     @Test
@@ -45,29 +51,43 @@ class SingleQueryHandlerTest {
     }
 
     @Test
-    public void returns_successful_peer_response() throws GatewayException {
+    public void returns_successful_peer_response() throws ContractException {
         Query query = mock(Query.class);
         when(query.evaluate(peer1)).thenReturn(successfulResponse);
 
-        QueryHandler handler = new SingleQueryHandler(Arrays.asList(peer1));
+        QueryHandler handler = new SingleQueryHandler(Collections.singletonList(peer1));
         ProposalResponse result = handler.evaluate(query);
 
         assertThat(result).isEqualTo(successfulResponse);
     }
 
     @Test
-    public void throws_if_all_peers_fail() throws GatewayException {
+    public void throws_on_failure_peer_response() {
         Query query = mock(Query.class);
-        when(query.evaluate(peer1)).thenReturn(failureResponse);
+        when(query.evaluate(any(Peer.class)))
+                .thenReturn(failureResponse)
+                .thenReturn(successfulResponse);
 
-        QueryHandler handler = new SingleQueryHandler(Arrays.asList(peer1));
+        QueryHandler handler = new SingleQueryHandler(Arrays.asList(peer1, peer2));
+
         assertThatThrownBy(() -> handler.evaluate(query))
-                .isInstanceOf(GatewayException.class)
+                .isInstanceOf(ContractException.class)
                 .hasMessageContaining(failureResponse.getMessage());
     }
 
     @Test
-    public void same_peer_for_two_successful_queries() throws GatewayException {
+    public void throws_if_all_peers_are_unavailable() {
+        Query query = mock(Query.class);
+        when(query.evaluate(peer1)).thenReturn(unavailableResponse);
+
+        QueryHandler handler = new SingleQueryHandler(Collections.singletonList(peer1));
+        assertThatThrownBy(() -> handler.evaluate(query))
+                .isInstanceOf(ContractException.class)
+                .hasMessageContaining(unavailableResponse.getMessage());
+    }
+
+    @Test
+    public void same_peer_for_two_successful_queries() throws ContractException {
         Query query = mock(Query.class);
         when(query.evaluate(any(Peer.class))).thenReturn(successfulResponse);
 
@@ -83,10 +103,10 @@ class SingleQueryHandlerTest {
     }
 
     @Test
-    public void failover_on_peer_failure() throws GatewayException {
+    public void failover_if_peer_unavailable() throws ContractException {
         Query query = mock(Query.class);
         when(query.evaluate(any(Peer.class)))
-                .thenReturn(failureResponse)
+                .thenReturn(unavailableResponse)
                 .thenReturn(successfulResponse);
 
         QueryHandler handler = new SingleQueryHandler(Arrays.asList(peer1, peer2));

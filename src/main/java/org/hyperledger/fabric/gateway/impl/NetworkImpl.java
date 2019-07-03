@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 import org.hyperledger.fabric.gateway.Contract;
-import org.hyperledger.fabric.gateway.GatewayException;
+import org.hyperledger.fabric.gateway.GatewayRuntimeException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.impl.event.BlockEventSource;
 import org.hyperledger.fabric.gateway.impl.event.BlockEventSourceFactory;
@@ -43,7 +43,7 @@ public final class NetworkImpl implements Network, AutoCloseable {
     private final Map<Consumer<BlockEvent>, ListenerSession> blockListenerSessions = new HashMap<>();
     private final Map<CommitListener, CommitListenerSession> commitListenerSessions = new ConcurrentHashMap<>();
 
-    NetworkImpl(Channel channel, GatewayImpl gateway) throws GatewayException {
+    NetworkImpl(Channel channel, GatewayImpl gateway) {
         this.channel = channel;
         this.gateway = gateway;
 
@@ -54,11 +54,11 @@ public final class NetworkImpl implements Network, AutoCloseable {
         queryHandler = gateway.getQueryHandlerFactory().create(this);
     }
 
-    private void initializeChannel() throws GatewayException {
+    private void initializeChannel() {
         try {
             channel.initialize();
         } catch (InvalidArgumentException | TransactionException e) {
-            throw new GatewayException(e);
+            throw new GatewayRuntimeException("Failed to initialize channel", e);
         }
     }
 
@@ -99,7 +99,7 @@ public final class NetworkImpl implements Network, AutoCloseable {
     }
 
     @Override
-    public Consumer<BlockEvent> addBlockListener(Checkpointer checkpointer, Consumer<BlockEvent> listener) throws GatewayException, IOException {
+    public Consumer<BlockEvent> addBlockListener(Checkpointer checkpointer, Consumer<BlockEvent> listener) throws IOException {
         synchronized (blockListenerSessions) {
             if (!blockListenerSessions.containsKey(listener)) {
                 Consumer<BlockEvent> checkpointListener = Listeners.checkpointBlock(checkpointer, listener);
@@ -112,7 +112,7 @@ public final class NetworkImpl implements Network, AutoCloseable {
     }
 
     @Override
-    public Consumer<BlockEvent> addBlockListener(long startBlock, Consumer<BlockEvent> listener) throws GatewayException {
+    public Consumer<BlockEvent> addBlockListener(long startBlock, Consumer<BlockEvent> listener) {
         synchronized (blockListenerSessions) {
             if (!blockListenerSessions.containsKey(listener)) {
                 ListenerSession session = new ReplayListenerSession(this, listener, startBlock);
@@ -122,7 +122,7 @@ public final class NetworkImpl implements Network, AutoCloseable {
         return listener;
     }
 
-    public ListenerSession newCheckpointListenerSession(Checkpointer checkpointer, Consumer<BlockEvent> listener) throws IOException, GatewayException {
+    public ListenerSession newCheckpointListenerSession(Checkpointer checkpointer, Consumer<BlockEvent> listener) throws IOException {
         final long blockNumber = checkpointer.getBlockNumber();
         if (blockNumber == Checkpointer.UNSET_BLOCK_NUMBER) {
             // New checkpointer so can attach to the shared block source

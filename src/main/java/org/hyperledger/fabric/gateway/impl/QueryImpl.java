@@ -6,7 +6,12 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
-import org.hyperledger.fabric.gateway.GatewayException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.hyperledger.fabric.gateway.GatewayRuntimeException;
 import org.hyperledger.fabric.gateway.spi.Query;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.Peer;
@@ -14,12 +19,6 @@ import org.hyperledger.fabric.sdk.ProposalResponse;
 import org.hyperledger.fabric.sdk.QueryByChaincodeRequest;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public final class QueryImpl implements Query {
     private final Channel channel;
@@ -31,24 +30,23 @@ public final class QueryImpl implements Query {
     }
 
     @Override
-    public ProposalResponse evaluate(Peer peer) throws GatewayException {
+    public ProposalResponse evaluate(Peer peer) {
         try {
             Collection<ProposalResponse> responses = channel.queryByChaincode(request, Collections.singletonList(peer));
             return responses.iterator().next();
         } catch (ProposalException | InvalidArgumentException e) {
-            throw new GatewayException(e);
+            throw new GatewayRuntimeException(e);
         }
     }
 
     @Override
-    public Map<Peer, ProposalResponse> evaluate(Collection<Peer> peers) throws GatewayException {
+    public Map<Peer, ProposalResponse> evaluate(Collection<Peer> peers) {
         try {
             Collection<ProposalResponse> responses = channel.queryByChaincode(request, peers);
-            Map<Peer, ProposalResponse> results = responses.stream()
-                    .collect(Collectors.toMap(ProposalResponse::getPeer, Function.identity()));
-            return results;
+            return responses.stream()
+                    .collect(Collectors.toMap(ProposalResponse::getPeer, response -> response));
         } catch (ProposalException | InvalidArgumentException e) {
-            throw new GatewayException(e);
+            throw new GatewayRuntimeException(e);
         }
     }
 }

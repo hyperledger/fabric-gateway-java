@@ -67,17 +67,19 @@ public interface Network {
 	 * @param checkpointer Checkpointer to persist block position.
 	 * @param listener A block listener.
 	 * @return The block listener argument.
-	 * @throws IOException if an errors occurs establishing checkpointing.
+	 * @throws IOException if an error occurs establishing checkpointing.
+	 * @throws GatewayRuntimeException if an underlying infrastructure failure occurs.
 	 */
-	Consumer<BlockEvent> addBlockListener(Checkpointer checkpointer, Consumer<BlockEvent> listener) throws GatewayException, IOException;
+	Consumer<BlockEvent> addBlockListener(Checkpointer checkpointer, Consumer<BlockEvent> listener) throws IOException;
 
 	/**
 	 * Add a listener to replay block events from the network. Events are received in order and without duplication.
 	 * @param startBlock The number of the block from which events should be replayed.
 	 * @param listener A block listener.
 	 * @return The block listener argument.
+	 * @throws GatewayRuntimeException if an underlying infrastructure failure occurs.
 	 */
-	Consumer<BlockEvent> addBlockListener(long startBlock, Consumer<BlockEvent> listener) throws GatewayException;
+	Consumer<BlockEvent> addBlockListener(long startBlock, Consumer<BlockEvent> listener);
 
 	/**
 	 * Removes a previously added block listener.
@@ -95,7 +97,7 @@ public interface Network {
 	CommitListener addCommitListener(CommitListener listener, Collection<Peer> peers, String transactionId);
 
 	/**
-	 * Removes a previously added transaction commit listener. Any associated checkpointer will be closed.
+	 * Removes a previously added transaction commit listener.
 	 * @param listener A block listener.
 	 */
 	void removeCommitListener(CommitListener listener);

@@ -13,13 +13,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 import javax.json.Json;
 import javax.json.JsonReader;
 import javax.json.stream.JsonParsingException;
@@ -30,6 +30,7 @@ import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
 import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
+import org.hyperledger.fabric.gateway.GatewayRuntimeException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.Wallet;
 import org.hyperledger.fabric.gateway.Wallet.Identity;
@@ -128,12 +129,12 @@ public final class GatewayImpl implements Gateway {
         }
 
         @Override
-        public GatewayImpl connect() throws GatewayException {
+        public GatewayImpl connect() {
             return new GatewayImpl(this);
         }
     }
 
-    private GatewayImpl(Builder builder) throws GatewayException {
+    private GatewayImpl(Builder builder) {
         this.commitHandlerFactory = builder.commitHandlerFactory;
         this.commitTimeout = builder.commitTimeout;
         this.queryHandlerFactory = builder.queryHandlerFactory;
@@ -149,10 +150,10 @@ public final class GatewayImpl implements Gateway {
             this.identity = Identity.createIdentity(user.getMspId(), enrollment.getCert(), enrollment.getKey());
         } else {
             if (null == builder.identity) {
-                throw new GatewayException("The gateway identity must be set");
+                throw new IllegalStateException("The gateway identity must be set");
             }
             if (null == builder.ccp) {
-                throw new GatewayException("The network configuration must be specified");
+                throw new IllegalStateException("The network configuration must be specified");
             }
             this.networkConfig = builder.ccp;
             this.identity = builder.identity;
@@ -161,7 +162,7 @@ public final class GatewayImpl implements Gateway {
         }
     }
 
-    private GatewayImpl(GatewayImpl that) throws GatewayException {
+    private GatewayImpl(GatewayImpl that) {
         this.commitHandlerFactory = that.commitHandlerFactory;
         this.commitTimeout = that.commitTimeout;
         this.queryHandlerFactory = that.queryHandlerFactory;
@@ -172,7 +173,7 @@ public final class GatewayImpl implements Gateway {
         this.client = createClient();
     }
 
-    private HFClient createClient() throws GatewayException {
+    private HFClient createClient() {
         Enrollment enrollment = new X509Enrollment(identity.getPrivateKey(), identity.getCertificate());
         User user = new User() {
             @Override
@@ -214,7 +215,7 @@ public final class GatewayImpl implements Gateway {
             client.setUserContext(user);
         } catch (ClassNotFoundException | CryptoException | IllegalAccessException | NoSuchMethodException |
                 InstantiationException | InvalidArgumentException | InvocationTargetException  e) {
-            throw new GatewayException("Failed to configure client", e);
+            throw new GatewayRuntimeException("Failed to configure client", e);
         }
 
         return client;
@@ -227,7 +228,7 @@ public final class GatewayImpl implements Gateway {
     }
 
     @Override
-    public synchronized Network getNetwork(final String networkName) throws GatewayException {
+    public synchronized Network getNetwork(final String networkName){
         if (networkName == null || networkName.isEmpty()) {
             throw new IllegalArgumentException("Channel name must be a non-empty string");
         }
@@ -246,19 +247,14 @@ public final class GatewayImpl implements Gateway {
                     // since this channel is not in the CCP, we'll assume it exists,
                 	// and the org's peer(s) has joined it with all roles
                     channel = client.newChannel(networkName);
-                    Collection<Peer> orgPeers = getPeersForOrg();
-                    for(Peer peer: orgPeers) {
-                    	channel.addPeer(peer,
-                    			PeerOptions.createPeerOptions()
-                    			.addPeerRole(PeerRole.CHAINCODE_QUERY)
-                    			.addPeerRole(PeerRole.ENDORSING_PEER)
-                    			.addPeerRole(PeerRole.EVENT_SOURCE)
-                    			.addPeerRole(PeerRole.LEDGER_QUERY)
-                    			.addPeerRole(PeerRole.SERVICE_DISCOVERY));
+                    for(Peer peer: getPeersForOrg()) {
+                        PeerOptions peerOptions = PeerOptions.createPeerOptions()
+                                .setPeerRoles(EnumSet.allOf(PeerRole.class));
+                    	channel.addPeer(peer, peerOptions);
                     }
                 } catch (InvalidArgumentException e) {
                     // we've already checked the channel status
-                	throw new GatewayException(e);
+                	throw new GatewayRuntimeException(e);
                 }
             }
             network = new NetworkImpl(channel, this);
@@ -292,7 +288,7 @@ public final class GatewayImpl implements Gateway {
         return discovery;
     }
 
-    public GatewayImpl newInstance() throws GatewayException {
+    public GatewayImpl newInstance() {
         return new GatewayImpl(this);
     }
 

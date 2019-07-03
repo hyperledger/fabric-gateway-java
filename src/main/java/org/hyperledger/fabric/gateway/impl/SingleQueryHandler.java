@@ -6,17 +6,17 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
-import org.hyperledger.fabric.gateway.GatewayException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.hyperledger.fabric.gateway.ContractException;
 import org.hyperledger.fabric.gateway.spi.Query;
 import org.hyperledger.fabric.gateway.spi.QueryHandler;
 import org.hyperledger.fabric.sdk.ChaincodeResponse;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.ProposalResponse;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public final class SingleQueryHandler implements QueryHandler {
     private final List<Peer> peers;
@@ -31,7 +31,7 @@ public final class SingleQueryHandler implements QueryHandler {
     }
 
     @Override
-    public ProposalResponse evaluate(Query query) throws GatewayException {
+    public ProposalResponse evaluate(Query query) throws ContractException {
         int startPeerIndex = currentPeerIndex.get();
         Collection<String> errorMessages = new ArrayList<>();
 
@@ -43,10 +43,14 @@ public final class SingleQueryHandler implements QueryHandler {
                 currentPeerIndex.set(peerIndex);
                 return response;
             }
+            if (response.getProposalResponse() != null) {
+                currentPeerIndex.set(peerIndex);
+                throw new ContractException(response.getMessage());
+            }
             errorMessages.add(response.getMessage());
         }
 
         String message = "No successful responses received. Errors: " + errorMessages;
-        throw new GatewayException(message);
+        throw new ContractException(message);
     }
 }

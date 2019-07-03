@@ -6,7 +6,7 @@
 
 package org.hyperledger.fabric.gateway.spi;
 
-import org.hyperledger.fabric.gateway.GatewayException;
+import org.hyperledger.fabric.gateway.ContractException;
 import org.hyperledger.fabric.sdk.ProposalResponse;
 
 /**
@@ -17,7 +17,7 @@ public interface QueryHandler {
      * Called when the result for a given query is required.
      * @param query The query to evaluate.
      * @return The query result.
-     * @throws GatewayException If no result can be obtained for the query.
+     * @throws ContractException if no peers are reachable or an error response is returned.
      */
-    ProposalResponse evaluate(Query query) throws GatewayException;
+    ProposalResponse evaluate(Query query) throws ContractException;
 }

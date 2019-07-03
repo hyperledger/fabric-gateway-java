@@ -6,14 +6,14 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
-import org.hyperledger.fabric.gateway.Wallet;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.hyperledger.fabric.gateway.Wallet;
+
 public final class InMemoryWallet implements Wallet {
-  Map<String, Identity> store = new HashMap<String, Identity>();
+  private Map<String, Identity> store = new HashMap<>();
 
   @Override
   public void put(String label, Identity identity) {

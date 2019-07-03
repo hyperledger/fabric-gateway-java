@@ -6,35 +6,6 @@
 
 package org.hyperledger.fabric.gateway;
 
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.X509v1CertificateBuilder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.crypto.util.PrivateKeyFactory;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
-import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
-import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.operator.bc.BcECContentSignerBuilder;
-import org.bouncycastle.util.io.pem.PemObject;
-import org.bouncycastle.util.io.pem.PemWriter;
-import org.hyperledger.fabric.gateway.impl.Enrollment;
-import org.hyperledger.fabric.gateway.impl.GatewayImpl;
-import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
-import org.hyperledger.fabric.sdk.BlockEvent;
-import org.hyperledger.fabric.sdk.ChaincodeResponse;
-import org.hyperledger.fabric.sdk.Channel;
-import org.hyperledger.fabric.sdk.HFClient;
-import org.hyperledger.fabric.sdk.Peer;
-import org.hyperledger.fabric.sdk.ProposalResponse;
-import org.hyperledger.fabric.sdk.User;
-import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
-import org.hyperledger.fabric.sdk.exception.ServiceDiscoveryException;
-import org.mockito.Mockito;
-
 import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigInteger;
@@ -61,6 +32,36 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v1CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.bc.BcECContentSignerBuilder;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemWriter;
+import org.hyperledger.fabric.gateway.impl.Enrollment;
+import org.hyperledger.fabric.gateway.impl.GatewayImpl;
+import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
+import org.hyperledger.fabric.protos.peer.FabricProposalResponse;
+import org.hyperledger.fabric.sdk.BlockEvent;
+import org.hyperledger.fabric.sdk.ChaincodeResponse;
+import org.hyperledger.fabric.sdk.Channel;
+import org.hyperledger.fabric.sdk.HFClient;
+import org.hyperledger.fabric.sdk.Peer;
+import org.hyperledger.fabric.sdk.ProposalResponse;
+import org.hyperledger.fabric.sdk.User;
+import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
+import org.hyperledger.fabric.sdk.exception.ServiceDiscoveryException;
+import org.mockito.Mockito;
 
 public final class TestUtils {
     private static final TestUtils INSTANCE = new TestUtils();
@@ -89,7 +90,7 @@ public final class TestUtils {
                     Peer peer = network.getChannel().getPeers(EnumSet.of(Peer.PeerRole.CHAINCODE_QUERY)).iterator().next();
                     ProposalResponse response = query.evaluate(peer);
                     if (!response.getStatus().equals(ChaincodeResponse.Status.SUCCESS)) {
-                        throw new GatewayException(response.getMessage());
+                        throw new ContractException(response.getMessage());
                     }
                     return response;
                 }));
@@ -230,26 +231,40 @@ public final class TestUtils {
     }
 
     public ProposalResponse newSuccessfulProposalResponse(byte[] responsePayload) {
-        ProposalResponse response = newProposalResponse(responsePayload);
+        ProposalResponse response = newProposalResponse(200, responsePayload);
         Mockito.when(response.getStatus()).thenReturn(ChaincodeResponse.Status.SUCCESS);
+        Mockito.when(response.getProposalResponse()).thenReturn(newFabricProposalResponse());
         return response;
     }
 
     public ProposalResponse newFailureProposalResponse(String message) {
-        ProposalResponse response = newProposalResponse(message.getBytes(StandardCharsets.UTF_8));
+        ProposalResponse response = newProposalResponse(500, message.getBytes(StandardCharsets.UTF_8));
+        Mockito.when(response.getStatus()).thenReturn(ChaincodeResponse.Status.FAILURE);
+        Mockito.when(response.getMessage()).thenReturn(message);
+        Mockito.when(response.getProposalResponse()).thenReturn(newFabricProposalResponse());
+        return response;
+    }
+
+    public ProposalResponse newUnavailableProposalResponse(String message) {
+        ProposalResponse response = newProposalResponse(500, message.getBytes(StandardCharsets.UTF_8));
         Mockito.when(response.getStatus()).thenReturn(ChaincodeResponse.Status.FAILURE);
         Mockito.when(response.getMessage()).thenReturn(message);
         return response;
     }
 
-    private ProposalResponse newProposalResponse(byte[] responsePayload) {
+    private ProposalResponse newProposalResponse(int statusCode, byte[] responsePayload) {
         ProposalResponse response = Mockito.mock(ProposalResponse.class);
         try {
             Mockito.when(response.getChaincodeActionResponsePayload()).thenReturn(responsePayload);
+            Mockito.when(response.getChaincodeActionResponseStatus()).thenReturn(statusCode);
         } catch (InvalidArgumentException e) {
             throw new RuntimeException(e);
         }
         return response;
+    }
+
+    private FabricProposalResponse.ProposalResponse newFabricProposalResponse() {
+        return FabricProposalResponse.ProposalResponse.getDefaultInstance();
     }
 
     public Enrollment newEnrollment() throws OperatorCreationException, IOException, NoSuchAlgorithmException, NoSuchProviderException, CertificateException {

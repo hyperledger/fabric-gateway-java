@@ -22,7 +22,7 @@ public final class DefaultCheckpointers {
      * state, which will start listening from the current block.
      * @param path A file path.
      * @return A checkpointer.
-     * @throws IOException
+     * @throws IOException if an error occurs creating the checkpointer.
      */
     public static Checkpointer file(Path path) throws IOException {
         return new FileCheckpointer(path);

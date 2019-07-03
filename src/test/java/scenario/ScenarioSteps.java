@@ -33,8 +33,10 @@ import javax.json.JsonString;
 
 import cucumber.api.java8.En;
 import io.cucumber.datatable.DataTable;
+import org.hamcrest.CoreMatchers;
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.ContractEvent;
+import org.hyperledger.fabric.gateway.ContractException;
 import org.hyperledger.fabric.gateway.DefaultCheckpointers;
 import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
 import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
@@ -49,6 +51,8 @@ import org.hyperledger.fabric.sdk.BlockEvent;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 
 public class ScenarioSteps implements En {
     private static final long EVENT_TIMEOUT_SECONDS = 30;
@@ -61,6 +65,7 @@ public class ScenarioSteps implements En {
     private Network network = null;
     private Contract contract = null;
     private String response = null;
+    private ContractException contractException = null;
     private Transaction transaction = null;
     private Consumer<BlockEvent> blockListener = null;
     private final BlockingQueue<BlockEvent> blockEvents = new LinkedBlockingQueue<>();
@@ -240,12 +245,18 @@ public class ScenarioSteps implements En {
                     String[] args = newStringArray(parseJsonArray(argsJson));
 
                     final byte[] result;
-                    if (action.equals("submit")) {
-                        result = transaction.submit(args);
-                    } else {
-                        result = transaction.evaluate(args);
+                    try {
+                        if (action.equals("submit")) {
+                            result = transaction.submit(args);
+                        } else {
+                            result = transaction.evaluate(args);
+                        }
+                        response = newString(result);
+                        contractException = null;
+                    } catch (ContractException e) {
+                        response = null;
+                        contractException = e;
                     }
-                    response = newString(result);
                 });
 
         When("I set transient data on the transaction to", (DataTable data) -> {
@@ -303,6 +314,7 @@ public class ScenarioSteps implements En {
         Then("the response should match {}",	(String expected) -> assertEquals(expected, response));
 
         Then("the response should be JSON matching", (String expected) -> {
+            assertNull(contractException);
             assertNotNull(response);
             try (JsonReader expectedReader = createJsonReader(expected);
                  JsonReader actualReader = createJsonReader(response)) {
@@ -310,6 +322,12 @@ public class ScenarioSteps implements En {
                 JsonObject actualObject = actualReader.readObject();
                 assertEquals(expectedObject, actualObject);
             }
+        });
+
+        Then("an error should be received with message containing {string}", (String expected) -> {
+            assertNull(response);
+            assertNotNull(contractException);
+            assertThat(contractException.getMessage(), CoreMatchers.containsString(expected));
         });
 
         Then("a block event should be received", this::getBlockEvent);

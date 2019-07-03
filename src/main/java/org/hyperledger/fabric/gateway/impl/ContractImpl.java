@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.ContractEvent;
-import org.hyperledger.fabric.gateway.GatewayException;
+import org.hyperledger.fabric.gateway.ContractException;
 import org.hyperledger.fabric.gateway.Transaction;
 import org.hyperledger.fabric.gateway.impl.event.BlockListenerSession;
 import org.hyperledger.fabric.gateway.impl.event.ListenerSession;
@@ -46,12 +46,12 @@ public final class ContractImpl implements Contract, AutoCloseable {
     }
 
     @Override
-    public byte[] submitTransaction(String name, String... args) throws GatewayException, TimeoutException {
+    public byte[] submitTransaction(String name, String... args) throws ContractException, TimeoutException {
         return createTransaction(name).submit(args);
     }
 
     @Override
-    public byte[] evaluateTransaction(String name, String... args) throws GatewayException {
+    public byte[] evaluateTransaction(String name, String... args) throws ContractException {
         return createTransaction(name).evaluate(args);
     }
 
@@ -87,7 +87,7 @@ public final class ContractImpl implements Contract, AutoCloseable {
     }
 
     @Override
-    public Consumer<ContractEvent> addContractListener(Checkpointer checkpointer, Consumer<ContractEvent> listener) throws IOException, GatewayException {
+    public Consumer<ContractEvent> addContractListener(Checkpointer checkpointer, Consumer<ContractEvent> listener) throws IOException {
         synchronized (contractListenerSessions) {
             if (!contractListenerSessions.containsKey(listener)) {
                 Consumer<ContractEvent> contractListener = Listeners.contract(listener, chaincodeId);
@@ -98,18 +98,18 @@ public final class ContractImpl implements Contract, AutoCloseable {
         return listener;
     }
 
-    private ListenerSession newCheckpointListenerSession(Checkpointer checkpointer, Consumer<ContractEvent> contractListener) throws IOException, GatewayException {
+    private ListenerSession newCheckpointListenerSession(Checkpointer checkpointer, Consumer<ContractEvent> contractListener) throws IOException {
         Consumer<BlockEvent> checkpointListener = Listeners.checkpointContract(checkpointer, contractListener);
         return network.newCheckpointListenerSession(checkpointer, checkpointListener);
     }
 
     @Override
-    public Consumer<ContractEvent> addContractListener(Checkpointer checkpointer, Consumer<ContractEvent> listener, String eventName) throws IOException, GatewayException {
+    public Consumer<ContractEvent> addContractListener(Checkpointer checkpointer, Consumer<ContractEvent> listener, String eventName) throws IOException {
         return addContractListener(checkpointer, listener, getEventNamePattern(eventName));
     }
 
     @Override
-    public Consumer<ContractEvent> addContractListener(Checkpointer checkpointer, Consumer<ContractEvent> listener, Pattern eventNamePattern) throws IOException, GatewayException {
+    public Consumer<ContractEvent> addContractListener(Checkpointer checkpointer, Consumer<ContractEvent> listener, Pattern eventNamePattern) throws IOException {
         synchronized (contractListenerSessions) {
             if (!contractListenerSessions.containsKey(listener)) {
                 Consumer<ContractEvent> contractListener = Listeners.contract(listener, chaincodeId, eventNamePattern);
@@ -121,7 +121,7 @@ public final class ContractImpl implements Contract, AutoCloseable {
     }
 
     @Override
-    public Consumer<ContractEvent> addContractListener(long startBlock, Consumer<ContractEvent> listener) throws GatewayException {
+    public Consumer<ContractEvent> addContractListener(long startBlock, Consumer<ContractEvent> listener) {
         synchronized (contractListenerSessions) {
             if (!contractListenerSessions.containsKey(listener)) {
                 Consumer<ContractEvent> contractListener = Listeners.contract(listener, chaincodeId);
@@ -132,18 +132,18 @@ public final class ContractImpl implements Contract, AutoCloseable {
         return listener;
     }
 
-    private ListenerSession newReplayListenerSession(long startBlock, Consumer<ContractEvent> contractListener) throws GatewayException {
+    private ListenerSession newReplayListenerSession(long startBlock, Consumer<ContractEvent> contractListener) {
         Consumer<BlockEvent> blockListener = Listeners.fromContract(contractListener);
         return new ReplayListenerSession(network, blockListener, startBlock);
     }
 
     @Override
-    public Consumer<ContractEvent> addContractListener(long startBlock, Consumer<ContractEvent> listener, String eventName) throws GatewayException {
+    public Consumer<ContractEvent> addContractListener(long startBlock, Consumer<ContractEvent> listener, String eventName) {
         return addContractListener(startBlock, listener, getEventNamePattern(eventName));
     }
 
     @Override
-    public Consumer<ContractEvent> addContractListener(long startBlock, Consumer<ContractEvent> listener, Pattern eventNamePattern) throws GatewayException {
+    public Consumer<ContractEvent> addContractListener(long startBlock, Consumer<ContractEvent> listener, Pattern eventNamePattern) {
         synchronized (contractListenerSessions) {
             if (!contractListenerSessions.containsKey(listener)) {
                 Consumer<ContractEvent> contractListener = Listeners.contract(listener, chaincodeId, eventNamePattern);
