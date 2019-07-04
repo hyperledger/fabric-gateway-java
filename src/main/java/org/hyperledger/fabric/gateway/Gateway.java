@@ -6,6 +6,7 @@
 
 package org.hyperledger.fabric.gateway;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
@@ -14,16 +15,25 @@ import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
 import org.hyperledger.fabric.gateway.spi.QueryHandlerFactory;
 
 /**
- * The Gateway provides the connection point for an application to access
- * the Fabric network. It is instantiated from a Builder instance that is
- * created using {@link #createBuilder()} and configured using a common
- * connection profile and a {@link Wallet} identity. It can then be connected to
- * a fabric network using the {@link Builder#connect()} method. Once connected,
- * it can then access individual {@link Network} instances (channels) using the
- * {@link #getNetwork(String) getNetwork} method which in turn can access the
- * {@link Contract} installed on a network and
- * {@link Contract#submitTransaction(String, String...) submit transactions} to
- * the ledger.
+ * The Gateway provides the connection point for an application to access the Fabric network as a specific user. It is
+ * instantiated from a Builder instance that is created using {@link #createBuilder()} and configured using a common
+ * connection profile and a {@link Wallet} identity. It can then be connected to a fabric network using the
+ * {@link Builder#connect()} method. Once connected, it can then access individual {@link Network} instances (channels)
+ * using the {@link #getNetwork(String) getNetwork} method which in turn can access the {@link Contract} installed on a
+ * network and {@link Contract#submitTransaction(String, String...) submit transactions} to the ledger.
+ *
+ * <p>Gateway instances should be closed only once connection to the Fabric network is no longer required.</p>
+ *
+ * <pre><code>
+ *     Gateway.Builder builder = Gateway.createBuilder()
+ *             .identity(wallet, "user1")
+ *             .networkConfig(networkConfigFile);
+ *
+ *     try (Gateway gateway = builder.connect()) {
+ *         Network network = gateway.getNetwork("mychannel");
+ *         // Interactions with the network
+ *     }
+ * </code></pre>
  *
  * @see <a href="https://hyperledger-fabric.readthedocs.io/en/release-1.4/developapps/application.html#gateway">Developing Fabric Applications - Gateway</a>
  */
@@ -33,9 +43,9 @@ public interface Gateway extends AutoCloseable {
 	 *
 	 * @param networkName The name of the network (channel name)
 	 * @return {@link Network}
-	 * @throws GatewayException Contains details of the Fabric error
+	 * @throws GatewayRuntimeException if a configuration or infrastructure error causes a failure.
 	 */
-	Network getNetwork(String networkName) throws GatewayException;
+	Network getNetwork(String networkName);
 
 	/**
 	 * Get the identity associated with the gateway connection.
@@ -54,7 +64,10 @@ public interface Gateway extends AutoCloseable {
 		return new GatewayImpl.Builder();
 	}
 
-	@Override
+	/**
+	 * Close the gateway connection and all associated resources, including removing listeners attached to networks and
+	 * contracts created by the gateway.
+	 */
 	void close();
 
 	/**
@@ -72,10 +85,10 @@ public interface Gateway extends AutoCloseable {
 		 * Specifies the path to the common connection profile.
 		 * @param config The path to the common connection profile.
 		 * @return The builder instance, allowing multiple configuration options to be chained.
-		 * @throws GatewayException if the config file does not exist, or is not JSON or YAML format,
+		 * @throws IOException if the config file does not exist, or is not JSON or YAML format,
 		 * or contains invalid information.
 		 */
-		Builder networkConfig(Path config) throws GatewayException;
+		Builder networkConfig(Path config) throws IOException;
 
 		/**
 		 * Specifies the identity that is to be used to connect to the network.  All operations
@@ -83,9 +96,9 @@ public interface Gateway extends AutoCloseable {
 		 * @param wallet The {@link Wallet} object containing the identity.
 		 * @param id The name of the identity stored in the wallet.
 		 * @return The builder instance, allowing multiple configuration options to be chained.
-		 * @throws GatewayException if the specified identity can not be loaded from the wallet.
+		 * @throws IOException if the specified identity can not be loaded from the wallet.
 		 */
-		Builder identity(Wallet wallet, String id) throws GatewayException;
+		Builder identity(Wallet wallet, String id) throws IOException;
 
 		/**
 		 * <em>Optional</em> - Allows an alternative commit handler to be specified. The commit handler defines how

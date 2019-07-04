@@ -18,6 +18,17 @@ import org.hyperledger.fabric.gateway.spi.Checkpointer;
  * Applications should get a Contract instance from a Network using the
  * {@link Network#getContract(String) getContract} method.
  *
+ * <p>The Contract allows applications to:
+ * <ul>
+ *     <li>Submit transactions that store state to the ledger using {@link #submitTransaction(String, String...)}.</li>
+ *     <li>Evaluate transactions that query state from the ledger using {@link #evaluateTransaction(String, String...)}.</li>
+ *     <li>Listen for new events emitted by the smart contract using {@link #addContractListener(Consumer)}.</li>
+ *     <li>Replay previous events emitted by the smart contract using {@link #addContractListener(long, Consumer)}.</li>
+ * </ul></p>
+ *
+ * If more control over transaction invocation is required, such as including transient data, {@link #createTransaction(String)}
+ * can be used to build a transaction request that is submitted to or evaluated by the smart contract.
+ *
  * @see <a href="https://hyperledger-fabric.readthedocs.io/en/release-1.4/developapps/application.html#construct-request">Developing Fabric Applications - Construct request</a>
  */
 public interface Contract {

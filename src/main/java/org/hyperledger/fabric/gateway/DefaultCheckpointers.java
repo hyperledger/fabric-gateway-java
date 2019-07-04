@@ -13,13 +13,15 @@ import org.hyperledger.fabric.gateway.impl.FileCheckpointer;
 import org.hyperledger.fabric.gateway.spi.Checkpointer;
 
 /**
- * Provides static methods used to create instances of default {@link Checkpointer} implementations.
+ * Provides static factory methods used to create instances of default {@link Checkpointer} implementations.
  */
 public final class DefaultCheckpointers {
     /**
      * Checkpointer implementation that persists state to a given file. If the file exists, it must contain valid
      * persistent checkpoint state. If the file does not exist, the checkpointer will be created with default initial
      * state, which will start listening from the current block.
+     * <p>The checkpointer will attempt to obtain an exclusive lock on the file so there can only be a single
+     * checkpointer instance for a given file at any point in time.</p>
      * @param path A file path.
      * @return A checkpointer.
      * @throws IOException if an error occurs creating the checkpointer.

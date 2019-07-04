@@ -10,6 +10,9 @@ import java.util.Optional;
 
 import org.hyperledger.fabric.sdk.BlockEvent;
 
+/**
+ * Event emitted by the business logic of a smart contract during execution of a transaction.
+ */
 public interface ContractEvent {
     /**
      * Get the name of the event emitted by the contract.

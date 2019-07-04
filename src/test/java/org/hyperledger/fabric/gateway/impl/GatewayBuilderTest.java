@@ -13,7 +13,6 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 
 import org.hyperledger.fabric.gateway.Gateway;
-import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.gateway.Wallet;
 import org.hyperledger.fabric.sdk.HFClient;
@@ -49,7 +48,7 @@ public class GatewayBuilderTest {
     }
 
     @Test
-    public void testBuilderNoCcp() throws GatewayException {
+    public void testBuilderNoCcp() throws IOException {
         Wallet wallet = Wallet.createInMemoryWallet();
         wallet.put("admin", Wallet.Identity.createIdentity("msp1", enrollment.getCertificate(), enrollment.getPrivateKey()));
         builder.identity(wallet, "admin");
@@ -59,7 +58,7 @@ public class GatewayBuilderTest {
     }
 
     @Test
-    public void testBuilderInvalidIdentity() throws GatewayException {
+    public void testBuilderInvalidIdentity() throws IOException {
         Wallet wallet = Wallet.createInMemoryWallet();
         builder.identity(wallet, "admin")
                 .networkConfig(networkConfigPath);
@@ -69,7 +68,7 @@ public class GatewayBuilderTest {
     }
 
     @Test
-    public void testBuilderYamlCcp() throws GatewayException {
+    public void testBuilderYamlCcp() throws IOException {
         Wallet wallet = Wallet.createInMemoryWallet();
         wallet.put("admin", Wallet.Identity.createIdentity("msp1", enrollment.getCertificate(), enrollment.getPrivateKey()));
         builder.identity(wallet, "admin");
@@ -85,17 +84,16 @@ public class GatewayBuilderTest {
     }
 
     @Test
-    public void testBuilderInvalidCcp() throws GatewayException {
+    public void testBuilderInvalidCcp() throws IOException {
         Wallet wallet = Wallet.createInMemoryWallet();
         wallet.put("admin", Wallet.Identity.createIdentity("msp1", enrollment.getCertificate(), enrollment.getPrivateKey()));
         builder.identity(wallet, "admin");
         assertThatThrownBy(() -> builder.networkConfig(Paths.get("invalidPath")))
-                .isInstanceOf(GatewayException.class)
-                .hasCauseInstanceOf(IOException.class);
+                .isInstanceOf(IOException.class);
     }
 
     @Test
-    public void testBuilderWithWalletIdentity() throws GatewayException {
+    public void testBuilderWithWalletIdentity() throws IOException {
         Wallet wallet = Wallet.createInMemoryWallet();
         wallet.put("admin", Wallet.Identity.createIdentity("msp1", enrollment.getCertificate(), enrollment.getPrivateKey()));
         builder.identity(wallet, "admin").networkConfig(networkConfigPath);

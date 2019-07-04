@@ -29,7 +29,6 @@ import org.apache.commons.logging.LogFactory;
 import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
 import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
 import org.hyperledger.fabric.gateway.Gateway;
-import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.GatewayRuntimeException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.Wallet;
@@ -76,7 +75,7 @@ public final class GatewayImpl implements Gateway {
         }
 
         @Override
-		public Builder networkConfig(Path config) throws GatewayException {
+		public Builder networkConfig(Path config) throws IOException {
 			try {
 				// ccp is either JSON or YAML
 			    try (JsonReader reader = Json.createReader(new FileReader(config.toFile()))) {
@@ -87,14 +86,14 @@ public final class GatewayImpl implements Gateway {
 					// assume YAML then
 					ccp = NetworkConfig.fromYamlFile(config.toFile());
 				}
-			} catch (IOException | InvalidArgumentException | NetworkConfigurationException e) {
-				throw new GatewayException(e);
+			} catch (InvalidArgumentException | NetworkConfigurationException e) {
+				throw new IOException(e);
 			}
 			return this;
 		}
 
         @Override
-        public Builder identity(Wallet wallet, String id) throws GatewayException {
+        public Builder identity(Wallet wallet, String id) throws IOException {
             this.identity = wallet.get(id);
             return this;
         }
@@ -228,7 +227,7 @@ public final class GatewayImpl implements Gateway {
     }
 
     @Override
-    public synchronized Network getNetwork(final String networkName){
+    public synchronized Network getNetwork(final String networkName) {
         if (networkName == null || networkName.isEmpty()) {
             throw new IllegalArgumentException("Channel name must be a non-empty string");
         }
@@ -293,7 +292,7 @@ public final class GatewayImpl implements Gateway {
     }
 
     private Collection<Peer> getPeersForOrg() {
-    	Collection<Peer> peers = new ArrayList<Peer>();
+    	Collection<Peer> peers = new ArrayList<>();
 		List<String> peerNames = networkConfig.getClientOrganization().getPeerNames();
 		for(String name: peerNames) {
 			try {

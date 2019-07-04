@@ -30,7 +30,7 @@ Feature: Query handler strategies for evaluating transactions
 		    }
 		    """
 
-	Scenario: Handle error resonses using MSPID_SCOPE_SINGLE query handler
+	Scenario: Handle error responses using MSPID_SCOPE_SINGLE query handler
 		Given I have a gateway as user User1 using the tls connection profile
 		And I configure the gateway to use the default MSPID_SCOPE_SINGLE query handler
 		And I connect the gateway
@@ -61,7 +61,7 @@ Feature: Query handler strategies for evaluating transactions
 		    }
 		    """
 
-	Scenario: Handle error resonses using MSPID_SCOPE_ROUND_ROBIN query handler
+	Scenario: Handle error responses using MSPID_SCOPE_ROUND_ROBIN query handler
 		Given I have a gateway as user User1 using the tls connection profile
 		And I configure the gateway to use the default MSPID_SCOPE_ROUND_ROBIN query handler
 		And I connect the gateway

@@ -37,7 +37,7 @@ public interface Wallet {
 	 * a wallet is returned that contains the identities that were stored on the filesystem.
 	 * @param basePath
 	 * @return A wallet backed by the file store.
-	 * @throws IOException
+	 * @throws IOException if an I/O error occurs accessing wallet state.
 	 */
 	static Wallet createFileSystemWallet(Path basePath) throws IOException {
 		return new FileSystemWallet(basePath);
@@ -101,7 +101,7 @@ public interface Wallet {
 		 * @param certificate The public certificate PEM
 		 * @param privateKey The private key PEM
 		 * @return the identity
-		 * @throws IOException
+		 * @throws IOException if an I/O error occurs accessing credentials.
 		 */
 		static Identity createIdentity(String mspId, Reader certificate, Reader privateKey) throws IOException {
 			try (PEMParser parser = new PEMParser(privateKey);
@@ -126,41 +126,41 @@ public interface Wallet {
 	 *
 	 * @param label The label associated with the identity in the wallet.
 	 * @param identity The identity to put in the wallet.
-	 * @throws GatewayException
+	 * @throws IOException if an I/O error occurs accessing wallet state.
 	 */
-	void put(String label, Identity identity) throws GatewayException;
+	void put(String label, Identity identity) throws IOException;
 
 	/**
 	 * Extracts an identity from the wallet.
 	 *
 	 * @param label The label associated with the identity in the wallet.
 	 * @return The identity.
-	 * @throws GatewayException
+	 * @throws IOException if an I/O error occurs accessing wallet state.
 	 */
-	Identity get(String label) throws GatewayException;
+	Identity get(String label) throws IOException;
 
 	/**
 	 * Lists the labels of all identities in the wallet.
 	 *
 	 * @return The set of identity labels.
-	 * @throws GatewayException
+	 * @throws IOException if an I/O error occurs accessing wallet state.
 	 */
-	Set<String> getAllLabels() throws GatewayException;
+	Set<String> getAllLabels() throws IOException;
 
 	/**
 	 * Removes an identity from the wallet.
 	 *
 	 * @param label The label associated with the identity in the wallet.
-	 * @throws GatewayException
+	 * @throws IOException if an I/O error occurs accessing wallet state.
 	 */
-	void remove(String label) throws GatewayException;
+	void remove(String label) throws IOException;
 
 	/**
 	 * Query the existence of an identity in the wallet.
 	 *
 	 * @param label The label associated with the identity in the wallet.
 	 * @return true if the label exists, false otherwise.
-	 * @throws GatewayException
+	 * @throws IOException if an I/O error occurs accessing wallet state.
 	 */
-	boolean exists(String label) throws GatewayException;
+	boolean exists(String label) throws IOException;
 }

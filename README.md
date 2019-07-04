@@ -8,49 +8,56 @@ The Gateway SDK implements the Fabric programming model as described in the [Dev
 
 The following shows a complete code sample of how to connect to a fabric network, submit a transaction and query the ledger state using an instantiated smart contract (fabcar sample).
 
-```
+```java
 package org.example;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.TimeoutException;
 
 import org.hyperledger.fabric.gateway.Contract;
+import org.hyperledger.fabric.gateway.ContractException;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.Wallet;
 
-public interface Sample {
-  static void main(String[] args) throws Exception {
+public final class Sample {
+    public static void main(String[] args) throws IOException {
 
-    // Create a new file system based wallet for managing identities.
-    Path walletPath = Paths.get("wallet");
-    Wallet wallet = Wallet.createFileSystemWallet(walletPath);
+        // Load an existing wallet holding identities used to access the network.
+        Path walletDirectory = Paths.get("wallet");
+        Wallet wallet = Wallet.createFileSystemWallet(walletDirectory);
 
-    // load a CCP
-    Path networkConfigPath = Paths.get("..", "..", "basic-network", "connection.json");
+        // Path to a common connection profile describing the network.
+        Path networkConfigFile = Paths.get("connection.json");
 
-    Gateway.Builder builder = Gateway.createBuilder();
-    builder.identity(wallet, "user1").networkConfig(networkConfigPath);
+        // Configure the gateway connection used to access the network.
+        Gateway.Builder builder = Gateway.createBuilder()
+                .identity(wallet, "user1")
+                .networkConfig(networkConfigFile);
 
-    // create a gateway connection
-    try (Gateway gateway = builder.connect()) {
-      // get the network and contract
-      Network network = gateway.getNetwork("mychannel");
-      Contract contract = network.getContract("fabcar");
+        // Create a gateway connection
+        try (Gateway gateway = builder.connect()) {
 
-      byte[] result = contract.submitTransaction("createCar", "CAR10", "VW", "Polo", "Grey", "Mary");
-      System.out.println(result);
+            // Obtain a smart contract deployed on the network.
+            Network network = gateway.getNetwork("mychannel");
+            Contract contract = network.getContract("fabcar");
 
-      result = contract.evaluateTransaction("queryAllCars");
-      System.out.println(new String(result));
+            // Submit transactions that store state to the ledger.
+            byte[] createCarResult = contract.submitTransaction("createCar", "CAR10", "VW", "Polo", "Grey", "Mary");
+            System.out.println(new String(createCarResult, StandardCharsets.UTF_8));
 
-    } catch (Exception ex) {
-      ex.printStackTrace();
+            // Evaluate transactions that query state from the ledger.
+            byte[] queryAllCarsResult = contract.evaluateTransaction("queryAllCars");
+            System.out.println(new String(queryAllCarsResult, StandardCharsets.UTF_8));
+
+        } catch (ContractException | TimeoutException e) {
+            e.printStackTrace();
+        }
     }
-  }
-
 }
-
 ```
 
 

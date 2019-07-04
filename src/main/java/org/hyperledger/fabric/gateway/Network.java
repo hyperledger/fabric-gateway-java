@@ -21,6 +21,14 @@ import org.hyperledger.fabric.sdk.Peer;
  * Applications should get a Network instance from a Gateway using the
  * {@link Gateway#getNetwork(String)} method.
  *
+ * <p>The Network object provides the ability for applications to:
+ * <ul>
+ *     <li>Obtain a specific smart contract deployed to the network using {@link #getContract(String)}, in order to
+ *     submit and evaluate transactions for that smart contract.</li>
+ *     <li>Listen to new block events using {@link #addBlockListener(Consumer)}.</li>
+ *     <li>Replay previous block events using {@link #addBlockListener(long, Consumer)}.</li>
+ * </ul></p>
+ *
  * @see <a href="https://hyperledger-fabric.readthedocs.io/en/release-1.4/developapps/application.html#network-channel">Developing Fabric Applications - Network Channel</a>
  */
 public interface Network {

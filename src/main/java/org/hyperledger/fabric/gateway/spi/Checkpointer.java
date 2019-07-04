@@ -9,9 +9,14 @@ package org.hyperledger.fabric.gateway.spi;
 import java.io.IOException;
 import java.util.Set;
 
+import org.hyperledger.fabric.gateway.DefaultCheckpointers;
+
 /**
- * Persists block and transaction events to enable event replay to be resumed in the event of an application outage.
- * Implementations must be thread-safe.
+ * Persists the current block and transactions within that block to enable event listening to be resumed following an
+ * application outage.
+ * <p>Default implementations can be obtained from {@link DefaultCheckpointers}. Application developers are
+ * encouraged to build their own implementations that use a persistent store suitable to their environment.</p>
+ * <p>Implementations must be thread-safe.</p>
  */
 public interface Checkpointer extends AutoCloseable {
     /**
