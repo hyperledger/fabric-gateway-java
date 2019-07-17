@@ -7,6 +7,7 @@
 package org.hyperledger.fabric.gateway;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
@@ -89,6 +90,15 @@ public interface Gateway extends AutoCloseable {
 		 * or contains invalid information.
 		 */
 		Builder networkConfig(Path config) throws IOException;
+
+		/**
+		 * Specifies the common connection profile.
+		 * @param config The common connection profile YAML or JSON content.
+		 * @return The builder instance, allowing multiple configuration options to be chained.
+		 * @throws IOException if the common connection profile is not JSON or YAML format,
+		 * or contains invalid information.
+		 */
+		Builder networkConfig(InputStream config) throws IOException;
 
 		/**
 		 * Specifies the identity that is to be used to connect to the network.  All operations

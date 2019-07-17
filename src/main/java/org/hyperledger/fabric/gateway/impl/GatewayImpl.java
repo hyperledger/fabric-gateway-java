@@ -6,8 +6,12 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
-import java.io.FileReader;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -20,9 +24,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import javax.json.Json;
-import javax.json.JsonReader;
-import javax.json.stream.JsonParsingException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -71,26 +72,44 @@ public final class GatewayImpl implements Gateway {
         private HFClient client;
         private boolean discovery = false;
 
-        public Builder() {
+        private static final class ExposedByteArrayOutputStream extends ByteArrayOutputStream {
+            public byte[] getInternalBuffer() {
+                return buf;
+            }
         }
 
         @Override
 		public Builder networkConfig(Path config) throws IOException {
-			try {
-				// ccp is either JSON or YAML
-			    try (JsonReader reader = Json.createReader(new FileReader(config.toFile()))) {
-			        reader.readObject();
-					// looks like JSON
-					ccp = NetworkConfig.fromJsonFile(config.toFile());
-				} catch (JsonParsingException ex) {
-					// assume YAML then
-					ccp = NetworkConfig.fromYamlFile(config.toFile());
-				}
-			} catch (InvalidArgumentException | NetworkConfigurationException e) {
-				throw new IOException(e);
-			}
-			return this;
+            try (InputStream fileIn = new FileInputStream(config.toFile());
+                    InputStream bufferedIn = new BufferedInputStream(fileIn)) {
+                return networkConfig(bufferedIn);
+            }
 		}
+
+        @Override
+        public Builder networkConfig(InputStream config) throws IOException {
+            try (InputStream bufferedStream = copyToMemory(config)) {
+                try {
+                    ccp = NetworkConfig.fromJsonStream(bufferedStream);
+                } catch (Exception e) {
+                    bufferedStream.reset();
+                    ccp = NetworkConfig.fromYamlStream(bufferedStream);
+                }
+            } catch (InvalidArgumentException | NetworkConfigurationException e) {
+                throw new IOException(e);
+            }
+            return this;
+        }
+
+        private InputStream copyToMemory(InputStream in) throws IOException {
+            ExposedByteArrayOutputStream outBuff = new ExposedByteArrayOutputStream();
+
+            for (int b; (b = in.read()) > -1; ) {
+                outBuff.write(b);
+            }
+
+            return new ByteArrayInputStream(outBuff.getInternalBuffer(), 0, outBuff.size());
+        }
 
         @Override
         public Builder identity(Wallet wallet, String id) throws IOException {
