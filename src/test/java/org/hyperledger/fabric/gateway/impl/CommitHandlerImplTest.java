@@ -8,9 +8,11 @@ package org.hyperledger.fabric.gateway.impl;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
@@ -26,6 +28,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
@@ -37,12 +40,12 @@ import static org.mockito.Mockito.when;
 public class CommitHandlerImplTest {
     private final TestUtils testUtils = TestUtils.getInstance();
     private final String transactionId = "txId";
-    private final long timeout = 30;
+    private final long timeout = 10;
     private final TimeUnit timeUnit = TimeUnit.SECONDS;
     private StubBlockEventSource blockSource;
     private Peer peer;
     private Gateway gateway;
-    private Collection<Peer> peers;
+    private Network network;
     private CommitHandler commitHandler;
     private CommitStrategy strategy;
 
@@ -55,10 +58,10 @@ public class CommitHandlerImplTest {
         peer = testUtils.newMockPeer("peer");
         peerDisconnectSources.put(peer, new StubPeerDisconnectEventSource(peer));
 
-        peers = Arrays.asList(peer);
+        Collection<Peer> peers = Arrays.asList(peer);
 
         gateway = testUtils.newGatewayBuilder().connect();
-        Network network = gateway.getNetwork("ch1");
+        network = gateway.getNetwork("ch1");
 
         strategy = mock(CommitStrategy.class);
         when(strategy.getPeers()).thenReturn(peers);
@@ -184,27 +187,48 @@ public class CommitHandlerImplTest {
     }
 
     @Test
-    public void wait_returns_if_peer_commit_causes_strategy_fail() throws Exception {
+    public void wait_returns_if_peer_commit_causes_strategy_fail() {
         when(strategy.onEvent(any())).thenReturn(CommitStrategy.Result.FAIL);
 
         commitHandler.startListening();
         sendValidTransactionEvent();
-        assertThatThrownBy(() -> commitHandler.waitForEvents(timeout, timeUnit)).isInstanceOf(GatewayException.class);
+        assertThatThrownBy(() -> commitHandler.waitForEvents(timeout, timeUnit))
+                .isInstanceOf(GatewayException.class);
     }
 
     @Test
-    public void wait_throws_if_peer_commit_fails() throws Exception {
+    public void wait_throws_if_peer_commit_fails() {
         when(strategy.onEvent(any())).thenReturn(CommitStrategy.Result.CONTINUE);
 
         commitHandler.startListening();
         sendInvalidTransactionEvent();
-        assertThatThrownBy(() -> commitHandler.waitForEvents(timeout, timeUnit)).isInstanceOf(GatewayException.class);
+        assertThatThrownBy(() -> commitHandler.waitForEvents(timeout, timeUnit))
+                .isInstanceOf(GatewayException.class);
     }
 
     @Test
-    public void wait_returns_if_cancelled() throws Exception {
+    public void wait_returns_if_cancelled() {
         commitHandler.startListening();
         commitHandler.cancelListening();
-        commitHandler.waitForEvents(timeout, timeUnit);
+        assertThatCode(() -> commitHandler.waitForEvents(timeout, timeUnit))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    public void wait_throws_on_timeout() {
+        commitHandler.startListening();
+        assertThatThrownBy(() -> commitHandler.waitForEvents(1, TimeUnit.NANOSECONDS))
+                .isInstanceOf(TimeoutException.class);
+    }
+
+    @Test
+    public void wait_returns_if_no_peers() {
+        strategy = mock(CommitStrategy.class);
+        when(strategy.getPeers()).thenReturn(Collections.emptyList());
+        commitHandler = new CommitHandlerImpl(transactionId, network, strategy);
+
+        commitHandler.startListening();
+        assertThatCode(() -> commitHandler.waitForEvents(timeout, timeUnit))
+                .doesNotThrowAnyException();
     }
 }

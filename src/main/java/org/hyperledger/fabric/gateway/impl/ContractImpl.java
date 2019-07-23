@@ -46,7 +46,7 @@ public final class ContractImpl implements Contract, AutoCloseable {
     }
 
     @Override
-    public byte[] submitTransaction(String name, String... args) throws ContractException, TimeoutException {
+    public byte[] submitTransaction(String name, String... args) throws ContractException, TimeoutException, InterruptedException {
         return createTransaction(name).submit(args);
     }
 

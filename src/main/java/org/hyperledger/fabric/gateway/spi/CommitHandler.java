@@ -33,8 +33,9 @@ public interface CommitHandler {
      * @throws ContractException if the commit fails, either by being rejected by a peer of failing to meet the
      * requirements of the strategy.
      * @throws TimeoutException if the strategy was not satisfied in time.
+     * @throws InterruptedException if the current thread is interrupted while waiting.
      */
-    void waitForEvents(long timeout, TimeUnit timeUnit) throws ContractException, TimeoutException;
+    void waitForEvents(long timeout, TimeUnit timeUnit) throws ContractException, TimeoutException, InterruptedException;
 
     /**
      * Called to interrupt the waiting state of {@link #waitForEvents(long, TimeUnit)} before completion.

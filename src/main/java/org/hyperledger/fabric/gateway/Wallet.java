@@ -35,7 +35,7 @@ public interface Wallet {
 	 * and an empty wallet is returned.
 	 * If a wallet already exists at the directory specified by basePath then
 	 * a wallet is returned that contains the identities that were stored on the filesystem.
-	 * @param basePath
+	 * @param basePath A directory path.
 	 * @return A wallet backed by the file store.
 	 * @throws IOException if an I/O error occurs accessing wallet state.
 	 */

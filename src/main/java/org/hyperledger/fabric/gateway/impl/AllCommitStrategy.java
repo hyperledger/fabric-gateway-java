@@ -6,11 +6,11 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import java.util.Collection;
+
 import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Peer;
-
-import java.util.Collection;
 
 public final class AllCommitStrategy implements CommitStrategy {
     private final Collection<Peer> peers;
