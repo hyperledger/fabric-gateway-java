@@ -23,8 +23,8 @@
 	</licenses>
 
 	<scm>
-		<connection>scm:git:https://gerrit.hyperledger.org/r/fabric-gateway-java</connection>
-		<url>https://gerrit.hyperledger.org/r/gitweb?p=fabric-gateway-java.git</url>
+		<connection>scm:git:https://github.com/hyperledger/fabric-gateway-java.git</connection>
+		<url>https://github.com/hyperledger/fabric-gateway-java</url>
 	</scm>
 
 	<properties>
