@@ -82,3 +82,24 @@ Feature: Commit handler strategies for submitting transactions
 	 	And I submit the transaction with arguments ["NETWORK_SCOPE_ANYFORTX", "Trabant", "601 Estate", "brown", "Simon"]
 	 	# Can't evaluate as the peer we query may not have commited the transaction
 	 	Then a response should be received
+
+	Scenario: Submit transaction using sample commit handler
+		Given I have a gateway as user User1 using the tls connection profile
+		And I configure the gateway to use the sample commit handler
+		And I connect the gateway
+		And I use the mychannel network
+		And I use the fabcar contract
+		When I prepare a createCar transaction
+		And I submit the transaction with arguments ["SAMPLE_COMMIT_HANDLER", "Trabant", "601 Estate", "brown", "Simon"]
+		And I prepare a queryCar transaction
+		And I evaluate the transaction with arguments ["SAMPLE_COMMIT_HANDLER"]
+		Then the response should be JSON matching
+		    """
+		    {
+		    	"color": "brown",
+		    	"docType": "car",
+		    	"make": "Trabant",
+		    	"model": "601 Estate",
+		    	"owner": "Simon"
+		    }
+		    """

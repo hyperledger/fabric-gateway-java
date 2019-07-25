@@ -18,16 +18,16 @@ import org.hyperledger.fabric.gateway.spi.Checkpointer;
  * Applications should get a Contract instance from a Network using the
  * {@link Network#getContract(String) getContract} method.
  *
- * <p>The Contract allows applications to:
+ * <p>The Contract allows applications to:</p>
  * <ul>
  *     <li>Submit transactions that store state to the ledger using {@link #submitTransaction(String, String...)}.</li>
  *     <li>Evaluate transactions that query state from the ledger using {@link #evaluateTransaction(String, String...)}.</li>
  *     <li>Listen for new events emitted by the smart contract using {@link #addContractListener(Consumer)}.</li>
  *     <li>Replay previous events emitted by the smart contract using {@link #addContractListener(long, Consumer)}.</li>
- * </ul></p>
+ * </ul>
  *
- * If more control over transaction invocation is required, such as including transient data, {@link #createTransaction(String)}
- * can be used to build a transaction request that is submitted to or evaluated by the smart contract.
+ * <p>If more control over transaction invocation is required, such as including transient data, {@link #createTransaction(String)}
+ * can be used to build a transaction request that is submitted to or evaluated by the smart contract.</p>
  *
  * @see <a href="https://hyperledger-fabric.readthedocs.io/en/release-1.4/developapps/application.html#construct-request">Developing Fabric Applications - Construct request</a>
  */
@@ -55,11 +55,12 @@ public interface Contract {
 	 * @throws ContractException if the transaction is rejected.
 	 * @throws TimeoutException If the transaction was successfully submitted to the orderer but
 	 * timed out before a commit event was received from peers.
+	 * @throws InterruptedException if the current thread is interrupted while waiting.
 	 * @throws GatewayRuntimeException if an underlying infrastructure failure occurs.
 	 *
 	 * @see <a href="https://hyperledger-fabric.readthedocs.io/en/release-1.4/developapps/application.html#submit-transaction">Developing Fabric Applications - Submit transaction</a>
 	 */
-	byte[] submitTransaction(String name, String... args) throws ContractException, TimeoutException;
+	byte[] submitTransaction(String name, String... args) throws ContractException, TimeoutException, InterruptedException;
 
 	/**
 	 * Evaluate a transaction function and return its results.

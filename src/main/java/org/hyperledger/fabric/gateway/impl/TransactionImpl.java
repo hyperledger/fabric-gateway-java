@@ -72,7 +72,7 @@ public final class TransactionImpl implements Transaction {
     }
 
     @Override
-    public byte[] submit(String... args) throws ContractException, TimeoutException {
+    public byte[] submit(String... args) throws ContractException, TimeoutException, InterruptedException {
         try {
             NetworkImpl network = contract.getNetwork();
             Channel channel = network.getChannel();

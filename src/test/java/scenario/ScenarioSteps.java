@@ -46,6 +46,7 @@ import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.gateway.Transaction;
 import org.hyperledger.fabric.gateway.Wallet;
+import org.hyperledger.fabric.gateway.sample.SampleCommitHandlerFactory;
 import org.hyperledger.fabric.gateway.spi.Checkpointer;
 import org.hyperledger.fabric.sdk.BlockEvent;
 
@@ -162,6 +163,9 @@ public class ScenarioSteps implements En {
 
         Given("I configure the gateway to use the default {word} commit handler",
                 (String handlerName) -> gatewayBuilder.commitHandler(DefaultCommitHandlers.valueOf(handlerName)));
+
+        Given("I configure the gateway to use the sample commit handler",
+                () -> gatewayBuilder.commitHandler(SampleCommitHandlerFactory.INSTANCE));
 
         Given("I configure the gateway to use the default {word} query handler",
                 (String handlerName) -> gatewayBuilder.queryHandler(DefaultQueryHandlers.valueOf(handlerName)));
@@ -421,7 +425,7 @@ public class ScenarioSteps implements En {
     }
 
     private static void exec(String... commandArgs) throws IOException, InterruptedException {
-        String commandString = Arrays.toString(commandArgs);
+        String commandString = String.join(" ", commandArgs);
         System.err.println(commandString);
         Process process = Runtime.getRuntime().exec(commandArgs);
         int exitCode = process.waitFor();

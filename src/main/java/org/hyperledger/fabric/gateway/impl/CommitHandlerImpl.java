@@ -11,10 +11,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.hyperledger.fabric.gateway.ContractException;
-import org.hyperledger.fabric.gateway.GatewayRuntimeException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.spi.CommitHandler;
 import org.hyperledger.fabric.gateway.spi.CommitListener;
@@ -50,15 +50,20 @@ public final class CommitHandlerImpl implements CommitHandler {
 
     @Override
     public void startListening() {
-        network.addCommitListener(listener, peers, transactionId);
+        if (peers.isEmpty()) {
+            cancelListening();
+        } else {
+            network.addCommitListener(listener, peers, transactionId);
+        }
     }
 
     @Override
-    public void waitForEvents(long timeout, TimeUnit timeUnit) throws ContractException {
+    public void waitForEvents(long timeout, TimeUnit timeUnit) throws ContractException, TimeoutException, InterruptedException {
         try {
-            latch.await(timeout, timeUnit);
-        } catch (InterruptedException e) {
-            throw new GatewayRuntimeException(e);
+            boolean complete = latch.await(timeout, timeUnit);
+            if (!complete) {
+                throw new TimeoutException("Timeout waiting for commit of transaction " + transactionId);
+            }
         } finally {
             cancelListening();
         }
@@ -70,7 +75,7 @@ public final class CommitHandlerImpl implements CommitHandler {
     }
 
     @Override
-    public synchronized void cancelListening() {
+    public void cancelListening() {
         latch.countDown();
         network.removeCommitListener(listener);
         peers.clear();
