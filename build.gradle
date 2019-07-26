@@ -8,8 +8,7 @@ buildscript {
     }
 }
 
-subprojects {
-    apply plugin: 'java-library'
+allprojects {
     apply plugin: 'java'
     apply plugin: 'maven-publish'
     apply plugin: 'com.bmuschko.nexus'
@@ -49,16 +48,11 @@ subprojects {
         testCompile group: 'io.cucumber', name: 'cucumber-junit', version: '4.7.0'
     }
 
-    test {
-        useJUnitPlatform {
-            excludeTags 'intTest'
-            includeEngines 'junit-jupiter', 'junit-vintage'
-        }
-
-        failFast = true
-    }
-
     def artifactName = it.name
+
+    test {
+        exclude '**/*'
+    }
 
     publishing {
         repositories {
