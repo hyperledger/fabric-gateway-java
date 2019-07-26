@@ -10,3 +10,4 @@ src/test/fixtures/crypto-material/channel.tx
 src/test/fixtures/crypto-material/Org1MSPanchors.tx
 src/test/fixtures/crypto-material/Org2MSPanchors.tx
 src/test/fixtures/crypto-material/core.yaml
+build

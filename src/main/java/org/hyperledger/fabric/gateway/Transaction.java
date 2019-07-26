@@ -6,6 +6,8 @@
 
 package org.hyperledger.fabric.gateway;
 
+import org.hyperledger.fabric.sdk.User;
+
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -62,6 +64,24 @@ public interface Transaction {
 	byte[] submit(String... args) throws ContractException, TimeoutException, InterruptedException;
 
 	/**
+	 * Submit a transaction to the ledger. The transaction function represented by this object
+	 * will be evaluated on the endorsing peers and then submitted to the ordering service
+	 * for committing to the ledger.
+	 *
+	 * @param userContext User context for this request.  Allows caller to set a context
+	 *                    different than the underlying gateway client user context (i.e. an actual
+	 *                    human using the app rather than the app itself).
+	 * @param args Transaction function arguments.
+	 * @return Payload response from the transaction function.
+	 * @throws ContractException if the transaction is rejected.
+	 * @throws TimeoutException if the transaction was successfully submitted to the orderer but
+	 * timed out before a commit event was received from peers.
+	 * @throws InterruptedException if the current thread is interrupted while waiting.
+	 * @throws GatewayRuntimeException if an underlying infrastructure failure occurs.
+	 */
+	byte[] submit(User userContext, String... args) throws ContractException, TimeoutException, InterruptedException;
+
+	/**
 	 * Evaluate a transaction function and return its results.
 	 * The transaction function will be evaluated on the endorsing peers but
 	 * the responses will not be sent to the ordering service and hence will
@@ -73,4 +93,20 @@ public interface Transaction {
 	 * @throws GatewayRuntimeException if an underlying infrastructure failure occurs.
 	 */
 	byte[] evaluate(String... args) throws ContractException;
+
+	/**
+	 * Evaluate a transaction function and return its results.
+	 * The transaction function will be evaluated on the endorsing peers but
+	 * the responses will not be sent to the ordering service and hence will
+	 * not be committed to the ledger. This is used for querying the world state.
+	 *
+	 * @param userContext User context for this request.  Allows caller to set a context
+	 *                    different than the underlying gateway client user context (i.e. an actual
+	 *                    human using the app rather than the app itself).
+	 * @param args Transaction function arguments.
+	 * @return Payload response from the transaction function.
+	 * @throws ContractException if no peers are reachable or an error response is returned.
+	 * @throws GatewayRuntimeException if an underlying infrastructure failure occurs.
+	 */
+	byte[] evaluate(User userContext, String... args) throws ContractException;
 }

@@ -23,6 +23,7 @@ import org.hyperledger.fabric.gateway.impl.event.Listeners;
 import org.hyperledger.fabric.gateway.impl.event.ReplayListenerSession;
 import org.hyperledger.fabric.gateway.spi.Checkpointer;
 import org.hyperledger.fabric.sdk.BlockEvent;
+import org.hyperledger.fabric.sdk.User;
 
 public final class ContractImpl implements Contract, AutoCloseable {
     private final NetworkImpl network;
@@ -53,6 +54,16 @@ public final class ContractImpl implements Contract, AutoCloseable {
     @Override
     public byte[] evaluateTransaction(String name, String... args) throws ContractException {
         return createTransaction(name).evaluate(args);
+    }
+
+    @Override
+    public byte[] submitTransaction(String name, User userContext, String... args) throws ContractException, TimeoutException, InterruptedException {
+        return createTransaction(name).evaluate(userContext, args);
+    }
+
+    @Override
+    public byte[] evaluateTransaction(String name, User userContext, String... args) throws ContractException {
+        return createTransaction(name).evaluate(userContext, args);
     }
 
     @Override
