@@ -1,33 +1,121 @@
-apply plugin: 'java'
-apply plugin: 'maven'
-
-group = 'org.hyperledger.fabric-gateway-java'
-version = '1.4.0-SNAPSHOT'
-
-description = """fabric-gateway-java"""
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-tasks.withType(JavaCompile) {
-	options.encoding = 'UTF-8'
-}
-test {
-    exclude '**/*'
+buildscript {
+    repositories {
+        jcenter()
+        maven { url "http://repo.spring.io/plugins-release" }
+    }
+    dependencies {
+        classpath 'com.bmuschko:gradle-nexus-plugin:2.3.1'
+    }
 }
 
-repositories {
-        
-     maven { url "https://digitalassetsdk.bintray.com/DigitalAssetSDK" }
-     maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
-     maven { url "http://repo.maven.apache.org/maven2" }
+subprojects {
+    apply plugin: 'java-library'
+    apply plugin: 'java'
+    apply plugin: 'maven-publish'
+    apply plugin: 'com.bmuschko.nexus'
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
+    group 'io.provenance'
+
+    // read version from jenkins/manually provided 'artifactVersion', fall back to snapshot (local builds)
+    version = project.hasProperty("artifactVersion") ? artifactVersion : '1.4.0-SNAPSHOT'
+
+    task listAllDependencies(type: DependencyReportTask) {}
+
+    tasks.withType(Javadoc).all { enabled = false }
+
+    repositories {
+        mavenLocal()
+        jcenter()
+        maven {
+            url "https://nexus.figure.com/repository/figure"
+            credentials {
+                username = project.hasProperty("nexusUser") ? nexusUser : System.getenv("NEXUS_USER")
+                password = project.hasProperty("nexusPass") ? nexusPass : System.getenv("NEXUS_PASS")
+            }
+        }
+    }
+
+    dependencies {
+        compile group: 'org.hyperledger.fabric-sdk-java', name: 'fabric-sdk-java', version: '1.4.5-SNAPSHOT'
+        testCompile group: 'org.junit.platform', name: 'junit-platform-launcher', version: '1.5.1'
+        testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.5.1'
+        testCompile group: 'org.junit.vintage', name: 'junit-vintage-engine', version: '5.5.1'
+        testCompile group: 'org.assertj', name: 'assertj-core', version: '3.12.2'
+        testCompile group: 'org.mockito', name: 'mockito-core', version: '2.28.2'
+        testCompile group: 'io.cucumber', name: 'cucumber-java8', version: '4.7.0'
+        testCompile group: 'io.cucumber', name: 'cucumber-junit', version: '4.7.0'
+    }
+
+    test {
+        useJUnitPlatform {
+            excludeTags 'intTest'
+            includeEngines 'junit-jupiter', 'junit-vintage'
+        }
+
+        failFast = true
+    }
+
+    def artifactName = it.name
+
+    publishing {
+        repositories {
+            maven {
+                url "https://nexus.figure.com/repository/figure"
+                credentials {
+                    username = project.hasProperty("nexusUser") ? nexusUser : System.getenv("NEXUS_USER")
+                    password = project.hasProperty("nexusPass") ? nexusPass : System.getenv("NEXUS_PASS")
+                }
+            }
+        }
+        publications {
+            mavenJava(MavenPublication) {
+                version = version
+                artifactId artifactName
+                from components.java
+                afterEvaluate {
+                    artifact tasks.sourcesJar
+                    artifact tasks.javadocJar
+                    artifact tasks.testJar
+                }
+            }
+        }
+    }
+
+    task testJar(type: Jar) {
+        classifier = 'test'
+        from sourceSets.test.output
+    }
+
+    // include the version within the manifest in order to allow for consumers to detect the version at runtime
+    jar {
+        manifest {
+            attributes("Implementation-Version": version)
+            attributes("Implementation-Title": project.name)
+            attributes("Git-Revision": getCommitId())
+            attributes("Git-Short-Revision": getShortCommitId())
+        }
+    }
 }
-dependencies {
-    compile group: 'org.hyperledger.fabric-sdk-java', name: 'fabric-sdk-java', version:'1.4.5-SNAPSHOT'
-    testCompile group: 'org.junit.platform', name: 'junit-platform-launcher', version:'1.5.1'
-    testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version:'5.5.1'
-    testCompile group: 'org.junit.vintage', name: 'junit-vintage-engine', version:'5.5.1'
-    testCompile group: 'org.assertj', name: 'assertj-core', version:'3.12.2'
-    testCompile group: 'org.mockito', name: 'mockito-core', version:'2.28.2'
-    testCompile group: 'io.cucumber', name: 'cucumber-java8', version:'4.7.0'
-    testCompile group: 'io.cucumber', name: 'cucumber-junit', version:'4.7.0'
+
+def getCommitId() {
+    def output = new ByteArrayOutputStream()
+    exec {
+        commandLine 'git', 'rev-parse', 'HEAD'
+        standardOutput = output
+    }
+
+    return output.toString().trim()
+}
+
+def getShortCommitId() {
+    def output = new ByteArrayOutputStream()
+    exec {
+        commandLine 'git', 'rev-parse', '--short', 'HEAD'
+        standardOutput = output
+    }
+
+    return output.toString().trim()
 }
