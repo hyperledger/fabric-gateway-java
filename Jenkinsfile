@@ -19,6 +19,13 @@ pipeline {
                gradleCleanBuild("${common.fixedBranchName()}-${env.BUILD_NUMBER}")
             }
         }
+        stage('Gradle Publish') {
+          steps {
+             script {
+                gradlePublish("${common.fixedBranchName()}-${env.BUILD_NUMBER}")
+             }
+          }
+        }
         stage('Git Tag') {
             steps {
                 script {
