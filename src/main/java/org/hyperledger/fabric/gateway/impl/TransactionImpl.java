@@ -106,6 +106,9 @@ public final class TransactionImpl implements Transaction {
         request.setChaincodeID(ChaincodeID.newBuilder().setName(contract.getChaincodeId()).build());
         request.setFcn(name);
         request.setArgs(args);
+        if (userContext != null) {
+            request.setUserContext(userContext);
+        }
         if(transientData != null) {
             request.setTransientMap(transientData);
         }
