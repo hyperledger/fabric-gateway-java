@@ -16,7 +16,7 @@ allprojects {
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
 
-    group 'io.provenance'
+    group 'org.hyperledger.fabric-gateway-java'
 
     // read version from jenkins/manually provided 'artifactVersion', fall back to snapshot (local builds)
     version = project.hasProperty("artifactVersion") ? artifactVersion : '1.4.0-SNAPSHOT'
