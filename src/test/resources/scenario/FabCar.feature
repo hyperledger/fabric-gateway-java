@@ -28,3 +28,13 @@ Feature: Configure Fabric using SDK and submit/evaluate using a network Gateway
 		    	"owner": "Simon"
 		    }
 		    """
+
+	Scenario: Using a Gateway I can submit transactions with specific endorsing peers
+		Given I have a gateway as user User1 using the tls connection profile
+		And I connect the gateway
+		And I use the mychannel network
+		And I use the fabcar contract
+		When I prepare a createCar transaction
+		And I set endorsing peers on the transaction to ["badpeer.org1.example.com"]
+		And I submit the transaction with arguments ["ENDORSING_PEERS", "Trabant", "601 Estate", "brown", "Simon"]
+		Then an error should be received with message containing "No valid proposal responses received"

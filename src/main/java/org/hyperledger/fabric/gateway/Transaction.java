@@ -6,9 +6,12 @@
 
 package org.hyperledger.fabric.gateway;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import org.hyperledger.fabric.sdk.Peer;
 
 /**
  * A Transaction represents a specific invocation of a transaction function, and provides
@@ -45,6 +48,14 @@ public interface Transaction {
 	 * @return this transaction object to allow method chaining.
 	 */
 	Transaction setCommitTimeout(long timeout, TimeUnit timeUnit);
+
+	/**
+	 * Set the peers that should be used for endorsement of transaction submitted to the ledger using
+	 * {@link #submit(String...)}.
+	 * @param peers Endorsing peers.
+	 * @return this transaction object to allow method chaining.
+	 */
+	Transaction setEndorsingPeers(Collection<Peer> peers);
 
 	/**
 	 * Submit a transaction to the ledger. The transaction function represented by this object

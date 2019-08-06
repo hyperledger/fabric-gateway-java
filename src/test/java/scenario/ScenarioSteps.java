@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
@@ -49,6 +51,7 @@ import org.hyperledger.fabric.gateway.Wallet;
 import org.hyperledger.fabric.gateway.sample.SampleCommitHandlerFactory;
 import org.hyperledger.fabric.gateway.spi.Checkpointer;
 import org.hyperledger.fabric.sdk.BlockEvent;
+import org.hyperledger.fabric.sdk.Peer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -268,6 +271,15 @@ public class ScenarioSteps implements En {
             Map<String, byte[]> transientMap = new HashMap<>();
             table.forEach((k, v) -> transientMap.put(k, v.getBytes(StandardCharsets.UTF_8)));
             transaction.setTransient(transientMap);
+        });
+
+        When("I set endorsing peers on the transaction to {}", (String peersJson) -> {
+            Set<String> peerNames = Arrays.stream(newStringArray(parseJsonArray(peersJson)))
+                    .collect(Collectors.toSet());
+            Collection<Peer> peers = network.getChannel().getPeers().stream()
+                    .filter(peer -> peerNames.contains(peer.getName()))
+                    .collect(Collectors.toList());
+            transaction.setEndorsingPeers(peers);
         });
 
         When("I add a block listener", () -> {
