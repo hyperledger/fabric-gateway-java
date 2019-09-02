@@ -52,7 +52,7 @@ public abstract class WalletTest {
         wallet.put("label1", identity1);
         Identity id1 = wallet.get("label1");
         assertThat(identity1.getMspId()).isEqualTo(id1.getMspId());
-        assertThat(identity1.getCertificate()).isEqualTo(id1.getCertificate());
+        assertThat(identity1.getCertificate()).isEqualToNormalizingNewlines(id1.getCertificate());
         Identity id2 = wallet.get("label2");
         assertThat(id2).isNull();
     }
