@@ -90,6 +90,16 @@ Depend on development snapshots with the following `pom.xml` entries:
 </dependencies>
 ```
 
+Note that the SDK is written to be used with Java version 1.8. If you're using any Java version beginning from 1.9, ensure to add the following dependency:
+
+```xml
+<dependency>
+    <groupId>javax.xml.bind</groupId>
+    <artifactId>jaxb-api</artifactId>
+    <version>2.3.1</version>
+</dependency>
+```
+
 ### Gradle
 
 Depend on development snapshots with the following `build.gradle` entries:
@@ -104,6 +114,7 @@ dependencies {
     implementation 'org.hyperledger.fabric-gateway-java:fabric-gateway-java:1.4.0-SNAPSHOT'
 }
 ```
+
 
 ## Building and testing
 
