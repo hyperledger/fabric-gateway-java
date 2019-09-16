@@ -1,0 +1,4 @@
+// Versions shared across subprojects
+ext {
+    fabric_sdk_version = 'feature-service-disco-1'
+}

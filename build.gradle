@@ -1,4 +1,8 @@
 buildscript {
+    rootProject.apply {
+        from(rootProject.file("versions.gradle"))
+    }
+
     repositories {
         jcenter()
         maven { url "http://repo.spring.io/plugins-release" }
@@ -42,7 +46,8 @@ allprojects {
     }
 
     dependencies {
-        compile group: 'org.hyperledger.fabric-sdk-java', name: 'fabric-sdk-java', version: '1.4.5-SNAPSHOT'
+        compile "org.hyperledger.fabric-sdk-java:fabric-sdk-java:$fabric_sdk_version"
+
         testCompile group: 'org.junit.platform', name: 'junit-platform-launcher', version: '1.5.1'
         testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.5.1'
         testCompile group: 'org.junit.vintage', name: 'junit-vintage-engine', version: '5.5.1'
