@@ -4,7 +4,7 @@
 // https://github.com/hyperledger/ci-management/tree/master/vars (Global Shared scripts)
 timestamps { // set the timestamps on the jenkins console
   timeout(40) { // Build timeout set to 40 mins
-    node ('hyp-x') {
+    node ('hyp-x-docker') {
       // trigger jobs on x86_64 builds nodes
       try {
         def JAVA_HOME = "/usr/lib/jvm/java-1.8.0-openjdk-amd64"
