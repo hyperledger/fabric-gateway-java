@@ -26,6 +26,7 @@ import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.ProposalResponse;
+import org.hyperledger.fabric.sdk.TransactionProposalRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,22 +50,27 @@ public class TransactionTest {
     private Channel channel;
     private Contract contract;
     private CommitHandler commitHandler;
-    private Peer peer;
+    private Peer peer1;
+    private Peer peer2;
     private ProposalResponse failureResponse;
     private Map<String, byte[]> transientMap;
 
     @Captor
     private ArgumentCaptor<Collection<ProposalResponse>> proposalResponseCaptor;
+    @Captor
+    private ArgumentCaptor<Collection<Peer>> peerCaptor;
 
     @BeforeEach
     public void setup() throws Exception {
         MockitoAnnotations.initMocks(this);
 
-        peer = testUtils.newMockPeer("peer");
+        peer1 = testUtils.newMockPeer("peer1");
+        peer2 = testUtils.newMockPeer("peer2");
+
         channel = testUtils.newMockChannel("channel");
         when(channel.sendTransaction(anyCollection(), any(Channel.TransactionOptions.class)))
                 .thenReturn(CompletableFuture.completedFuture(null));
-        when(channel.getPeers(any())).thenReturn(Collections.singletonList(peer));
+        when(channel.getPeers(any())).thenReturn(Collections.singletonList(peer1));
 
         HFClient client = testUtils.newMockClient();
         when(client.getChannel(anyString())).thenReturn(channel);
@@ -109,7 +115,7 @@ public class TransactionTest {
 
     @Test
     public void testEvaluateUnsuccessfulResponse() throws Exception {
-        when(failureResponse.getPeer()).thenReturn(peer);
+        when(failureResponse.getPeer()).thenReturn(peer1);
         when(channel.queryByChaincode(any(), anyCollection())).thenReturn(Collections.singletonList(failureResponse));
 
         assertThatThrownBy(() -> contract.evaluateTransaction("txn", "arg1"))
@@ -120,7 +126,7 @@ public class TransactionTest {
     public void testEvaluateSuccess() throws Exception {
         String expected = "successful result";
         ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
-        when(response.getPeer()).thenReturn(peer);
+        when(response.getPeer()).thenReturn(peer1);
         when(channel.queryByChaincode(any(), anyCollection())).thenReturn(Collections.singletonList(response));
 
         byte[] result = contract.evaluateTransaction("txn", "arg1");
@@ -131,7 +137,7 @@ public class TransactionTest {
     public void testEvaluateSuccessWithTransient() throws Exception {
         String expected = "successful result";
         ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
-        when(response.getPeer()).thenReturn(peer);
+        when(response.getPeer()).thenReturn(peer1);
         when(channel.queryByChaincode(any(), anyCollection())).thenReturn(Collections.singletonList(response));
 
         byte[] result = contract.createTransaction("txn").setTransient(transientMap).evaluate("arg1");
@@ -171,7 +177,9 @@ public class TransactionTest {
         ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
         when(channel.sendTransactionProposal(any())).thenReturn(Collections.singletonList(response));
 
-        byte[] result = contract.createTransaction("txn").setTransient(transientMap).submit("arg1");
+        byte[] result = contract.createTransaction("txn")
+                .setTransient(transientMap)
+                .submit("arg1");
         assertThat(new String(result)).isEqualTo(expected);
     }
 
@@ -195,6 +203,21 @@ public class TransactionTest {
         contract.submitTransaction("txn", "arg1");
 
         verify(channel).sendTransaction(proposalResponseCaptor.capture(), any(Channel.TransactionOptions.class));
-        assertThat(proposalResponseCaptor.getValue()).containsOnly(goodResponse);
+        assertThat(proposalResponseCaptor.getValue()).containsExactly(goodResponse);
+    }
+
+    @Test
+    public void testSubmitWithEndorsingPeers() throws Exception {
+        String expected = "successful result";
+        ProposalResponse goodResponse = testUtils.newSuccessfulProposalResponse(expected.getBytes());
+        when(channel.sendTransactionProposal(any(TransactionProposalRequest.class), anyCollection()))
+                .thenReturn(Collections.singletonList(goodResponse));
+
+        contract.createTransaction("txn")
+                .setEndorsingPeers(Collections.singletonList(peer2))
+                .submit();
+
+        verify(channel).sendTransactionProposal(any(TransactionProposalRequest.class), peerCaptor.capture());
+        assertThat(peerCaptor.getValue()).containsExactly(peer2);
     }
 }

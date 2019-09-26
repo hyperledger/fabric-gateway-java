@@ -25,10 +25,12 @@ import org.hyperledger.fabric.gateway.spi.QueryHandler;
 import org.hyperledger.fabric.sdk.ChaincodeID;
 import org.hyperledger.fabric.sdk.ChaincodeResponse;
 import org.hyperledger.fabric.sdk.Channel;
+import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.ProposalResponse;
 import org.hyperledger.fabric.sdk.QueryByChaincodeRequest;
 import org.hyperledger.fabric.sdk.ServiceDiscovery;
 import org.hyperledger.fabric.sdk.TransactionProposalRequest;
+import org.hyperledger.fabric.sdk.TransactionRequest;
 import org.hyperledger.fabric.sdk.User;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
@@ -43,16 +45,21 @@ public final class TransactionImpl implements Transaction {
 
     private final ContractImpl contract;
     private final String name;
+    private final NetworkImpl network;
+    private final Channel channel;
+    private final GatewayImpl gateway;
     private final CommitHandlerFactory commitHandlerFactory;
     private TimePeriod commitTimeout;
     private final QueryHandler queryHandler;
     private Map<String, byte[]> transientData = null;
+    private Collection<Peer> endorsingPeers = null;
 
     TransactionImpl(ContractImpl contract, String name) {
         this.contract = contract;
         this.name = name;
-        NetworkImpl network = contract.getNetwork();
-        GatewayImpl gateway = network.getGateway();
+        network = contract.getNetwork();
+        channel = network.getChannel();
+        gateway = network.getGateway();
         commitHandlerFactory = gateway.getCommitHandlerFactory();
         commitTimeout = gateway.getCommitTimeout();
         queryHandler = network.getQueryHandler();
@@ -76,85 +83,96 @@ public final class TransactionImpl implements Transaction {
     }
 
     @Override
+    public Transaction setEndorsingPeers(Collection<Peer> peers) {
+        endorsingPeers = peers;
+        return this;
+    }
+
+    @Override
     public byte[] submit(User userContext, String... args) throws ContractException, TimeoutException, InterruptedException {
-        try {
-            NetworkImpl network = contract.getNetwork();
-
-            TransactionProposalRequest request = buildTransactionProposalRequest(network, userContext, args);
-            return executeTransactionProposal(network, request);
-
-        } catch (InvalidArgumentException | ProposalException | ServiceDiscoveryException e) {
-            throw new GatewayRuntimeException(e);
-        }
+        return createSubmit(userContext, args);
     }
 
     @Override
     public byte[] submit(String... args) throws ContractException, TimeoutException, InterruptedException {
+        return createSubmit(null, args);
+    }
+
+    private byte[] createSubmit(@Nullable User userContext, String... args) throws ContractException, TimeoutException, InterruptedException {
         try {
-            NetworkImpl network = contract.getNetwork();
+            TransactionProposalRequest request = newProposalRequest(userContext, args);
+            Collection<ProposalResponse> proposalResponses = sendTransactionProposal(request);
 
-            TransactionProposalRequest request = buildTransactionProposalRequest(network, null, args);
-            return executeTransactionProposal(network, request);
+            Collection<ProposalResponse> validResponses = validatePeerResponses(proposalResponses);
+            ProposalResponse proposalResponse = validResponses.iterator().next();
+            byte[] result = proposalResponse.getChaincodeActionResponsePayload();
+            String transactionId = proposalResponse.getTransactionID();
 
+            Channel.TransactionOptions transactionOptions = Channel.TransactionOptions.createTransactionOptions()
+                    .nOfEvents(Channel.NOfEvents.createNoEvents()); // Disable default commit wait behaviour
+
+            CommitHandler commitHandler = commitHandlerFactory.create(transactionId, network);
+            commitHandler.startListening();
+
+            try {
+                channel.sendTransaction(validResponses, transactionOptions).get(60, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                commitHandler.cancelListening();
+                throw e;
+            } catch (Exception e) {
+                commitHandler.cancelListening();
+                throw new ContractException("Failed to send transaction to the orderer", e);
+            }
+
+            commitHandler.waitForEvents(commitTimeout.getTime(), commitTimeout.getTimeUnit());
+
+            return result;
         } catch (InvalidArgumentException | ProposalException | ServiceDiscoveryException e) {
             throw new GatewayRuntimeException(e);
         }
     }
-
-    private TransactionProposalRequest buildTransactionProposalRequest(NetworkImpl network, @Nullable User userContext, String...args) throws InvalidArgumentException {
+    private TransactionProposalRequest newProposalRequest(@Nullable User userContext, String[] args) {
         TransactionProposalRequest request = network.getGateway().getClient().newTransactionProposalRequest();
-        request.setChaincodeID(ChaincodeID.newBuilder().setName(contract.getChaincodeId()).build());
+        configureRequest(userContext, request, args);
+        if (transientData != null) {
+            try {
+                request.setTransientMap(transientData);
+            } catch (InvalidArgumentException e) {
+                // Only happens if transientData is null
+                throw new IllegalStateException(e);
+            }
+        }
+        return request;
+    }
+
+    private void configureRequest(@Nullable User userContext, TransactionRequest request, String[] args) {
+        request.setChaincodeID(getChaincodeId());
         request.setFcn(name);
         request.setArgs(args);
         if (userContext != null) {
             request.setUserContext(userContext);
         }
-        if(transientData != null) {
-            request.setTransientMap(transientData);
-        }
-        return request;
     }
 
-    private byte[] executeTransactionProposal(NetworkImpl network, TransactionProposalRequest request)
-            throws InvalidArgumentException, ProposalException, ServiceDiscoveryException, ContractException, TimeoutException, InterruptedException {
+    private ChaincodeID getChaincodeId() {
+        return ChaincodeID.newBuilder()
+                .setName(contract.getChaincodeId())
+                .build();
+    }
 
-        Channel channel = network.getChannel();
-        final Collection<ProposalResponse> proposalResponses;
-        if(network.getGateway().isDiscoveryEnabled()) {
-            proposalResponses = channel.sendTransactionProposalToEndorsers(request,
-                    createDiscoveryOptions().setEndorsementSelector(ServiceDiscovery.EndorsementSelector.ENDORSEMENT_SELECTION_RANDOM)
-                            .setForceDiscovery(true));
+    private Collection<ProposalResponse> sendTransactionProposal(TransactionProposalRequest request) throws InvalidArgumentException, ServiceDiscoveryException, ProposalException {
+        if (endorsingPeers != null) {
+            return channel.sendTransactionProposal(request, endorsingPeers);
+        } else if (network.getGateway().isDiscoveryEnabled()) {
+            Channel.DiscoveryOptions discoveryOptions = createDiscoveryOptions()
+                    .setEndorsementSelector(ServiceDiscovery.EndorsementSelector.ENDORSEMENT_SELECTION_RANDOM)
+                    .setForceDiscovery(true);
+            return channel.sendTransactionProposalToEndorsers(request, discoveryOptions);
         } else {
-            proposalResponses = channel.sendTransactionProposal(request);
+            return channel.sendTransactionProposal(request);
         }
-
-        // Validate the proposal responses.
-        Collection<ProposalResponse> validResponses = validatePeerResponses(proposalResponses);
-
-        ProposalResponse proposalResponse = validResponses.iterator().next();
-        byte[] result = proposalResponse.getChaincodeActionResponsePayload();
-        String transactionId = proposalResponse.getTransactionID();
-
-        Channel.TransactionOptions transactionOptions = Channel.TransactionOptions.createTransactionOptions()
-                .nOfEvents(Channel.NOfEvents.createNoEvents()); // Disable default commit wait behaviour
-
-        CommitHandler commitHandler = commitHandlerFactory.create(transactionId, network);
-        commitHandler.startListening();
-
-        try {
-            channel.sendTransaction(validResponses, transactionOptions).get(60, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-            commitHandler.cancelListening();
-            throw e;
-        } catch (Exception e) {
-            commitHandler.cancelListening();
-            throw new ContractException("Failed to send transaction to the orderer", e);
-        }
-
-        commitHandler.waitForEvents(commitTimeout.getTime(), commitTimeout.getTimeUnit());
-
-        return result;
     }
+
     private Collection<ProposalResponse> validatePeerResponses(Collection<ProposalResponse> proposalResponses) throws ContractException {
         final Collection<ProposalResponse> validResponses = new ArrayList<>();
         final Collection<String> invalidResponseMsgs = new ArrayList<>();
@@ -181,43 +199,38 @@ public final class TransactionImpl implements Transaction {
 
     @Override
     public byte[] evaluate(User userContext, String... args) throws ContractException {
-        NetworkImpl network = contract.getNetwork();
-        return executeQueryRequest(network, buildQueryRequest(network, userContext, args));
+        return processEvaluate(userContext, args);
     }
 
     @Override
     public byte[] evaluate(String... args) throws ContractException {
-        NetworkImpl network = contract.getNetwork();
-        return executeQueryRequest(network, buildQueryRequest(network, null, args));
+        return processEvaluate(null, args);
     }
 
-    private QueryByChaincodeRequest buildQueryRequest(NetworkImpl network, @Nullable User userContext, String... args) throws IllegalStateException {
-
-        QueryByChaincodeRequest request = network.getGateway().getClient().newQueryProposalRequest();
-        ChaincodeID chaincodeId = ChaincodeID.newBuilder().setName(contract.getChaincodeId()).build();
-        request.setChaincodeID(chaincodeId);
-        request.setFcn(name);
-        request.setArgs(args);
-        if (userContext != null) {
-            request.setUserContext(userContext);
-        }
-        if (transientData != null) {
-            try {
-                request.setTransientMap(transientData);
-            } catch (InvalidArgumentException e) {
-                throw new IllegalStateException(e);
-            }
-        }
-        return request;
-    }
-
-    private byte[] executeQueryRequest(NetworkImpl network, QueryByChaincodeRequest request) throws ContractException {
+    private byte[] processEvaluate(@Nullable User userContext, String... args) throws ContractException {
+        QueryByChaincodeRequest request = newQueryRequest(userContext, args);
         Query query = new QueryImpl(network.getChannel(), request);
+
         ProposalResponse response = queryHandler.evaluate(query);
+
         try {
             return response.getChaincodeActionResponsePayload();
         } catch (InvalidArgumentException e) {
             throw new ContractException(response.getMessage(), e);
         }
+    }
+
+    private QueryByChaincodeRequest newQueryRequest(@Nullable User userContext, String[] args) {
+        QueryByChaincodeRequest request = gateway.getClient().newQueryProposalRequest();
+        configureRequest(userContext, request, args);
+        if (transientData != null) {
+            try {
+                request.setTransientMap(transientData);
+            } catch (InvalidArgumentException e) {
+                // Only happens if transientData is null
+                throw new IllegalStateException(e);
+            }
+        }
+        return request;
     }
 }
