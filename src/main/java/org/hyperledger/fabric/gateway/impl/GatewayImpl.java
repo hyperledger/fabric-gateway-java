@@ -15,12 +15,14 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -273,6 +275,33 @@ public final class GatewayImpl implements Gateway {
                 } catch (InvalidArgumentException e) {
                     // we've already checked the channel status
                 	throw new GatewayRuntimeException(e);
+                }
+            }
+            /*
+            provenance.io - use the service discovery peer to set the mutual TLS
+            connectivity properties on the channel service discovery options
+             */
+            if(isDiscoveryEnabled()) {
+                List<String> tlsProps = Arrays.asList("clientCertFile","clientKeyFile","clientCertBytes","clientKeyBytes");
+
+                Optional<Peer> firstSDPeer = channel.getPeers(EnumSet.of(PeerRole.SERVICE_DISCOVERY))
+                        .stream()
+                        .filter(peer -> {
+                            return peer.getProperties().keySet().stream().anyMatch(tlsProps::contains);
+                        }).findFirst();
+
+                if(firstSDPeer.isPresent()) {
+                    Peer sdPeer = firstSDPeer.get();
+                    LOG.info("Setting mutual TLS service discovery properties from peer "+sdPeer.getName());
+                    Properties sdprops = new Properties();
+                    tlsProps.forEach(p->{
+                        if(sdPeer.getProperties().containsKey(p)) {
+                            sdprops.put("org.hyperledger.fabric.sdk.discovery.default."+p, sdPeer.getProperties().get(p));
+                        }
+                    });
+                    channel.setServiceDiscoveryProperties(sdprops);
+                } else {
+                    LOG.warn("Mutual TLS service discovery properties not set on channel.");
                 }
             }
             network = new NetworkImpl(channel, this);
