@@ -81,12 +81,12 @@ public final class GatewayImpl implements Gateway {
         }
 
         @Override
-		public Builder networkConfig(Path config) throws IOException {
+        public Builder networkConfig(Path config) throws IOException {
             try (InputStream fileIn = new FileInputStream(config.toFile());
-                    InputStream bufferedIn = new BufferedInputStream(fileIn)) {
+                 InputStream bufferedIn = new BufferedInputStream(fileIn)) {
                 return networkConfig(bufferedIn);
             }
-		}
+        }
 
         @Override
         public Builder networkConfig(InputStream config) throws IOException {
@@ -137,11 +137,11 @@ public final class GatewayImpl implements Gateway {
             return this;
         }
 
-		@Override
-		public Builder discovery(boolean enabled) {
-			this.discovery = enabled;
-			return this;
-		}
+        @Override
+        public Builder discovery(boolean enabled) {
+            this.discovery = enabled;
+            return this;
+        }
 
         public Builder client(HFClient client) {
             this.client = client;
@@ -234,7 +234,7 @@ public final class GatewayImpl implements Gateway {
             client.setCryptoSuite(cryptoSuite);
             client.setUserContext(user);
         } catch (ClassNotFoundException | CryptoException | IllegalAccessException | NoSuchMethodException |
-                InstantiationException | InvalidArgumentException | InvocationTargetException  e) {
+                InstantiationException | InvalidArgumentException | InvocationTargetException e) {
             throw new GatewayRuntimeException("Failed to configure client", e);
         }
 
@@ -265,24 +265,24 @@ public final class GatewayImpl implements Gateway {
             if (channel == null) {
                 try {
                     // since this channel is not in the CCP, we'll assume it exists,
-                	// and the org's peer(s) has joined it with all roles
+                    // and the org's peer(s) has joined it with all roles
                     channel = client.newChannel(networkName);
-                    for(Peer peer: getPeersForOrg()) {
+                    for (Peer peer : getPeersForOrg()) {
                         PeerOptions peerOptions = PeerOptions.createPeerOptions()
                                 .setPeerRoles(EnumSet.allOf(PeerRole.class));
-                    	channel.addPeer(peer, peerOptions);
+                        channel.addPeer(peer, peerOptions);
                     }
                 } catch (InvalidArgumentException e) {
                     // we've already checked the channel status
-                	throw new GatewayRuntimeException(e);
+                    throw new GatewayRuntimeException(e);
                 }
             }
             /*
             provenance.io - use the service discovery peer to set the mutual TLS
             connectivity properties on the channel service discovery options
              */
-            if(isDiscoveryEnabled()) {
-                List<String> tlsProps = Arrays.asList("clientCertFile","clientKeyFile","clientCertBytes","clientKeyBytes");
+            if (isDiscoveryEnabled()) {
+                List<String> tlsProps = Arrays.asList("clientCertFile", "clientKeyFile", "clientCertBytes", "clientKeyBytes");
 
                 Optional<Peer> firstSDPeer = channel.getPeers(EnumSet.of(PeerRole.SERVICE_DISCOVERY))
                         .stream()
@@ -290,13 +290,16 @@ public final class GatewayImpl implements Gateway {
                             return peer.getProperties().keySet().stream().anyMatch(tlsProps::contains);
                         }).findFirst();
 
-                if(firstSDPeer.isPresent()) {
+                if (firstSDPeer.isPresent()) {
                     Peer sdPeer = firstSDPeer.get();
-                    LOG.info("Setting mutual TLS service discovery properties from peer "+sdPeer.getName());
+                    LOG.info("Setting mutual TLS service discovery properties from peer " + sdPeer.getName());
                     Properties sdprops = new Properties();
-                    tlsProps.forEach(p->{
-                        if(sdPeer.getProperties().containsKey(p)) {
-                            sdprops.put("org.hyperledger.fabric.sdk.discovery.default."+p, sdPeer.getProperties().get(p));
+                    tlsProps.forEach(p -> {
+                        if (sdPeer.getProperties().containsKey(p)) {
+                            String k = "org.hyperledger.fabric.sdk.discovery.default." + p;
+                            Object v = sdPeer.getProperties().get(p);
+                            sdprops.put(k, v);
+                            LOG.info(k + "=" + v);
                         }
                     });
                     channel.setServiceDiscoveryProperties(sdprops);
@@ -340,17 +343,17 @@ public final class GatewayImpl implements Gateway {
     }
 
     private Collection<Peer> getPeersForOrg() {
-    	Collection<Peer> peers = new ArrayList<>();
-		List<String> peerNames = networkConfig.getClientOrganization().getPeerNames();
-		for(String name: peerNames) {
-			try {
-				String url = networkConfig.getPeerUrl(name);
-				Properties props =networkConfig.getPeerProperties(name);
-				peers.add(client.newPeer(name, url, props));
-			} catch (InvalidArgumentException e) {
-				// log warning
-			}
-		}
-		return peers;
+        Collection<Peer> peers = new ArrayList<>();
+        List<String> peerNames = networkConfig.getClientOrganization().getPeerNames();
+        for (String name : peerNames) {
+            try {
+                String url = networkConfig.getPeerUrl(name);
+                Properties props = networkConfig.getPeerProperties(name);
+                peers.add(client.newPeer(name, url, props));
+            } catch (InvalidArgumentException e) {
+                // log warning
+            }
+        }
+        return peers;
     }
 }
