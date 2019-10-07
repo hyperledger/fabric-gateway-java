@@ -299,8 +299,6 @@ public final class GatewayImpl implements Gateway {
                             String k = "org.hyperledger.fabric.sdk.discovery.default." + p;
                             Object v = sdPeer.getProperties().get(p);
                             sdprops.put(k, v);
-                            /* Add the pio max message size */
-                            sdprops.put("grpc.NettyChannelBuilderOption.maxInboundMessageSize", Integer.MAX_VALUE);
                             LOG.info(k + "=" + v);
                         }
                     });
