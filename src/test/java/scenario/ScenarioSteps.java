@@ -1,5 +1,10 @@
 package scenario;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -27,14 +32,13 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonString;
 
-import cucumber.api.java8.En;
-import io.cucumber.datatable.DataTable;
 import org.hamcrest.CoreMatchers;
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.ContractEvent;
@@ -52,11 +56,10 @@ import org.hyperledger.fabric.gateway.sample.SampleCommitHandlerFactory;
 import org.hyperledger.fabric.gateway.spi.Checkpointer;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Peer;
+import org.hyperledger.fabric.sdk.helper.Config;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import io.cucumber.datatable.DataTable;
+import io.cucumber.java8.En;
 
 public class ScenarioSteps implements En {
     private static final long EVENT_TIMEOUT_SECONDS = 30;
@@ -77,6 +80,10 @@ public class ScenarioSteps implements En {
     private final BlockingQueue<ContractEvent> contractEvents = new LinkedBlockingQueue<>();
     private final Path checkpointFile;
     private Checkpointer checkpointer = null;
+
+    {
+        System.setProperty(Config.SERVICE_DISCOVER_AS_LOCALHOST, "true");
+    }
 
     public ScenarioSteps() throws IOException {
         checkpointFile = TestUtils.getInstance().getUnusedFilePath();

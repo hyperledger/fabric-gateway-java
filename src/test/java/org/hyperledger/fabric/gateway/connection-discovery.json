@@ -31,7 +31,7 @@
 	},
 	"peers": {
 		"peer0.org1.example.com": {
-			"url": "grpcs://peer0.org1.example.com:7051",
+			"url": "grpcs://localhost:7051",
 			"grpcOptions": {
 				"hostnameOverride": "peer0.org1.example.com",
 				"ssl-target-name-override": "peer0.org1.example.com",
