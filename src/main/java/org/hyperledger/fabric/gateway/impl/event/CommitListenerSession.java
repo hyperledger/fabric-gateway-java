@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import org.hyperledger.fabric.gateway.impl.GatewayUtils;
 import org.hyperledger.fabric.gateway.spi.CommitListener;
 import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
 import org.hyperledger.fabric.sdk.BlockEvent;
@@ -42,8 +43,8 @@ public final class CommitListenerSession implements ListenerSession {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
-                "(blockListenerSession=" + blockListenerSession +
-                ", disconnectListenerSessions=" + disconnectListenerSessions + ')';
+        return GatewayUtils.toString(this,
+                "blockListenerSession=" + blockListenerSession,
+                "disconnectListenerSessions=" + disconnectListenerSessions);
     }
 }

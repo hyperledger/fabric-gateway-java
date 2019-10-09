@@ -8,6 +8,7 @@ package org.hyperledger.fabric.gateway.impl.event;
 
 import java.util.function.Consumer;
 
+import org.hyperledger.fabric.gateway.impl.GatewayUtils;
 import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
 import org.hyperledger.fabric.sdk.Peer;
 
@@ -74,7 +75,7 @@ public final class PeerDisconnectInterceptor implements PeerDisconnectEventSourc
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
-                "(peer=" + peer + ')';
+        return GatewayUtils.toString(this,
+                "peer=" + peer);
     }
 }

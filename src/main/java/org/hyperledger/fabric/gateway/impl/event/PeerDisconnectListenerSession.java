@@ -8,6 +8,7 @@ package org.hyperledger.fabric.gateway.impl.event;
 
 import java.util.function.Consumer;
 
+import org.hyperledger.fabric.gateway.impl.GatewayUtils;
 import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
 import org.hyperledger.fabric.sdk.Peer;
 
@@ -31,8 +32,8 @@ public final class PeerDisconnectListenerSession implements ListenerSession {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
-                "(disconnectSource=" + disconnectSource +
-                ", listener=" + listener + ')';
+        return GatewayUtils.toString(this,
+                "disconnectSource=" + disconnectSource,
+                "listener=" + listener);
     }
 }

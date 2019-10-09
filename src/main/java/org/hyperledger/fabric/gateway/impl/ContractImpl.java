@@ -187,8 +187,8 @@ public final class ContractImpl implements Contract, AutoCloseable {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
-                "(name=" + (name.isEmpty() ? chaincodeId : chaincodeId + ':' + name) +
-                ", contractListenerSessions=" + contractListenerSessions + ')';
+        return GatewayUtils.toString(this,
+                "name=" + (name.isEmpty() ? chaincodeId : chaincodeId + ':' + name),
+                "contractListenerSessions=" + contractListenerSessions);
     }
 }

@@ -12,6 +12,7 @@ import java.util.function.Consumer;
 
 import org.hyperledger.fabric.gateway.GatewayRuntimeException;
 import org.hyperledger.fabric.gateway.impl.GatewayImpl;
+import org.hyperledger.fabric.gateway.impl.GatewayUtils;
 import org.hyperledger.fabric.gateway.impl.NetworkImpl;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Channel;
@@ -77,8 +78,8 @@ public final class ReplayListenerSession implements ListenerSession {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
-                "(channel=" + channel +
-                ", blockSource=" + blockSource + ')';
+        return GatewayUtils.toString(this,
+                "channel=" + channel,
+                "blockSource=" + blockSource);
     }
 }
