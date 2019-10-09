@@ -83,7 +83,10 @@ public final class CommitHandlerImpl implements CommitHandler {
 
     @Override
     public String toString() {
-        return String.format("%s(transactionId=%s, strategy=%s, peers=%s)", getClass().getSimpleName(), transactionId, strategy, peers);
+        return GatewayUtils.toString(this,
+                "transactionId=" + transactionId,
+                "strategy=" + strategy,
+                "peers=" + peers);
     }
 
     private void onTxEvent(BlockEvent.TransactionEvent event) {

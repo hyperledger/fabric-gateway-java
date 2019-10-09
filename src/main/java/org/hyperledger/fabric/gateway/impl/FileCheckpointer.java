@@ -176,9 +176,9 @@ public final class FileCheckpointer implements Checkpointer {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
-                "(file=" + filePath +
-                ", blockNumber=" + blockNumber.get() +
-                ", transactionIds=" + transactionIds + ')';
+        return GatewayUtils.toString(this,
+                "file=" + filePath,
+                "blockNumber=" + blockNumber.get(),
+                "transactionIds=" + transactionIds);
     }
 }

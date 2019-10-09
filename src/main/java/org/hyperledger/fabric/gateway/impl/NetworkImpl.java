@@ -182,11 +182,11 @@ public final class NetworkImpl implements Network, AutoCloseable {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
-                "(name=" + channel.getName() +
-                ", channelBlockSource=" + channelBlockSource +
-                ", commitListenerSessions=" + commitListenerSessions +
-                ", orderedBlockSource=" + orderedBlockSource +
-                ", blockListenerSessions=" + blockListenerSessions + ')';
+        return GatewayUtils.toString(this,
+                "name=" + channel.getName(),
+                "channelBlockSource=" + channelBlockSource,
+                "commitListenerSessions=" + commitListenerSessions,
+                "orderedBlockSource=" + orderedBlockSource,
+                "blockListenerSessions=" + blockListenerSessions);
     }
 }

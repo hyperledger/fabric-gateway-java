@@ -54,8 +54,8 @@ public class InMemoryCheckpointer implements Checkpointer {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
-                "(blockNumber=" + blockNumber.get() +
-                ", transactionIds=" + transactionIds + ')';
+        return GatewayUtils.toString(this,
+                "blockNumber=" + blockNumber.get(),
+                "transactionIds=" + transactionIds);
     }
 }

@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
+import org.hyperledger.fabric.gateway.impl.GatewayUtils;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
@@ -66,7 +67,7 @@ public final class ChannelBlockEventSource implements BlockEventSource {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
-                "(channel=" + channel + ')';
+        return GatewayUtils.toString(this,
+                "channel=" + channel);
     }
 }

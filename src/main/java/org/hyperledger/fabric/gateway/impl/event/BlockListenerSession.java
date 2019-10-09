@@ -8,6 +8,7 @@ package org.hyperledger.fabric.gateway.impl.event;
 
 import java.util.function.Consumer;
 
+import org.hyperledger.fabric.gateway.impl.GatewayUtils;
 import org.hyperledger.fabric.sdk.BlockEvent;
 
 /**
@@ -30,8 +31,8 @@ public final class BlockListenerSession implements ListenerSession {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
-                "(blockSource=" + blockSource +
-                ", listener=" + listener + ')';
+        return GatewayUtils.toString(this,
+                "blockSource=" + blockSource,
+                "listener=" + listener);
     }
 }
