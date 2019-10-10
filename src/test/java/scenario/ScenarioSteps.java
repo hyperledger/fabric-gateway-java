@@ -81,7 +81,7 @@ public class ScenarioSteps implements En {
     private final Path checkpointFile;
     private Checkpointer checkpointer = null;
 
-    {
+    static {
         System.setProperty(Config.SERVICE_DISCOVER_AS_LOCALHOST, "true");
     }
 

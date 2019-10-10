@@ -37,6 +37,15 @@ timestamps { // set the timestamps on the jenkins console
           '''
         }
         stage ('Maven Tests') {
+          environment { 
+            ORG_HYPERLEDGER_FABRIC_SDK_PROPOSAL_WAIT_TIME = '55000'
+            ORG_HYPERLEDGER_FABRIC_SDK_CHANNELCONFIG_WAIT_TIME = '20000'
+            ORG_HYPERLEDGER_FABRIC_SDK_CLIENT_TRANSACTION_CLEANUP_UP_TIMEOUT_WAIT_TIME = '65000'
+            ORG_HYPERLEDGER_FABRIC_SDK_ORDERER_ORDERERWAITTIMEMILLISECS = '180000'
+            ORG_HYPERLEDGER_FABRIC_SDK_PEER_EVENTREGISTRATION_WAIT_TIME = '180000'
+            ORG_HYPERLEDGER_FABRIC_SDK_EVENTHUB_CONNECTION_WAIT_TIME = '180000'
+            ORG_HYPERLEDGER_FABRIC_SDK_CHANNEL_GENESISBLOCK_WAIT_TIME = '180000'
+          }
           try {
             dir("$ROOTDIR/$BASE_DIR") {
               sh 'mvn install'
@@ -49,7 +58,7 @@ timestamps { // set the timestamps on the jenkins console
 
     // Publish jar files from merge job
     if (env.JOB_TYPE == "merge") {
-      publishJar()
+      // publishJar() - disable publication of jars to nexus.hyperledger.org - will be published to sonatype.org
       apiDocs()
    } else {
       echo "------> Don't publish jar files from VERIFY job"
