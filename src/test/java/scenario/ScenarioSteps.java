@@ -1,10 +1,5 @@
 package scenario;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -32,17 +27,16 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonString;
 
-import org.hamcrest.CoreMatchers;
+import io.cucumber.datatable.DataTable;
+import io.cucumber.java8.En;
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.ContractEvent;
-import org.hyperledger.fabric.gateway.ContractException;
 import org.hyperledger.fabric.gateway.DefaultCheckpointers;
 import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
 import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
@@ -58,8 +52,7 @@ import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.helper.Config;
 
-import io.cucumber.datatable.DataTable;
-import io.cucumber.java8.En;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ScenarioSteps implements En {
     private static final long EVENT_TIMEOUT_SECONDS = 30;
@@ -71,9 +64,7 @@ public class ScenarioSteps implements En {
     private Gateway gateway = null;
     private Network network = null;
     private Contract contract = null;
-    private String response = null;
-    private ContractException contractException = null;
-    private Transaction transaction = null;
+    private TransactionInvocation transactionInvocation;
     private Consumer<BlockEvent> blockListener = null;
     private final BlockingQueue<BlockEvent> blockEvents = new LinkedBlockingQueue<>();
     private Consumer<ContractEvent> contractListener = null;
@@ -251,25 +242,23 @@ public class ScenarioSteps implements En {
 
         Given("I use the {word} contract", (String contractName) -> contract = network.getContract(contractName));
 
-        When("I prepare a(n) {word} transaction",
-                (String transactionName) -> transaction = contract.createTransaction(transactionName));
+        When("I prepare a(n) {word} transaction", (String transactionName) -> {
+            Transaction transaction = contract.createTransaction(transactionName);
+            transactionInvocation = TransactionInvocation.expectSuccess(transaction);
+        });
+
+        When("I prepare a(n) {word} transaction that I expect to fail", (String transactionName) -> {
+            Transaction transaction = contract.createTransaction(transactionName);
+            transactionInvocation = TransactionInvocation.expectFail(transaction);
+        });
 
         When("^I (submit|evaluate) the transaction with arguments (.+)$",
                 (String action, String argsJson) -> {
                     String[] args = newStringArray(parseJsonArray(argsJson));
-
-                    final byte[] result;
-                    try {
-                        if (action.equals("submit")) {
-                            result = transaction.submit(args);
-                        } else {
-                            result = transaction.evaluate(args);
-                        }
-                        response = newString(result);
-                        contractException = null;
-                    } catch (ContractException e) {
-                        response = null;
-                        contractException = e;
+                    if (action.equals("submit")) {
+                        transactionInvocation.submit(args);
+                    } else {
+                        transactionInvocation.evaluate(args);
                     }
                 });
 
@@ -277,7 +266,7 @@ public class ScenarioSteps implements En {
             Map<String, String> table = data.asMap(String.class, String.class);
             Map<String, byte[]> transientMap = new HashMap<>();
             table.forEach((k, v) -> transientMap.put(k, v.getBytes(StandardCharsets.UTF_8)));
-            transaction.setTransient(transientMap);
+            transactionInvocation.setTransient(transientMap);
         });
 
         When("I set endorsing peers on the transaction to {}", (String peersJson) -> {
@@ -286,7 +275,7 @@ public class ScenarioSteps implements En {
             Collection<Peer> peers = network.getChannel().getPeers().stream()
                     .filter(peer -> peerNames.contains(peer.getName()))
                     .collect(Collectors.toList());
-            transaction.setEndorsingPeers(peers);
+            transactionInvocation.setEndorsingPeers(peers);
         });
 
         When("I add a block listener", () -> {
@@ -332,26 +321,22 @@ public class ScenarioSteps implements En {
 
         When("I remove the contract listener", this::clearContractListener);
 
-        Then("a response should be received", () -> assertNotNull(response));
+        Then("a response should be received", () -> transactionInvocation.getResponse());
 
-        Then("the response should match {}",	(String expected) -> assertEquals(expected, response));
+        Then("the response should match {}",
+                (String expected) -> assertThat(transactionInvocation.getResponse()).isEqualTo(expected));
 
         Then("the response should be JSON matching", (String expected) -> {
-            assertNull(contractException);
-            assertNotNull(response);
             try (JsonReader expectedReader = createJsonReader(expected);
-                 JsonReader actualReader = createJsonReader(response)) {
+                 JsonReader actualReader = createJsonReader(transactionInvocation.getResponse())) {
                 JsonObject expectedObject = expectedReader.readObject();
                 JsonObject actualObject = actualReader.readObject();
-                assertEquals(expectedObject, actualObject);
+                assertThat(actualObject).isEqualTo(expectedObject);
             }
         });
 
-        Then("an error should be received with message containing {string}", (String expected) -> {
-            assertNull(response);
-            assertNotNull(contractException);
-            assertThat(contractException.getMessage(), CoreMatchers.containsString(expected));
-        });
+        Then("the error message should contain {string}",
+                (String expected) -> assertThat(transactionInvocation.getError().getMessage()).contains(expected));
 
         Then("a block event should be received", this::getBlockEvent);
 
@@ -370,7 +355,7 @@ public class ScenarioSteps implements En {
         }
     }
 
-    private Path getNetworkConfigPath(String configType) {
+    private static Path getNetworkConfigPath(String configType) {
         Path networkConfigDir = Paths.get("src", "test", "java", "org", "hyperledger", "fabric", "gateway");
         switch (configType) {
             case "tls":
@@ -384,36 +369,37 @@ public class ScenarioSteps implements En {
         }
     }
 
-    private JsonArray parseJsonArray(String jsonString) {
+    private static JsonArray parseJsonArray(String jsonString) {
         try (JsonReader reader = createJsonReader(jsonString)) {
             return reader.readArray();
         }
     }
 
-    private JsonReader createJsonReader(String jsonString) {
+    private static JsonReader createJsonReader(String jsonString) {
         return Json.createReader(new StringReader(jsonString));
     }
 
-    private String[] newStringArray(JsonArray jsonArray) {
+    private static String[] newStringArray(JsonArray jsonArray) {
         return jsonArray.getValuesAs(JsonString.class).stream()
                 .map(JsonString::getString)
                 .toArray(String[]::new);
     }
 
-    private String newString(byte[] bytes) {
+    public static String newString(byte[] bytes) {
         return new String(bytes, StandardCharsets.UTF_8);
     }
 
     private ContractEvent getContractEvent(String expectedPayload) throws InterruptedException {
         List<String> payloads = new ArrayList<>();
         ContractEvent matchingEvent = removeFirstMatch(contractEvents, event -> {
-            String eventPayload = event.getPayload().map(this::newString).orElse("");
+            String eventPayload = event.getPayload().map(ScenarioSteps::newString).orElse("");
             payloads.add(eventPayload);
             return expectedPayload.equals(eventPayload);
         });
-        String failMessage = "No contract events with payload \"" + expectedPayload + "\": " + payloads +
-                ", network=" + network + ", contract=" + contract + ", checkpointer=" + checkpointer;
-        assertNotNull(failMessage, matchingEvent);
+        assertThat(matchingEvent)
+                .withFailMessage("No contract events with payload \"%s\": %s, network=%s, contract=%s, checkpointer=%s",
+                        expectedPayload, payloads, network, contract, checkpointer)
+                .isNotNull();
         return matchingEvent;
     }
 
@@ -440,13 +426,23 @@ public class ScenarioSteps implements En {
     }
 
     private static void exec(List<String> commandArgs) throws IOException, InterruptedException {
-        exec(commandArgs.toArray(new String[0]));
+        exec(null, commandArgs);
+    }
+
+    private static void exec(Path dir, List<String> commandArgs) throws IOException, InterruptedException {
+        exec(dir, commandArgs.toArray(new String[0]));
     }
 
     private static void exec(String... commandArgs) throws IOException, InterruptedException {
+        exec(null, commandArgs);
+    }
+
+    private static void exec(Path dir, String... commandArgs) throws IOException, InterruptedException {
         String commandString = String.join(" ", commandArgs);
         System.err.println(commandString);
-        Process process = Runtime.getRuntime().exec(commandArgs);
+
+        File dirFile = dir != null ? dir.toFile() : null;
+        Process process = Runtime.getRuntime().exec(commandArgs, null, dirFile);
         int exitCode = process.waitFor();
 
         // get STDERR for the process and print it
@@ -457,8 +453,9 @@ public class ScenarioSteps implements En {
             }
         }
 
-        assertEquals("Failed to execute command: " + commandString, exitCode, 0);
-
+        assertThat(exitCode)
+                .withFailMessage("Failed to execute command: %s",commandString)
+                .isEqualTo(0);
     }
 
     static void startFabric(boolean tls) throws Exception {
@@ -476,20 +473,8 @@ public class ScenarioSteps implements En {
     }
 
     private static void createCryptoMaterial() throws Exception {
-        File fixtures = Paths.get("src", "test", "fixtures").toFile();
-        Process process = Runtime.getRuntime().exec("sh generate.sh", null, fixtures);
-        int exitCode = process.waitFor();
-        // get STDERR for the process and print it
-        InputStream is = process.getErrorStream();
-        InputStreamReader isr = new InputStreamReader(is);
-        BufferedReader br = new BufferedReader(isr);
-
-        String line;
-        while ((line = br.readLine()) != null) {
-            System.err.println(line);
-        }
-
-        assertEquals(exitCode, 0);
+        Path fixtures = Paths.get("src", "test", "fixtures");
+        exec(fixtures, "./generate.sh");
     }
 
     private static Wallet createWallet() throws IOException, GatewayException {
@@ -505,9 +490,10 @@ public class ScenarioSteps implements En {
 
     private BlockEvent getBlockEvent() throws InterruptedException {
         BlockEvent event = blockEvents.poll(EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        String failMessage = "No block events received: " +
-                "network=" + network + ", contract=" + contract + ", checkpointer=" + checkpointer;
-        assertNotNull(failMessage, event);
+        assertThat(event)
+                .withFailMessage("No block events received: network=%s, contract=%s, checkpointer=%s",
+                        network, contract, checkpointer)
+                .isNotNull();
         return event;
     }
 

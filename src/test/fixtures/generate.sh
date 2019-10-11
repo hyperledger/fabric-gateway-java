@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+
+set -eo pipefail
+
 rm -f crypto-material/channel.tx
 rm -f crypto-material/core.yaml
 rm -f crypto-material/genesis.block

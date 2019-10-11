@@ -36,9 +36,9 @@ Feature: Query handler strategies for evaluating transactions
 		And I connect the gateway
 		And I use the mychannel network
 		And I use the fabcar contract
-		When I prepare a queryCar transaction
+		When I prepare a queryCar transaction that I expect to fail
 		And I evaluate the transaction with arguments ["INVALID_CAR_ID"]
-		Then an error should be received with message containing "INVALID_CAR_ID"
+		Then the error message should contain "INVALID_CAR_ID"
 
 	Scenario: Evaluate transaction using MSPID_SCOPE_ROUND_ROBIN query handler
 		Given I have a gateway as user User1 using the tls connection profile
@@ -67,6 +67,6 @@ Feature: Query handler strategies for evaluating transactions
 		And I connect the gateway
 		And I use the mychannel network
 		And I use the fabcar contract
-		When I prepare a queryCar transaction
+		When I prepare a queryCar transaction that I expect to fail
 		And I evaluate the transaction with arguments ["INVALID_CAR_ID"]
-		Then an error should be received with message containing "INVALID_CAR_ID"
+		Then the error message should contain "INVALID_CAR_ID"
