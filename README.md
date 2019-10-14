@@ -67,25 +67,13 @@ Full Javadoc documentation of the SDK is published [here](https://fabric-gateway
 ### Maven
 
 Depend on development snapshots with the following `pom.xml` entries:
-```xml
-<repositories>
-    <repository>
-        <id>hyperledger-snapshots-repo</id>
-        <url>https://nexus.hyperledger.org/content/repositories/snapshots</url>
-        <releases>
-            <enabled>false</enabled>
-        </releases>
-        <snapshots>
-            <enabled>true</enabled>
-        </snapshots>
-    </repository>
-</repositories>
 
+```xml
 <dependencies>
     <dependency>
-        <groupId>org.hyperledger.fabric-gateway-java</groupId>
+        <groupId>org.hyperledger.fabric</groupId>
         <artifactId>fabric-gateway-java</artifactId>
-        <version>1.4.0-SNAPSHOT</version>
+        <version>1.4.0</version>
     </dependency>
 </dependencies>
 ```
@@ -93,6 +81,7 @@ Depend on development snapshots with the following `pom.xml` entries:
 ### Gradle
 
 Depend on development snapshots with the following `build.gradle` entries:
+
 ```groovy
 repositories {
     maven {
@@ -101,7 +90,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.hyperledger.fabric-gateway-java:fabric-gateway-java:1.4.0-SNAPSHOT'
+    implementation 'org.hyperledger.fabric:fabric-gateway-java:1.4.0'
 }
 ```
 
@@ -117,13 +106,14 @@ The `mvn install` command will download the dependencies and run all the unit te
 
 Docker is required to run the scenario tests. For the tests to locate the peer, orderer and certificate authority
 containers running locally, the following entries are required in the local `hosts` file:
+
 ```
 127.0.0.1  ca0.example.com
 127.0.0.1  ca1.example.com
 127.0.0.1  orderer.example.com
 127.0.0.1  peer0.org1.example.com
 127.0.0.1  peer0.org2.example.com
-``` 
+```
 
 ### Unit tests
 

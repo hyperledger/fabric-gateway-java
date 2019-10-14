@@ -257,7 +257,7 @@ public final class GatewayImpl implements Gateway {
                 try {
                     channel = client.loadChannelFromConfig(networkName, networkConfig);
                 } catch (InvalidArgumentException | NetworkConfigurationException ex) {
-                    LOG.info("Unable to load channel configuration from connection profile: ", ex);
+                    LOG.info("Unable to load channel configuration from connection profile: " + ex.getLocalizedMessage());
                 }
             }
             if (channel == null) {
