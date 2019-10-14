@@ -1,4 +1,4 @@
 // Versions shared across subprojects
 ext {
-    fabric_sdk_java_version = 'feature-service-disco-2'
+    fabric_sdk_java_version = 'release-1.4-pio-2'
 }
