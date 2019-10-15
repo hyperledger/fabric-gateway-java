@@ -143,6 +143,10 @@
 	                            <goal>test</goal>
 	                        </goals>
 	                        <configuration>
+								<environmentVariables>
+									<!-- Temporary override until we pick up this default from a new SDK version -->
+									<ORG_HYPERLEDGER_FABRIC_SDK_PROPOSAL_WAIT_TIME>120000</ORG_HYPERLEDGER_FABRIC_SDK_PROPOSAL_WAIT_TIME>
+								</environmentVariables>
 	                            <excludes>
 	                                <exclude>none</exclude>
 	                            </excludes>
