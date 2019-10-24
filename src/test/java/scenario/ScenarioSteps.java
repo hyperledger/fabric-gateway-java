@@ -47,6 +47,7 @@ import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.gateway.Transaction;
+import org.hyperledger.fabric.gateway.TransactionResponse;
 import org.hyperledger.fabric.gateway.Wallet;
 import org.hyperledger.fabric.gateway.sample.SampleCommitHandlerFactory;
 import org.hyperledger.fabric.gateway.spi.Checkpointer;
@@ -251,14 +252,14 @@ public class ScenarioSteps implements En {
                 (String action, String argsJson) -> {
                     String[] args = newStringArray(parseJsonArray(argsJson));
 
-                    final byte[] result;
+                    final TransactionResponse result;
                     try {
                         if (action.equals("submit")) {
                             result = transaction.submit(args);
                         } else {
                             result = transaction.evaluate(args);
                         }
-                        response = newString(result);
+                        response = newString(result.getPayload());
                         contractException = null;
                     } catch (ContractException e) {
                         response = null;

@@ -18,6 +18,7 @@ import org.hyperledger.fabric.gateway.ContractException;
 import org.hyperledger.fabric.gateway.GatewayRuntimeException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.Transaction;
+import org.hyperledger.fabric.gateway.TransactionResponse;
 import org.hyperledger.fabric.gateway.spi.CommitHandler;
 import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
 import org.hyperledger.fabric.gateway.spi.Query;
@@ -89,16 +90,16 @@ public final class TransactionImpl implements Transaction {
     }
 
     @Override
-    public byte[] submit(User userContext, String... args) throws ContractException, TimeoutException, InterruptedException {
+    public TransactionResponse submit(User userContext, String... args) throws ContractException, TimeoutException, InterruptedException {
         return createSubmit(userContext, args);
     }
 
     @Override
-    public byte[] submit(String... args) throws ContractException, TimeoutException, InterruptedException {
+    public TransactionResponse submit(String... args) throws ContractException, TimeoutException, InterruptedException {
         return createSubmit(null, args);
     }
 
-    private byte[] createSubmit(@Nullable User userContext, String... args) throws ContractException, TimeoutException, InterruptedException {
+    private TransactionResponse createSubmit(@Nullable User userContext, String... args) throws ContractException, TimeoutException, InterruptedException {
         try {
             TransactionProposalRequest request = newProposalRequest(userContext, args);
             Collection<ProposalResponse> proposalResponses = sendTransactionProposal(request);
@@ -126,7 +127,7 @@ public final class TransactionImpl implements Transaction {
 
             commitHandler.waitForEvents(commitTimeout.getTime(), commitTimeout.getTimeUnit());
 
-            return result;
+            return new TransactionResponse(transactionId, result);
         } catch (InvalidArgumentException | ProposalException | ServiceDiscoveryException e) {
             throw new GatewayRuntimeException(e);
         }
@@ -198,23 +199,23 @@ public final class TransactionImpl implements Transaction {
     }
 
     @Override
-    public byte[] evaluate(User userContext, String... args) throws ContractException {
+    public TransactionResponse evaluate(User userContext, String... args) throws ContractException {
         return processEvaluate(userContext, args);
     }
 
     @Override
-    public byte[] evaluate(String... args) throws ContractException {
+    public TransactionResponse evaluate(String... args) throws ContractException {
         return processEvaluate(null, args);
     }
 
-    private byte[] processEvaluate(@Nullable User userContext, String... args) throws ContractException {
+    private TransactionResponse processEvaluate(@Nullable User userContext, String... args) throws ContractException {
         QueryByChaincodeRequest request = newQueryRequest(userContext, args);
         Query query = new QueryImpl(network.getChannel(), request);
 
         ProposalResponse response = queryHandler.evaluate(query);
 
         try {
-            return response.getChaincodeActionResponsePayload();
+            return new TransactionResponse(response.getTransactionID(), response.getChaincodeActionResponsePayload());
         } catch (InvalidArgumentException e) {
             throw new ContractException(response.getMessage(), e);
         }

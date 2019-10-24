@@ -61,7 +61,7 @@ public interface Contract {
 	 *
 	 * @see <a href="https://hyperledger-fabric.readthedocs.io/en/release-1.4/developapps/application.html#submit-transaction">Developing Fabric Applications - Submit transaction</a>
 	 */
-	byte[] submitTransaction(String name, String... args) throws ContractException, TimeoutException, InterruptedException;
+	TransactionResponse submitTransaction(String name, String... args) throws ContractException, TimeoutException, InterruptedException;
 
 	/**
 	 * Submit a transaction to the ledger. The transaction function {@code name}
@@ -83,7 +83,7 @@ public interface Contract {
 	 *
 	 * @see <a href="https://hyperledger-fabric.readthedocs.io/en/release-1.4/developapps/application.html#submit-transaction">Developing Fabric Applications - Submit transaction</a>
 	 */
-	byte[] submitTransaction(String name, User userContext, String... args) throws ContractException, TimeoutException, InterruptedException;
+	TransactionResponse submitTransaction(String name, User userContext, String... args) throws ContractException, TimeoutException, InterruptedException;
 
 	/**
 	 * Evaluate a transaction function and return its results.
@@ -98,7 +98,7 @@ public interface Contract {
 	 * @return Payload response from the transaction function.
 	 * @throws ContractException if no peers are reachable or an error response is returned.
 	 */
-	byte[] evaluateTransaction(String name, String... args) throws ContractException;
+	TransactionResponse evaluateTransaction(String name, String... args) throws ContractException;
 
 	/**
 	 * Evaluate a transaction function and return its results.
@@ -116,7 +116,7 @@ public interface Contract {
 	 * @return Payload response from the transaction function.
 	 * @throws ContractException if no peers are reachable or an error response is returned.
 	 */
-	byte[] evaluateTransaction(String name, User userContext, String... args) throws ContractException;
+	TransactionResponse evaluateTransaction(String name, User userContext, String... args) throws ContractException;
 
 	/**
 	 * Add a listener to receive all contract events emitted by transactions.

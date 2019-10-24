@@ -72,7 +72,7 @@ public interface Transaction {
 	 * @throws InterruptedException if the current thread is interrupted while waiting.
 	 * @throws GatewayRuntimeException if an underlying infrastructure failure occurs.
 	 */
-	byte[] submit(String... args) throws ContractException, TimeoutException, InterruptedException;
+	TransactionResponse submit(String... args) throws ContractException, TimeoutException, InterruptedException;
 
 	/**
 	 * Submit a transaction to the ledger. The transaction function represented by this object
@@ -90,7 +90,7 @@ public interface Transaction {
 	 * @throws InterruptedException if the current thread is interrupted while waiting.
 	 * @throws GatewayRuntimeException if an underlying infrastructure failure occurs.
 	 */
-	byte[] submit(User userContext, String... args) throws ContractException, TimeoutException, InterruptedException;
+	TransactionResponse submit(User userContext, String... args) throws ContractException, TimeoutException, InterruptedException;
 
 	/**
 	 * Evaluate a transaction function and return its results.
@@ -103,7 +103,7 @@ public interface Transaction {
 	 * @throws ContractException if no peers are reachable or an error response is returned.
 	 * @throws GatewayRuntimeException if an underlying infrastructure failure occurs.
 	 */
-	byte[] evaluate(String... args) throws ContractException;
+	TransactionResponse evaluate(String... args) throws ContractException;
 
 	/**
 	 * Evaluate a transaction function and return its results.
@@ -119,5 +119,5 @@ public interface Transaction {
 	 * @throws ContractException if no peers are reachable or an error response is returned.
 	 * @throws GatewayRuntimeException if an underlying infrastructure failure occurs.
 	 */
-	byte[] evaluate(User userContext, String... args) throws ContractException;
+	TransactionResponse evaluate(User userContext, String... args) throws ContractException;
 }

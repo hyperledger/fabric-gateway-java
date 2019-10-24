@@ -17,6 +17,7 @@ import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.ContractEvent;
 import org.hyperledger.fabric.gateway.ContractException;
 import org.hyperledger.fabric.gateway.Transaction;
+import org.hyperledger.fabric.gateway.TransactionResponse;
 import org.hyperledger.fabric.gateway.impl.event.BlockListenerSession;
 import org.hyperledger.fabric.gateway.impl.event.ListenerSession;
 import org.hyperledger.fabric.gateway.impl.event.Listeners;
@@ -47,22 +48,22 @@ public final class ContractImpl implements Contract, AutoCloseable {
     }
 
     @Override
-    public byte[] submitTransaction(String name, String... args) throws ContractException, TimeoutException, InterruptedException {
+    public TransactionResponse submitTransaction(String name, String... args) throws ContractException, TimeoutException, InterruptedException {
         return createTransaction(name).submit(args);
     }
 
     @Override
-    public byte[] evaluateTransaction(String name, String... args) throws ContractException {
+    public TransactionResponse evaluateTransaction(String name, String... args) throws ContractException {
         return createTransaction(name).evaluate(args);
     }
 
     @Override
-    public byte[] submitTransaction(String name, User userContext, String... args) throws ContractException, TimeoutException, InterruptedException {
+    public TransactionResponse submitTransaction(String name, User userContext, String... args) throws ContractException, TimeoutException, InterruptedException {
         return createTransaction(name).submit(userContext, args);
     }
 
     @Override
-    public byte[] evaluateTransaction(String name, User userContext, String... args) throws ContractException {
+    public TransactionResponse evaluateTransaction(String name, User userContext, String... args) throws ContractException {
         return createTransaction(name).evaluate(userContext, args);
     }
 

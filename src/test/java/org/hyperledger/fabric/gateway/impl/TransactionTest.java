@@ -21,6 +21,7 @@ import org.hyperledger.fabric.gateway.ContractException;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.TestUtils;
+import org.hyperledger.fabric.gateway.TransactionResponse;
 import org.hyperledger.fabric.gateway.spi.CommitHandler;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;
@@ -129,8 +130,8 @@ public class TransactionTest {
         when(response.getPeer()).thenReturn(peer1);
         when(channel.queryByChaincode(any(), anyCollection())).thenReturn(Collections.singletonList(response));
 
-        byte[] result = contract.evaluateTransaction("txn", "arg1");
-        assertThat(new String(result)).isEqualTo(expected);
+        TransactionResponse result = contract.evaluateTransaction("txn", "arg1");
+        assertThat(new String(result.getPayload())).isEqualTo(expected);
     }
 
     @Test
@@ -140,8 +141,8 @@ public class TransactionTest {
         when(response.getPeer()).thenReturn(peer1);
         when(channel.queryByChaincode(any(), anyCollection())).thenReturn(Collections.singletonList(response));
 
-        byte[] result = contract.createTransaction("txn").setTransient(transientMap).evaluate("arg1");
-        assertThat(new String(result)).isEqualTo(expected);
+        TransactionResponse result = contract.createTransaction("txn").setTransient(transientMap).evaluate("arg1");
+        assertThat(new String(result.getPayload())).isEqualTo(expected);
     }
 
     @Test
@@ -167,8 +168,8 @@ public class TransactionTest {
         ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
         when(channel.sendTransactionProposal(any())).thenReturn(Collections.singletonList(response));
 
-        byte[] result = contract.submitTransaction("txn", "arg1");
-        assertThat(new String(result)).isEqualTo(expected);
+        TransactionResponse result = contract.submitTransaction("txn", "arg1");
+        assertThat(new String(result.getPayload())).isEqualTo(expected);
     }
 
     @Test
@@ -177,10 +178,10 @@ public class TransactionTest {
         ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
         when(channel.sendTransactionProposal(any())).thenReturn(Collections.singletonList(response));
 
-        byte[] result = contract.createTransaction("txn")
+        TransactionResponse result = contract.createTransaction("txn")
                 .setTransient(transientMap)
                 .submit("arg1");
-        assertThat(new String(result)).isEqualTo(expected);
+        assertThat(new String(result.getPayload())).isEqualTo(expected);
     }
 
     @Test
