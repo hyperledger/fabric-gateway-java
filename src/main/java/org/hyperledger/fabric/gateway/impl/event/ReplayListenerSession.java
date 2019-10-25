@@ -28,7 +28,7 @@ public final class ReplayListenerSession implements ListenerSession {
     private final Channel channel;
     private final BlockEventSource blockSource;
 
-    public ReplayListenerSession(NetworkImpl network, Consumer<BlockEvent> listener, long startBlock) {
+    public ReplayListenerSession(final NetworkImpl network, final Consumer<BlockEvent> listener, final long startBlock) {
         gateway = network.getGateway().newInstance();
         String channelName = network.getChannel().getName();
         channel = gateway.getNetwork(channelName).getChannel();
@@ -55,7 +55,7 @@ public final class ReplayListenerSession implements ListenerSession {
         }
     }
 
-    private void addReplayPeers(Collection<Peer> eventingPeers, long startBlock) {
+    private void addReplayPeers(final Collection<Peer> eventingPeers, final long startBlock) {
         HFClient client = gateway.getClient();
         try {
             for (Peer originalPeer : eventingPeers) {

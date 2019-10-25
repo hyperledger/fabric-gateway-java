@@ -1,3 +1,9 @@
+/*
+ * Copyright 2019 IBM All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /**
  * <p>This package provides the set of interfaces that enable a Java application to
  * interact with a Fabric blockchain network. It provides a simple API to

@@ -15,7 +15,7 @@ public final class WalletIdentity implements Wallet.Identity {
   private final String certificate;
   private final PrivateKey privateKey;
 
-  public WalletIdentity(String mspId, String certificate, PrivateKey privateKey) {
+  public WalletIdentity(final String mspId, final String certificate, final PrivateKey privateKey) {
     this.mspId = mspId;
     this.certificate = certificate;
     this.privateKey = privateKey;

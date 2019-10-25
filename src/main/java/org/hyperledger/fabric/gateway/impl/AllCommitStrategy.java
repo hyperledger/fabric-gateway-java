@@ -17,7 +17,7 @@ public final class AllCommitStrategy implements CommitStrategy {
     private int successCount = 0;
     private int totalCount = 0;
 
-    public AllCommitStrategy(Collection<Peer> peers) {
+    public AllCommitStrategy(final Collection<Peer> peers) {
         this.peers = peers;
     }
 
@@ -27,14 +27,14 @@ public final class AllCommitStrategy implements CommitStrategy {
     }
 
     @Override
-    public synchronized Result onEvent(BlockEvent.TransactionEvent event) {
+    public synchronized Result onEvent(final BlockEvent.TransactionEvent event) {
         successCount++;
         totalCount++;
         return getResult();
     }
 
     @Override
-    public synchronized Result onError(PeerDisconnectEvent event) {
+    public synchronized Result onError(final PeerDisconnectEvent event) {
         totalCount++;
         return getResult();
     }

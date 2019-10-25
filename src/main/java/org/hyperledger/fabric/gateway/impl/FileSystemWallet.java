@@ -32,7 +32,7 @@ import org.hyperledger.fabric.gateway.Wallet;
 public final class FileSystemWallet implements Wallet {
     private Path basePath;
 
-    public FileSystemWallet(Path path) throws IOException {
+    public FileSystemWallet(final Path path) throws IOException {
         boolean walletExists = Files.isDirectory(path);
         if (!walletExists) {
             Files.createDirectories(path);
@@ -41,7 +41,7 @@ public final class FileSystemWallet implements Wallet {
     }
 
     @Override
-    public void put(String label, Identity identity) throws IOException {
+    public void put(final String label, final Identity identity) throws IOException {
         Path idFolder = basePath.resolve(label);
         if (!Files.isDirectory(idFolder)) {
             Files.createDirectories(idFolder);
@@ -57,7 +57,7 @@ public final class FileSystemWallet implements Wallet {
     }
 
     @Override
-    public Identity get(String label) throws IOException {
+    public Identity get(final String label) throws IOException {
         Path idFile = basePath.resolve(Paths.get(label, label));
         if (Files.exists(idFile)) {
             try (BufferedReader fr = Files.newBufferedReader(idFile)) {
@@ -76,7 +76,7 @@ public final class FileSystemWallet implements Wallet {
     }
 
     @Override
-    public void remove(String label) throws IOException {
+    public void remove(final String label) throws IOException {
         Path idDir = basePath.resolve(label);
         if (Files.exists(idDir)) {
             FileUtils.deleteDirectory(idDir.toFile());
@@ -84,12 +84,12 @@ public final class FileSystemWallet implements Wallet {
     }
 
     @Override
-    public boolean exists(String label) {
+    public boolean exists(final String label) {
         Path idFile = basePath.resolve(Paths.get(label, label));
         return Files.exists(idFile);
     }
 
-    private Identity fromJson(String json) throws IOException {
+    private Identity fromJson(final String json) throws IOException {
         try (JsonReader reader = Json.createReader(new StringReader(json))) {
             JsonObject idObject = reader.readObject();
             String name = idObject.getString("name");  // TODO assert this is the same as the folder
@@ -102,7 +102,7 @@ public final class FileSystemWallet implements Wallet {
         }
     }
 
-    private static String toJson(String name, Identity identity) {
+    private static String toJson(final String name, final Identity identity) {
         String json = null;
         JsonObject idObject = Json.createObjectBuilder()
                 .add("name", name)
@@ -122,7 +122,7 @@ public final class FileSystemWallet implements Wallet {
         return json;
     }
 
-    private static void writePrivateKey(PrivateKey key, Path pemFile) throws IOException  {
+    private static void writePrivateKey(final PrivateKey key, final Path pemFile) throws IOException  {
         try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(pemFile))) {
             writer.println("-----BEGIN PRIVATE KEY-----");
             String base64 = Base64.getEncoder().encodeToString(key.getEncoded());

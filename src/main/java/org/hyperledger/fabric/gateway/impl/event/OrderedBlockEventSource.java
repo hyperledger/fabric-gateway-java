@@ -22,7 +22,7 @@ import org.hyperledger.fabric.sdk.BlockInfo;
  * without duplicates.
  */
 public final class OrderedBlockEventSource implements BlockEventSource {
-    private static final Comparator<BlockEvent> eventComparator = Comparator.comparingLong(BlockEvent::getBlockNumber);
+    private static final Comparator<BlockEvent> EVENT_COMPARATOR = Comparator.comparingLong(BlockEvent::getBlockNumber);
 
     private final BlockEventSource blockSource;
     private final ListenerSet<Consumer<BlockEvent>> listeners = new ListenerSet<>();
@@ -31,13 +31,13 @@ public final class OrderedBlockEventSource implements BlockEventSource {
     // Non-threadsafe state synchronized by stateLock
     private final Object stateLock = new Object();
     private long blockNumber;
-    private final SortedSet<BlockEvent> queuedEvents = new TreeSet<>(eventComparator);
+    private final SortedSet<BlockEvent> queuedEvents = new TreeSet<>(EVENT_COMPARATOR);
 
-    public OrderedBlockEventSource(BlockEventSource blockSource) {
+    public OrderedBlockEventSource(final BlockEventSource blockSource) {
         this(blockSource, -1);
     }
 
-    public OrderedBlockEventSource(BlockEventSource blockSource, long startBlock) {
+    public OrderedBlockEventSource(final BlockEventSource blockSource, final long startBlock) {
         this.blockSource = blockSource;
         this.blockListener = blockSource.addBlockListener(this::receivedBlock);
         synchronized (stateLock) {
@@ -46,12 +46,12 @@ public final class OrderedBlockEventSource implements BlockEventSource {
     }
 
     @Override
-    public Consumer<BlockEvent> addBlockListener(Consumer<BlockEvent> listener) {
+    public Consumer<BlockEvent> addBlockListener(final Consumer<BlockEvent> listener) {
         return listeners.add(listener);
     }
 
     @Override
-    public void removeBlockListener(Consumer<BlockEvent> listener) {
+    public void removeBlockListener(final Consumer<BlockEvent> listener) {
         listeners.remove(listener);
     }
 
@@ -61,7 +61,7 @@ public final class OrderedBlockEventSource implements BlockEventSource {
         blockSource.removeBlockListener(blockListener);
     }
 
-    private void receivedBlock(BlockEvent event) {
+    private void receivedBlock(final BlockEvent event) {
         synchronized (stateLock) {
             if (isOldBlockNumber(event.getBlockNumber())) {
                 return;
@@ -72,7 +72,7 @@ public final class OrderedBlockEventSource implements BlockEventSource {
         }
     }
 
-    private boolean isOldBlockNumber(long eventBlockNumber) {
+    private boolean isOldBlockNumber(final long eventBlockNumber) {
         return eventBlockNumber < blockNumber;
     }
 
@@ -91,7 +91,7 @@ public final class OrderedBlockEventSource implements BlockEventSource {
         }
     }
 
-    private boolean isNextBlockNumber(long eventBlockNumber) {
+    private boolean isNextBlockNumber(final long eventBlockNumber) {
         return blockNumber < 0 || blockNumber == eventBlockNumber;
     }
 

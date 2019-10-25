@@ -28,15 +28,15 @@ import org.hyperledger.fabric.sdk.Peer;
 public final class Listeners {
     private static final Log LOG = LogFactory.getLog(Listeners.class);
 
-    public static Consumer<BlockEvent> fromTransaction(Consumer<BlockEvent.TransactionEvent> listener) {
+    public static Consumer<BlockEvent> fromTransaction(final Consumer<BlockEvent.TransactionEvent> listener) {
         return blockEvent -> blockEvent.getTransactionEvents().forEach(listener);
     }
 
-    public static Consumer<BlockEvent> fromContract(Consumer<ContractEvent> listener) {
+    public static Consumer<BlockEvent> fromContract(final Consumer<ContractEvent> listener) {
         return fromTransaction(transactionFromContract(listener));
     }
 
-    private static Consumer<BlockEvent.TransactionEvent> transactionFromContract(Consumer<ContractEvent> listener) {
+    private static Consumer<BlockEvent.TransactionEvent> transactionFromContract(final Consumer<ContractEvent> listener) {
         return transactionEvent -> StreamSupport.stream(transactionEvent.getTransactionActionInfos().spliterator(), false)
                 .map(BlockInfo.TransactionEnvelopeInfo.TransactionActionInfo::getEvent)
                 .filter(Objects::nonNull)
@@ -44,7 +44,7 @@ public final class Listeners {
                 .forEach(listener);
     }
 
-    public static Consumer<BlockEvent> checkpointBlock(Checkpointer checkpointer, Consumer<BlockEvent> listener) {
+    public static Consumer<BlockEvent> checkpointBlock(final Checkpointer checkpointer, final Consumer<BlockEvent> listener) {
         return blockEvent -> {
             final long eventBlockNumber = blockEvent.getBlockNumber();
             try {
@@ -70,7 +70,8 @@ public final class Listeners {
         };
     }
 
-    public static Consumer<BlockEvent> checkpointTransaction(Checkpointer checkpointer, Consumer<BlockEvent.TransactionEvent> listener) {
+    public static Consumer<BlockEvent> checkpointTransaction(final Checkpointer checkpointer,
+                                                             final Consumer<BlockEvent.TransactionEvent> listener) {
         Consumer<BlockEvent.TransactionEvent> transactionListener = transactionEvent -> {
             String transactionId = transactionEvent.getTransactionID();
             try {
@@ -89,11 +90,12 @@ public final class Listeners {
         return checkpointBlock(checkpointer, fromTransaction(transactionListener));
     }
 
-    public static Consumer<BlockEvent> checkpointContract(Checkpointer checkpointer, Consumer<ContractEvent> listener) {
+    public static Consumer<BlockEvent> checkpointContract(final Checkpointer checkpointer,
+                                                          final Consumer<ContractEvent> listener) {
         return checkpointTransaction(checkpointer, transactionFromContract(listener));
     }
 
-    public static Consumer<ContractEvent> contract(Consumer<ContractEvent> listener, String chaincodeId) {
+    public static Consumer<ContractEvent> contract(final Consumer<ContractEvent> listener, final String chaincodeId) {
         return contractEvent -> {
             if (contractEvent.getChaincodeId().equals(chaincodeId)) {
                 listener.accept(contractEvent);
@@ -101,7 +103,9 @@ public final class Listeners {
         };
     }
 
-    public static Consumer<ContractEvent> contract(Consumer<ContractEvent> listener, String chaincodeId, Pattern namePattern) {
+    public static Consumer<ContractEvent> contract(final Consumer<ContractEvent> listener,
+                                                   final String chaincodeId,
+                                                   final Pattern namePattern) {
         return contract(contractEvent -> {
             if (namePattern.matcher(contractEvent.getName()).matches()) {
                 listener.accept(contractEvent);
@@ -109,7 +113,9 @@ public final class Listeners {
         }, chaincodeId);
     }
 
-    public static Consumer<BlockEvent.TransactionEvent> transaction(CommitListener listener, Collection<Peer> peers, String transactionId) {
+    public static Consumer<BlockEvent.TransactionEvent> transaction(final CommitListener listener,
+                                                                    final Collection<Peer> peers,
+                                                                    final String transactionId) {
         Set<Peer> peerSet = new HashSet<>(peers);
         return transactionEvent -> {
             if (transactionEvent.getTransactionID().equals(transactionId) && peerSet.contains(transactionEvent.getPeer())) {

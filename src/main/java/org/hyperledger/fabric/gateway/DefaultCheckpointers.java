@@ -26,7 +26,7 @@ public final class DefaultCheckpointers {
      * @return A checkpointer.
      * @throws IOException if an error occurs creating the checkpointer.
      */
-    public static Checkpointer file(Path path) throws IOException {
+    public static Checkpointer file(final Path path) throws IOException {
         return new FileCheckpointer(path);
     }
 

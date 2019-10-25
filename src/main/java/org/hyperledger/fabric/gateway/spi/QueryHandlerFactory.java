@@ -7,11 +7,10 @@
 package org.hyperledger.fabric.gateway.spi;
 
 import org.hyperledger.fabric.gateway.Network;
-import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
 
 /**
  * Functional interface describing a factory function for constructing {@link QueryHandler} instances.
- * <p>Default implementations can be obtained from {@link DefaultQueryHandlers}.</p>
+ * <p>Default implementations can be obtained from {@link org.hyperledger.fabric.gateway.DefaultQueryHandlers}.</p>
  */
 @FunctionalInterface
 public interface QueryHandlerFactory {
