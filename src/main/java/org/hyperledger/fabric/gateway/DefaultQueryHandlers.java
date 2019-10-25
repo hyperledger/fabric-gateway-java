@@ -6,15 +6,15 @@
 
 package org.hyperledger.fabric.gateway;
 
+import java.util.Collection;
+import java.util.EnumSet;
+
 import org.hyperledger.fabric.gateway.impl.RoundRobinQueryHandler;
 import org.hyperledger.fabric.gateway.impl.SingleQueryHandler;
 import org.hyperledger.fabric.gateway.spi.QueryHandler;
 import org.hyperledger.fabric.gateway.spi.QueryHandlerFactory;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
-
-import java.util.Collection;
-import java.util.EnumSet;
 
 /**
  * Default query handler implementations. Instances can be referenced directly or looked up by name, for example
@@ -43,22 +43,22 @@ public enum DefaultQueryHandlers implements QueryHandlerFactory {
 
     private final QueryHandlerFactory factory;
 
-    DefaultQueryHandlers(QueryHandlerFactory factory) {
+    DefaultQueryHandlers(final QueryHandlerFactory factory) {
         this.factory = factory;
     }
 
-    private static Collection<Peer> getChaincodeQueryPeersForOrganization(Network network) {
+    private static Collection<Peer> getChaincodeQueryPeersForOrganization(final Network network) {
         Collection<Peer> queryPeers = getChaincodeQueryPeers(network);
         Collection<Peer> orgPeers = getPeersForOrganization(network);
         orgPeers.retainAll(queryPeers);
         return orgPeers;
     }
 
-    private static Collection<Peer> getChaincodeQueryPeers(Network network) {
+    private static Collection<Peer> getChaincodeQueryPeers(final Network network) {
         return network.getChannel().getPeers(QUERY_ROLES);
     }
 
-    private static Collection<Peer> getPeersForOrganization(Network network) {
+    private static Collection<Peer> getPeersForOrganization(final Network network) {
         String mspId = network.getGateway().getIdentity().getMspId();
         try {
             return network.getChannel().getPeersForOrganization(mspId);
@@ -68,7 +68,8 @@ public enum DefaultQueryHandlers implements QueryHandlerFactory {
         }
     }
 
-    public QueryHandler create(Network network) {
+    @Override
+    public QueryHandler create(final Network network) {
         return factory.create(network);
     }
 }

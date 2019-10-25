@@ -6,17 +6,17 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import java.util.Collection;
+
 import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Peer;
-
-import java.util.Collection;
 
 public final class AnyCommitStrategy implements CommitStrategy {
     private final Collection<Peer> peers;
     private int totalCount = 0;
 
-    public AnyCommitStrategy(Collection<Peer> peers) {
+    public AnyCommitStrategy(final Collection<Peer> peers) {
         this.peers = peers;
     }
 
@@ -26,12 +26,12 @@ public final class AnyCommitStrategy implements CommitStrategy {
     }
 
     @Override
-    public synchronized Result onEvent(BlockEvent.TransactionEvent event) {
+    public synchronized Result onEvent(final BlockEvent.TransactionEvent event) {
         return Result.SUCCESS;
     }
 
     @Override
-    public synchronized Result onError(PeerDisconnectEvent event) {
+    public synchronized Result onError(final PeerDisconnectEvent event) {
         totalCount++;
         if (totalCount < peers.size()) {
             return Result.CONTINUE;

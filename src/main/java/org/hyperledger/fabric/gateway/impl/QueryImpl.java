@@ -24,13 +24,13 @@ public final class QueryImpl implements Query {
     private final Channel channel;
     private final QueryByChaincodeRequest request;
 
-    public QueryImpl(Channel channel, QueryByChaincodeRequest request) {
+    public QueryImpl(final Channel channel, final QueryByChaincodeRequest request) {
         this.channel = channel;
         this.request = request;
     }
 
     @Override
-    public ProposalResponse evaluate(Peer peer) {
+    public ProposalResponse evaluate(final Peer peer) {
         try {
             Collection<ProposalResponse> responses = channel.queryByChaincode(request, Collections.singletonList(peer));
             return responses.iterator().next();
@@ -40,7 +40,7 @@ public final class QueryImpl implements Query {
     }
 
     @Override
-    public Map<Peer, ProposalResponse> evaluate(Collection<Peer> peers) {
+    public Map<Peer, ProposalResponse> evaluate(final Collection<Peer> peers) {
         try {
             Collection<ProposalResponse> responses = channel.queryByChaincode(request, peers);
             return responses.stream()

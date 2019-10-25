@@ -28,12 +28,12 @@ public final class CommitHandlerImpl implements CommitHandler {
     private final CommitStrategy strategy;
     private final CommitListener listener = new CommitListener() {
         @Override
-        public void acceptCommit(BlockEvent.TransactionEvent transactionEvent) {
+        public void acceptCommit(final BlockEvent.TransactionEvent transactionEvent) {
             onTxEvent(transactionEvent);
         }
 
         @Override
-        public void acceptDisconnect(PeerDisconnectEvent disconnectEvent) {
+        public void acceptDisconnect(final PeerDisconnectEvent disconnectEvent) {
             onDisconnectEvent(disconnectEvent);
         }
     };
@@ -41,7 +41,7 @@ public final class CommitHandlerImpl implements CommitHandler {
     private final CountDownLatch latch = new CountDownLatch(1);
     private final AtomicReference<ContractException> error = new AtomicReference<>();
 
-    public CommitHandlerImpl(String transactionId, Network network, CommitStrategy strategy) {
+    public CommitHandlerImpl(final String transactionId, final Network network, final CommitStrategy strategy) {
         this.transactionId = transactionId;
         this.network = network;
         this.strategy = strategy;
@@ -58,7 +58,7 @@ public final class CommitHandlerImpl implements CommitHandler {
     }
 
     @Override
-    public void waitForEvents(long timeout, TimeUnit timeUnit) throws ContractException, TimeoutException, InterruptedException {
+    public void waitForEvents(final long timeout, final TimeUnit timeUnit) throws ContractException, TimeoutException, InterruptedException {
         try {
             boolean complete = latch.await(timeout, timeUnit);
             if (!complete) {
@@ -89,7 +89,7 @@ public final class CommitHandlerImpl implements CommitHandler {
                 "peers=" + peers);
     }
 
-    private void onTxEvent(BlockEvent.TransactionEvent event) {
+    private void onTxEvent(final BlockEvent.TransactionEvent event) {
         if (!transactionId.equals(event.getTransactionID()) || !peers.remove(event.getPeer())) {
             // Not a transaction or peer we were looking for
             return;
@@ -104,7 +104,7 @@ public final class CommitHandlerImpl implements CommitHandler {
         }
     }
 
-    private void onDisconnectEvent(PeerDisconnectEvent event) {
+    private void onDisconnectEvent(final PeerDisconnectEvent event) {
         if (!peers.remove(event.getPeer())) {
             // Not a peer we were looking for
             return;
@@ -114,7 +114,7 @@ public final class CommitHandlerImpl implements CommitHandler {
         processStrategyResult(result);
     }
 
-    private void processStrategyResult(CommitStrategy.Result strategyResult) {
+    private void processStrategyResult(final CommitStrategy.Result strategyResult) {
         if (strategyResult == CommitStrategy.Result.SUCCESS) {
             cancelListening();
         } else if (strategyResult == CommitStrategy.Result.FAIL) {
@@ -122,7 +122,7 @@ public final class CommitHandlerImpl implements CommitHandler {
         }
     }
 
-    private void fail(ContractException e) {
+    private void fail(final ContractException e) {
         error.set(e);
         cancelListening();
     }

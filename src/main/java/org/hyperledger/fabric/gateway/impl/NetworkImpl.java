@@ -43,7 +43,7 @@ public final class NetworkImpl implements Network, AutoCloseable {
     private final Map<Consumer<BlockEvent>, ListenerSession> blockListenerSessions = new HashMap<>();
     private final Map<CommitListener, CommitListenerSession> commitListenerSessions = new ConcurrentHashMap<>();
 
-    NetworkImpl(Channel channel, GatewayImpl gateway) {
+    NetworkImpl(final Channel channel, final GatewayImpl gateway) {
         this.channel = channel;
         this.gateway = gateway;
 
@@ -76,7 +76,7 @@ public final class NetworkImpl implements Network, AutoCloseable {
     }
 
     @Override
-    public Contract getContract(String chaincodeId) {
+    public Contract getContract(final String chaincodeId) {
         return getContract(chaincodeId, "");
     }
 
@@ -91,7 +91,7 @@ public final class NetworkImpl implements Network, AutoCloseable {
     }
 
     @Override
-    public Consumer<BlockEvent> addBlockListener(Consumer<BlockEvent> listener) {
+    public Consumer<BlockEvent> addBlockListener(final Consumer<BlockEvent> listener) {
         synchronized (blockListenerSessions) {
             blockListenerSessions.computeIfAbsent(listener, k -> new BlockListenerSession(orderedBlockSource, listener));
         }
@@ -99,7 +99,7 @@ public final class NetworkImpl implements Network, AutoCloseable {
     }
 
     @Override
-    public Consumer<BlockEvent> addBlockListener(Checkpointer checkpointer, Consumer<BlockEvent> listener) throws IOException {
+    public Consumer<BlockEvent> addBlockListener(final Checkpointer checkpointer, final Consumer<BlockEvent> listener) throws IOException {
         synchronized (blockListenerSessions) {
             if (!blockListenerSessions.containsKey(listener)) {
                 Consumer<BlockEvent> checkpointListener = Listeners.checkpointBlock(checkpointer, listener);
@@ -112,7 +112,7 @@ public final class NetworkImpl implements Network, AutoCloseable {
     }
 
     @Override
-    public Consumer<BlockEvent> addBlockListener(long startBlock, Consumer<BlockEvent> listener) {
+    public Consumer<BlockEvent> addBlockListener(final long startBlock, final Consumer<BlockEvent> listener) {
         synchronized (blockListenerSessions) {
             if (!blockListenerSessions.containsKey(listener)) {
                 ListenerSession session = new ReplayListenerSession(this, listener, startBlock);
@@ -122,7 +122,7 @@ public final class NetworkImpl implements Network, AutoCloseable {
         return listener;
     }
 
-    public ListenerSession newCheckpointListenerSession(Checkpointer checkpointer, Consumer<BlockEvent> listener) throws IOException {
+    public ListenerSession newCheckpointListenerSession(final Checkpointer checkpointer, final Consumer<BlockEvent> listener) throws IOException {
         final long blockNumber = checkpointer.getBlockNumber();
         if (blockNumber == Checkpointer.UNSET_BLOCK_NUMBER) {
             // New checkpointer so can attach to the shared block source
@@ -132,7 +132,7 @@ public final class NetworkImpl implements Network, AutoCloseable {
     }
 
     @Override
-    public void removeBlockListener(Consumer<BlockEvent> listener) {
+    public void removeBlockListener(final Consumer<BlockEvent> listener) {
         final ListenerSession session;
         synchronized (blockListenerSessions) {
             session = blockListenerSessions.remove(listener);
@@ -143,14 +143,16 @@ public final class NetworkImpl implements Network, AutoCloseable {
     }
 
     @Override
-    public CommitListener addCommitListener(CommitListener listener, Collection<Peer> peers, String transactionId) {
+    public CommitListener addCommitListener(final CommitListener listener,
+                                            final Collection<Peer> peers,
+                                            final String transactionId) {
         commitListenerSessions.computeIfAbsent(listener, k ->
                 new CommitListenerSession(channelBlockSource, listener, peers, transactionId));
         return listener;
     }
 
     @Override
-    public void removeCommitListener(CommitListener listener) {
+    public void removeCommitListener(final CommitListener listener) {
         CommitListenerSession session = commitListenerSessions.remove(listener);
         if (session != null) {
             session.close();

@@ -39,115 +39,115 @@ import org.hyperledger.fabric.gateway.spi.QueryHandlerFactory;
  * @see <a href="https://hyperledger-fabric.readthedocs.io/en/release-1.4/developapps/application.html#gateway">Developing Fabric Applications - Gateway</a>
  */
 public interface Gateway extends AutoCloseable {
-	/**
-	 * Returns an object representing a network
-	 *
-	 * @param networkName The name of the network (channel name)
-	 * @return {@link Network}
-	 * @throws GatewayRuntimeException if a configuration or infrastructure error causes a failure.
-	 */
-	Network getNetwork(String networkName);
+    /**
+     * Returns an object representing a network.
+     *
+     * @param networkName The name of the network (channel name)
+     * @return {@link Network}
+     * @throws GatewayRuntimeException if a configuration or infrastructure error causes a failure.
+     */
+    Network getNetwork(String networkName);
 
-	/**
-	 * Get the identity associated with the gateway connection.
-	 *
-	 * @return {@link Wallet.Identity}} The identity used by this Gateway.
-	 */
-	Wallet.Identity getIdentity();
+    /**
+     * Get the identity associated with the gateway connection.
+     *
+     * @return {@link Wallet.Identity}} The identity used by this Gateway.
+     */
+    Wallet.Identity getIdentity();
 
-	/**
-	 * Creates a gateway builder which is used to configure the gateway options
-	 * prior to connecting to the Fabric network.
-	 *
-	 * @return A gateway connection.
-	 */
-	static Builder createBuilder() {
-		return new GatewayImpl.Builder();
-	}
+    /**
+     * Creates a gateway builder which is used to configure the gateway options
+     * prior to connecting to the Fabric network.
+     *
+     * @return A gateway connection.
+     */
+    static Builder createBuilder() {
+        return new GatewayImpl.Builder();
+    }
 
-	/**
-	 * Close the gateway connection and all associated resources, including removing listeners attached to networks and
-	 * contracts created by the gateway.
-	 */
-	void close();
+    /**
+     * Close the gateway connection and all associated resources, including removing listeners attached to networks and
+     * contracts created by the gateway.
+     */
+    void close();
 
-	/**
-	 *
-	 * The Gateway Builder interface defines the options that can be configured
-	 * prior to connection.
-	 * An instance of builder is created using the static method
-	 * {@link Gateway#createBuilder()}.  Every method on the builder object will return
-	 * a reference to the same builder object allowing them to be chained together in
-	 * a single line.
-	 *
-	 */
-	interface Builder {
-		/**
-		 * Specifies the path to the common connection profile.
-		 * @param config The path to the common connection profile.
-		 * @return The builder instance, allowing multiple configuration options to be chained.
-		 * @throws IOException if the config file does not exist, or is not JSON or YAML format,
-		 * or contains invalid information.
-		 */
-		Builder networkConfig(Path config) throws IOException;
+    /**
+     *
+     * The Gateway Builder interface defines the options that can be configured
+     * prior to connection.
+     * An instance of builder is created using the static method
+     * {@link Gateway#createBuilder()}.  Every method on the builder object will return
+     * a reference to the same builder object allowing them to be chained together in
+     * a single line.
+     *
+     */
+    interface Builder {
+        /**
+         * Specifies the path to the common connection profile.
+         * @param config The path to the common connection profile.
+         * @return The builder instance, allowing multiple configuration options to be chained.
+         * @throws IOException if the config file does not exist, or is not JSON or YAML format,
+         * or contains invalid information.
+         */
+        Builder networkConfig(Path config) throws IOException;
 
-		/**
-		 * Specifies the common connection profile.
-		 * @param config The common connection profile YAML or JSON content.
-		 * @return The builder instance, allowing multiple configuration options to be chained.
-		 * @throws IOException if the common connection profile is not JSON or YAML format,
-		 * or contains invalid information.
-		 */
-		Builder networkConfig(InputStream config) throws IOException;
+        /**
+         * Specifies the common connection profile.
+         * @param config The common connection profile YAML or JSON content.
+         * @return The builder instance, allowing multiple configuration options to be chained.
+         * @throws IOException if the common connection profile is not JSON or YAML format,
+         * or contains invalid information.
+         */
+        Builder networkConfig(InputStream config) throws IOException;
 
-		/**
-		 * Specifies the identity that is to be used to connect to the network.  All operations
-		 * under this gateway connection will be performed using this identity.
-		 * @param wallet The {@link Wallet} object containing the identity.
-		 * @param id The name of the identity stored in the wallet.
-		 * @return The builder instance, allowing multiple configuration options to be chained.
-		 * @throws IOException if the specified identity can not be loaded from the wallet.
-		 */
-		Builder identity(Wallet wallet, String id) throws IOException;
+        /**
+         * Specifies the identity that is to be used to connect to the network.  All operations
+         * under this gateway connection will be performed using this identity.
+         * @param wallet The {@link Wallet} object containing the identity.
+         * @param id The name of the identity stored in the wallet.
+         * @return The builder instance, allowing multiple configuration options to be chained.
+         * @throws IOException if the specified identity can not be loaded from the wallet.
+         */
+        Builder identity(Wallet wallet, String id) throws IOException;
 
-		/**
-		 * <em>Optional</em> - Allows an alternative commit handler to be specified. The commit handler defines how
-		 * client code should wait to receive commit events from peers following submit of a transaction.
-		 * <p>Default commit handler implementations are defined in {@link DefaultCommitHandlers}.</p>
-		 * @param commitHandler A commit handler implementation.
-		 * @return The builder instance, allowing multiple configuration options to be chained.
-		 */
-		Builder commitHandler(CommitHandlerFactory commitHandler);
+        /**
+         * <em>Optional</em> - Allows an alternative commit handler to be specified. The commit handler defines how
+         * client code should wait to receive commit events from peers following submit of a transaction.
+         * <p>Default commit handler implementations are defined in {@link DefaultCommitHandlers}.</p>
+         * @param commitHandler A commit handler implementation.
+         * @return The builder instance, allowing multiple configuration options to be chained.
+         */
+        Builder commitHandler(CommitHandlerFactory commitHandler);
 
-		/**
-		 * <em>Optional</em> - Allows an alternative query handler to be specified. The query handler defines the
-		 * peers that should be used to evaluate transactions.
-		 * <p>Default query handler implementations are defined in {@link DefaultQueryHandlers}.</p>
-		 * @param queryHandler A query handler implementation.
-		 * @return The builder instance, allowing multiple configuration options to be chained.
-		 */
-		Builder queryHandler(QueryHandlerFactory queryHandler);
+        /**
+         * <em>Optional</em> - Allows an alternative query handler to be specified. The query handler defines the
+         * peers that should be used to evaluate transactions.
+         * <p>Default query handler implementations are defined in {@link DefaultQueryHandlers}.</p>
+         * @param queryHandler A query handler implementation.
+         * @return The builder instance, allowing multiple configuration options to be chained.
+         */
+        Builder queryHandler(QueryHandlerFactory queryHandler);
 
-		/**
-		 * <em>Optional</em> - Set the default maximum time to wait for commit events to be received from peers after
-		 * submitting a transaction to the orderer.
-		 * @param timeout the maximum time to wait.
-		 * @param timeUnit the time unit of the timeout argument.
-		 * @return The builder instance, allowing multiple configuration options to be chained.
-		 */
-		Builder commitTimeout(long timeout, TimeUnit timeUnit);
+        /**
+         * <em>Optional</em> - Set the default maximum time to wait for commit events to be received from peers after
+         * submitting a transaction to the orderer.
+         * @param timeout the maximum time to wait.
+         * @param timeUnit the time unit of the timeout argument.
+         * @return The builder instance, allowing multiple configuration options to be chained.
+         */
+        Builder commitTimeout(long timeout, TimeUnit timeUnit);
 
-		/**
-		 * <em>Optional</em> - Enable or disable service discovery for all transaction submissions for this gateway
-		 * @param enabled - true to enable service discovery
-		 * @return The builder instance, allowing multiple configuration options to be chained.
-		 */
-		Builder discovery(boolean enabled);
+        /**
+         * <em>Optional</em> - Enable or disable service discovery for all transaction submissions for this gateway.
+         * @param enabled - true to enable service discovery
+         * @return The builder instance, allowing multiple configuration options to be chained.
+         */
+        Builder discovery(boolean enabled);
 
-		/**
-		 * Connects to the gateway using the specified options.
-		 * @return The connected {@link Gateway} object.
-		 */
-		Gateway connect();
-	}
+        /**
+         * Connects to the gateway using the specified options.
+         * @return The connected {@link Gateway} object.
+         */
+        Gateway connect();
+    }
 }

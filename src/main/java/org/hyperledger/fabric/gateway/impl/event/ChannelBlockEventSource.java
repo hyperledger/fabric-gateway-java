@@ -25,17 +25,17 @@ public final class ChannelBlockEventSource implements BlockEventSource {
     private final Map<Consumer<BlockEvent>, String> handleMap = new ConcurrentHashMap<>();
     private final Channel channel;
 
-    ChannelBlockEventSource(Channel channel) {
+    ChannelBlockEventSource(final Channel channel) {
         this.channel = channel;
     }
 
     @Override
-    public Consumer<BlockEvent> addBlockListener(Consumer<BlockEvent> listener) {
+    public Consumer<BlockEvent> addBlockListener(final Consumer<BlockEvent> listener) {
         handleMap.computeIfAbsent(listener, this::registerChannelListener);
         return listener;
     }
 
-    private String registerChannelListener(Consumer<BlockEvent> listener) {
+    private String registerChannelListener(final Consumer<BlockEvent> listener) {
         try {
             return channel.registerBlockListener(listener::accept);
         } catch (InvalidArgumentException e) {
@@ -45,14 +45,14 @@ public final class ChannelBlockEventSource implements BlockEventSource {
     }
 
     @Override
-    public void removeBlockListener(Consumer<BlockEvent> listener) {
+    public void removeBlockListener(final Consumer<BlockEvent> listener) {
         handleMap.computeIfPresent(listener, (key, value) -> {
             unregisterChannelListener(value);
             return null;
         });
     }
 
-    private void unregisterChannelListener(String handle) {
+    private void unregisterChannelListener(final String handle) {
         try {
             channel.unregisterBlockListener(handle);
         } catch (InvalidArgumentException e) {

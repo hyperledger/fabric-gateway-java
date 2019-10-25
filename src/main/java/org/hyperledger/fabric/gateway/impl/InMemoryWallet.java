@@ -16,12 +16,12 @@ public final class InMemoryWallet implements Wallet {
   private Map<String, Identity> store = new HashMap<>();
 
   @Override
-  public void put(String label, Identity identity) {
+  public void put(final String label, final Identity identity) {
     store.put(label, identity);
   }
 
   @Override
-  public Identity get(String label) {
+  public Identity get(final String label) {
     return store.get(label);
   }
 
@@ -31,12 +31,12 @@ public final class InMemoryWallet implements Wallet {
   }
 
   @Override
-  public void remove(String label) {
+  public void remove(final String label) {
     store.remove(label);
   }
 
   @Override
-  public boolean exists(String label) {
+  public boolean exists(final String label) {
     return store.containsKey(label);
   }
 

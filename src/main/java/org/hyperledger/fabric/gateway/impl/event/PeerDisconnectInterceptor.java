@@ -26,13 +26,13 @@ public final class PeerDisconnectInterceptor implements PeerDisconnectEventSourc
     private final Peer peer;
     private final Peer.PeerEventingServiceDisconnected disconnectHandler;
 
-    PeerDisconnectInterceptor(Peer peer) {
+    PeerDisconnectInterceptor(final Peer peer) {
         this.peer = peer;
         disconnectHandler = peer.getPeerEventingServiceDisconnected();
         peer.setPeerEventingServiceDisconnected(this::handleDisconnect);
     }
 
-    private void handleDisconnect(Peer.PeerEventingServiceDisconnectEvent event) {
+    private void handleDisconnect(final Peer.PeerEventingServiceDisconnectEvent event) {
         notifyListeners(event);
 
         // Do this after listener notifications as it may sleep the thread
@@ -40,16 +40,16 @@ public final class PeerDisconnectInterceptor implements PeerDisconnectEventSourc
     }
 
     @Override
-    public Consumer<PeerDisconnectEvent> addDisconnectListener(Consumer<PeerDisconnectEvent> listener) {
+    public Consumer<PeerDisconnectEvent> addDisconnectListener(final Consumer<PeerDisconnectEvent> listener) {
         return listeners.add(listener);
     }
 
     @Override
-    public void removeDisconnectListener(Consumer<PeerDisconnectEvent> listener) {
+    public void removeDisconnectListener(final Consumer<PeerDisconnectEvent> listener) {
         listeners.remove(listener);
     }
 
-    private void notifyListeners(Peer.PeerEventingServiceDisconnectEvent sdkEvent) {
+    private void notifyListeners(final Peer.PeerEventingServiceDisconnectEvent sdkEvent) {
         PeerDisconnectEvent ourEvent = new PeerDisconnectEvent() {
             @Override
             public Peer getPeer() {
