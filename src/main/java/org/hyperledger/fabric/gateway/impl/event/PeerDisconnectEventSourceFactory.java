@@ -6,11 +6,11 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
-import org.hyperledger.fabric.sdk.Peer;
-
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
+
+import org.hyperledger.fabric.sdk.Peer;
 
 /**
  * Factory for creating PeerDisconnectEventSource instances for a given peer.
@@ -31,7 +31,7 @@ public final class PeerDisconnectEventSourceFactory {
      * Get the event source for a given peer.
      * @return Event source.
      */
-    public PeerDisconnectEventSource getPeerDisconnectEventSource(Peer peer) {
+    public PeerDisconnectEventSource getPeerDisconnectEventSource(final Peer peer) {
         return eventSources.computeIfAbsent(peer, key -> new PeerDisconnectInterceptor(peer));
     }
 
@@ -40,7 +40,7 @@ public final class PeerDisconnectEventSourceFactory {
      * @param peer A peer.
      * @param eventSource An event source, or {@code null}.
      */
-    void setPeerDisconnectEventSource(Peer peer, PeerDisconnectEventSource eventSource) {
+    void setPeerDisconnectEventSource(final Peer peer, final PeerDisconnectEventSource eventSource) {
         PeerDisconnectEventSource previousValue = eventSources.put(peer, eventSource);
         if (previousValue != null) {
             previousValue.close();

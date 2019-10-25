@@ -16,7 +16,7 @@ public final class TimePeriod {
     private final long time;
     private final TimeUnit timeUnit;
 
-    public TimePeriod(long time, TimeUnit timeUnit) {
+    public TimePeriod(final long time, final TimeUnit timeUnit) {
         this.time = time;
         this.timeUnit = timeUnit;
     }

@@ -30,14 +30,14 @@ public final class ContractImpl implements Contract, AutoCloseable {
     private final String name;
     private final Map<Consumer<ContractEvent>, ListenerSession> contractListenerSessions = new HashMap<>();
 
-    ContractImpl(NetworkImpl network, String chaincodeId, String name) {
+    ContractImpl(final NetworkImpl network, final String chaincodeId, final String name) {
         this.network = network;
         this.chaincodeId = chaincodeId;
         this.name = name;
     }
 
     @Override
-    public Transaction createTransaction(String name) {
+    public Transaction createTransaction(final String name) {
         if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException("Transaction must be a non-empty string");
         }
@@ -46,17 +46,17 @@ public final class ContractImpl implements Contract, AutoCloseable {
     }
 
     @Override
-    public byte[] submitTransaction(String name, String... args) throws ContractException, TimeoutException, InterruptedException {
+    public byte[] submitTransaction(final String name, final String... args) throws ContractException, TimeoutException, InterruptedException {
         return createTransaction(name).submit(args);
     }
 
     @Override
-    public byte[] evaluateTransaction(String name, String... args) throws ContractException {
+    public byte[] evaluateTransaction(final String name, final String... args) throws ContractException {
         return createTransaction(name).evaluate(args);
     }
 
     @Override
-    public Consumer<ContractEvent> addContractListener(Consumer<ContractEvent> listener) {
+    public Consumer<ContractEvent> addContractListener(final Consumer<ContractEvent> listener) {
         synchronized (contractListenerSessions) {
             contractListenerSessions.computeIfAbsent(listener, k -> {
                 Consumer<ContractEvent> contractListener = Listeners.contract(listener, chaincodeId);
@@ -67,17 +67,17 @@ public final class ContractImpl implements Contract, AutoCloseable {
     }
 
     @Override
-    public Consumer<ContractEvent> addContractListener(Consumer<ContractEvent> listener, String eventName) {
+    public Consumer<ContractEvent> addContractListener(final Consumer<ContractEvent> listener, final String eventName) {
         return addContractListener(listener, getEventNamePattern(eventName));
     }
 
-    private Pattern getEventNamePattern(String eventName) {
+    private Pattern getEventNamePattern(final String eventName) {
         return Pattern.compile(Pattern.quote(eventName));
     }
 
     @Override
-    public Consumer<ContractEvent> addContractListener(Consumer<ContractEvent> listener, Pattern eventNamePattern) {
-        synchronized(contractListenerSessions) {
+    public Consumer<ContractEvent> addContractListener(final Consumer<ContractEvent> listener, final Pattern eventNamePattern) {
+        synchronized (contractListenerSessions) {
             contractListenerSessions.computeIfAbsent(listener, k -> {
                 Consumer<ContractEvent> contractListener = Listeners.contract(listener, chaincodeId, eventNamePattern);
                 return new BlockListenerSession(network.getBlockSource(), Listeners.fromContract(contractListener));
@@ -87,7 +87,7 @@ public final class ContractImpl implements Contract, AutoCloseable {
     }
 
     @Override
-    public Consumer<ContractEvent> addContractListener(Checkpointer checkpointer, Consumer<ContractEvent> listener) throws IOException {
+    public Consumer<ContractEvent> addContractListener(final Checkpointer checkpointer, final Consumer<ContractEvent> listener) throws IOException {
         synchronized (contractListenerSessions) {
             if (!contractListenerSessions.containsKey(listener)) {
                 Consumer<ContractEvent> contractListener = Listeners.contract(listener, chaincodeId);
@@ -98,18 +98,23 @@ public final class ContractImpl implements Contract, AutoCloseable {
         return listener;
     }
 
-    private ListenerSession newCheckpointListenerSession(Checkpointer checkpointer, Consumer<ContractEvent> contractListener) throws IOException {
+    private ListenerSession newCheckpointListenerSession(final Checkpointer checkpointer,
+                                                         final Consumer<ContractEvent> contractListener) throws IOException {
         Consumer<BlockEvent> checkpointListener = Listeners.checkpointContract(checkpointer, contractListener);
         return network.newCheckpointListenerSession(checkpointer, checkpointListener);
     }
 
     @Override
-    public Consumer<ContractEvent> addContractListener(Checkpointer checkpointer, Consumer<ContractEvent> listener, String eventName) throws IOException {
+    public Consumer<ContractEvent> addContractListener(final Checkpointer checkpointer,
+                                                       final Consumer<ContractEvent> listener,
+                                                       final String eventName) throws IOException {
         return addContractListener(checkpointer, listener, getEventNamePattern(eventName));
     }
 
     @Override
-    public Consumer<ContractEvent> addContractListener(Checkpointer checkpointer, Consumer<ContractEvent> listener, Pattern eventNamePattern) throws IOException {
+    public Consumer<ContractEvent> addContractListener(final Checkpointer checkpointer,
+                                                       final Consumer<ContractEvent> listener,
+                                                       final Pattern eventNamePattern) throws IOException {
         synchronized (contractListenerSessions) {
             if (!contractListenerSessions.containsKey(listener)) {
                 Consumer<ContractEvent> contractListener = Listeners.contract(listener, chaincodeId, eventNamePattern);
@@ -121,7 +126,7 @@ public final class ContractImpl implements Contract, AutoCloseable {
     }
 
     @Override
-    public Consumer<ContractEvent> addContractListener(long startBlock, Consumer<ContractEvent> listener) {
+    public Consumer<ContractEvent> addContractListener(final long startBlock, final Consumer<ContractEvent> listener) {
         synchronized (contractListenerSessions) {
             if (!contractListenerSessions.containsKey(listener)) {
                 Consumer<ContractEvent> contractListener = Listeners.contract(listener, chaincodeId);
@@ -132,18 +137,23 @@ public final class ContractImpl implements Contract, AutoCloseable {
         return listener;
     }
 
-    private ListenerSession newReplayListenerSession(long startBlock, Consumer<ContractEvent> contractListener) {
+    private ListenerSession newReplayListenerSession(final long startBlock,
+                                                     final Consumer<ContractEvent> contractListener) {
         Consumer<BlockEvent> blockListener = Listeners.fromContract(contractListener);
         return new ReplayListenerSession(network, blockListener, startBlock);
     }
 
     @Override
-    public Consumer<ContractEvent> addContractListener(long startBlock, Consumer<ContractEvent> listener, String eventName) {
+    public Consumer<ContractEvent> addContractListener(final long startBlock,
+                                                       final Consumer<ContractEvent> listener,
+                                                       final String eventName) {
         return addContractListener(startBlock, listener, getEventNamePattern(eventName));
     }
 
     @Override
-    public Consumer<ContractEvent> addContractListener(long startBlock, Consumer<ContractEvent> listener, Pattern eventNamePattern) {
+    public Consumer<ContractEvent> addContractListener(final long startBlock,
+                                                       final Consumer<ContractEvent> listener,
+                                                       final Pattern eventNamePattern) {
         synchronized (contractListenerSessions) {
             if (!contractListenerSessions.containsKey(listener)) {
                 Consumer<ContractEvent> contractListener = Listeners.contract(listener, chaincodeId, eventNamePattern);
@@ -155,7 +165,7 @@ public final class ContractImpl implements Contract, AutoCloseable {
     }
 
     @Override
-    public void removeContractListener(Consumer<ContractEvent> listener) {
+    public void removeContractListener(final Consumer<ContractEvent> listener) {
         ListenerSession session;
         synchronized (contractListenerSessions) {
             session = contractListenerSessions.remove(listener);
@@ -173,7 +183,7 @@ public final class ContractImpl implements Contract, AutoCloseable {
         return chaincodeId;
     }
 
-    private String getQualifiedName(String tname) {
+    private String getQualifiedName(final String tname) {
         return this.name.isEmpty() ? tname : this.name + ':' + tname;
     }
 

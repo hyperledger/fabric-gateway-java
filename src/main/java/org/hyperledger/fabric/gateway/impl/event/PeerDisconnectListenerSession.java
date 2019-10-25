@@ -19,7 +19,7 @@ public final class PeerDisconnectListenerSession implements ListenerSession {
     private final PeerDisconnectEventSource disconnectSource;
     private final Consumer<PeerDisconnectEvent> listener;
 
-    public PeerDisconnectListenerSession(Peer peer, Consumer<PeerDisconnectEvent> listener) {
+    public PeerDisconnectListenerSession(final Peer peer, final Consumer<PeerDisconnectEvent> listener) {
         disconnectSource = PeerDisconnectEventSourceFactory.getInstance().getPeerDisconnectEventSource(peer);
         this.listener = listener;
         disconnectSource.addDisconnectListener(listener);
