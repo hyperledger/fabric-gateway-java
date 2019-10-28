@@ -51,7 +51,7 @@ public final class FileCheckpointer implements Checkpointer {
     private final AtomicLong blockNumber = new AtomicLong(Checkpointer.UNSET_BLOCK_NUMBER);
     private final Set<String> transactionIds = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-    public FileCheckpointer(Path checkpointFile) throws IOException {
+    public FileCheckpointer(final Path checkpointFile) throws IOException {
         boolean isFileAlreadyPresent = Files.exists(checkpointFile);
 
         filePath = checkpointFile;
@@ -103,7 +103,7 @@ public final class FileCheckpointer implements Checkpointer {
         }
     }
 
-    private void parseDataV1(JsonObject json) throws IOException {
+    private void parseDataV1(final JsonObject json) throws IOException {
         // Version 1 JSON format:
         // {
         //     version: 1,
@@ -136,7 +136,7 @@ public final class FileCheckpointer implements Checkpointer {
                     .build();
     }
 
-    private void saveJson(JsonObject json) throws IOException {
+    private void saveJson(final JsonObject json) throws IOException {
         JsonWriter jsonWriter = Json.createWriter(fileWriter);
         try {
             jsonWriter.writeObject(json);
@@ -152,7 +152,7 @@ public final class FileCheckpointer implements Checkpointer {
     }
 
     @Override
-    public synchronized void setBlockNumber(long blockNumber) throws IOException {
+    public synchronized void setBlockNumber(final long blockNumber) throws IOException {
         this.blockNumber.set(blockNumber);
         transactionIds.clear();
         save();
@@ -164,7 +164,7 @@ public final class FileCheckpointer implements Checkpointer {
     }
 
     @Override
-    public synchronized void addTransactionId(String transactionId) throws IOException {
+    public synchronized void addTransactionId(final String transactionId) throws IOException {
         transactionIds.add(transactionId);
         save();
     }

@@ -6,19 +6,17 @@
 
 package org.hyperledger.fabric.gateway.spi;
 
-import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.hyperledger.fabric.gateway.ContractException;
-import org.hyperledger.fabric.gateway.Network;
 
 /**
  * Class to handle waiting for an appropriate number of successful commit events to be received from peers following
  * submit of a transaction to the orderer. Each handler instance will handle a single transaction so can maintain
  * instance state related to events received during its lifetime.
- * <p>Implementations may use {@link Network#addCommitListener(CommitListener, Collection, String)} to identify
- * when specific peers have committed the transaction they are tracking.</p>
+ * <p>Implementations may use {@link org.hyperledger.fabric.gateway.Network#addCommitListener(CommitListener, java.util.Collection, String)}
+ * to identify when specific peers have committed the transaction they are tracking.</p>
  * @see <a href="https://github.com/hyperledger/fabric-gateway-java/blob/master/src/test/java/org/hyperledger/fabric/gateway/sample/SampleCommitHandlerFactory.java">SampleCommitHandlerFactory</a>
  * @see <a href="https://github.com/hyperledger/fabric-gateway-java/blob/master/src/test/java/org/hyperledger/fabric/gateway/sample/SampleCommitHandler.java">SampleCommitHandler</a>
  */

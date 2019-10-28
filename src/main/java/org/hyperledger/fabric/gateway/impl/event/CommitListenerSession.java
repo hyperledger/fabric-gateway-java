@@ -24,7 +24,10 @@ public final class CommitListenerSession implements ListenerSession {
     private final BlockListenerSession blockListenerSession;
     private final Collection<PeerDisconnectListenerSession> disconnectListenerSessions;
 
-    public CommitListenerSession(BlockEventSource blockSource, CommitListener commitListener, Collection<Peer> peers, String transactionId) {
+    public CommitListenerSession(final BlockEventSource blockSource,
+                                 final CommitListener commitListener,
+                                 final Collection<Peer> peers,
+                                 final String transactionId) {
         Consumer<BlockEvent.TransactionEvent> transactionListener = Listeners.transaction(commitListener, peers, transactionId);
         Consumer<BlockEvent> blockListener = Listeners.fromTransaction(transactionListener);
         blockListenerSession = new BlockListenerSession(blockSource, blockListener);

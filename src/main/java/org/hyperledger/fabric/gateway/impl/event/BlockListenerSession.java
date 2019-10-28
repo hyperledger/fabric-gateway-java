@@ -18,7 +18,7 @@ public final class BlockListenerSession implements ListenerSession {
     private final BlockEventSource blockSource;
     private final Consumer<BlockEvent> listener;
 
-    public BlockListenerSession(BlockEventSource blockSource, Consumer<BlockEvent> listener) {
+    public BlockListenerSession(final BlockEventSource blockSource, final Consumer<BlockEvent> listener) {
         this.blockSource = blockSource;
         this.listener = listener;
         blockSource.addBlockListener(listener);

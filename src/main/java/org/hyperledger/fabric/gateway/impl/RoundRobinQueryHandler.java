@@ -22,7 +22,7 @@ public final class RoundRobinQueryHandler implements QueryHandler {
     private final List<Peer> peers;
     private final AtomicInteger currentPeerIndex = new AtomicInteger(0);
 
-    public RoundRobinQueryHandler(Collection<Peer> peers) {
+    public RoundRobinQueryHandler(final Collection<Peer> peers) {
         if (peers.size() < 1) {
             throw new IllegalArgumentException("No peers provided");
         }
@@ -31,7 +31,7 @@ public final class RoundRobinQueryHandler implements QueryHandler {
     }
 
     @Override
-    public ProposalResponse evaluate(Query query) throws ContractException {
+    public ProposalResponse evaluate(final Query query) throws ContractException {
         int startPeerIndex = currentPeerIndex.getAndUpdate(i -> (i + 1) % peers.size());
         Collection<String> errorMessages = new ArrayList<>();
 

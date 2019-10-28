@@ -6,11 +6,11 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
-import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.function.Consumer;
+
+import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
 
 /**
  * Attaches a single listener to multiple peer disconnect event sources. Instances should be closed after use by
@@ -23,7 +23,8 @@ public final class CompositePeerDisconnectListener implements AutoCloseable {
     private final Collection<PeerDisconnectEventSource> eventSources;
     private final Consumer<PeerDisconnectEvent> listener;
 
-    public CompositePeerDisconnectListener(Consumer<PeerDisconnectEvent> listener, Collection<PeerDisconnectEventSource> eventSources) {
+    public CompositePeerDisconnectListener(final Consumer<PeerDisconnectEvent> listener,
+                                           final Collection<PeerDisconnectEventSource> eventSources) {
         this.eventSources = new ArrayList<>(eventSources);
         this.listener = listener;
 

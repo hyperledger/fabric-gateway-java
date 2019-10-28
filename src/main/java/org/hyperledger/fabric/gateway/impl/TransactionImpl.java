@@ -37,7 +37,10 @@ import org.hyperledger.fabric.sdk.exception.ServiceDiscoveryException;
 import static org.hyperledger.fabric.sdk.Channel.DiscoveryOptions.createDiscoveryOptions;
 
 public final class TransactionImpl implements Transaction {
-    private static final Log logger = LogFactory.getLog(TransactionImpl.class);
+    private static final Log LOG = LogFactory.getLog(TransactionImpl.class);
+
+    private static final long DEFAULT_ORDERER_TIMEOUT = 60;
+    private static final TimeUnit DEFAULT_ORDERER_TIMEOUT_UNIT = TimeUnit.SECONDS;
 
     private final ContractImpl contract;
     private final String name;
@@ -50,7 +53,7 @@ public final class TransactionImpl implements Transaction {
     private Map<String, byte[]> transientData = null;
     private Collection<Peer> endorsingPeers = null;
 
-    TransactionImpl(ContractImpl contract, String name) {
+    TransactionImpl(final ContractImpl contract, final String name) {
         this.contract = contract;
         this.name = name;
         network = contract.getNetwork();
@@ -67,25 +70,25 @@ public final class TransactionImpl implements Transaction {
     }
 
     @Override
-    public Transaction setTransient(Map<String, byte[]> transientData) {
+    public Transaction setTransient(final Map<String, byte[]> transientData) {
         this.transientData = transientData;
         return this;
     }
 
     @Override
-    public Transaction setCommitTimeout(long timeout, TimeUnit timeUnit) {
+    public Transaction setCommitTimeout(final long timeout, final TimeUnit timeUnit) {
         commitTimeout = new TimePeriod(timeout, timeUnit);
         return this;
     }
 
     @Override
-    public Transaction setEndorsingPeers(Collection<Peer> peers) {
+    public Transaction setEndorsingPeers(final Collection<Peer> peers) {
         endorsingPeers = peers;
         return this;
     }
 
     @Override
-    public byte[] submit(String... args) throws ContractException, TimeoutException, InterruptedException {
+    public byte[] submit(final String... args) throws ContractException, TimeoutException, InterruptedException {
         try {
             TransactionProposalRequest request = newProposalRequest(args);
             Collection<ProposalResponse> proposalResponses = sendTransactionProposal(request);
@@ -102,7 +105,7 @@ public final class TransactionImpl implements Transaction {
             commitHandler.startListening();
 
             try {
-                channel.sendTransaction(validResponses, transactionOptions).get(60, TimeUnit.SECONDS);
+                channel.sendTransaction(validResponses, transactionOptions).get(DEFAULT_ORDERER_TIMEOUT, DEFAULT_ORDERER_TIMEOUT_UNIT);
             } catch (TimeoutException e) {
                 commitHandler.cancelListening();
                 throw e;
@@ -119,7 +122,7 @@ public final class TransactionImpl implements Transaction {
         }
     }
 
-    private TransactionProposalRequest newProposalRequest(String[] args) {
+    private TransactionProposalRequest newProposalRequest(final String[] args) {
         TransactionProposalRequest request = network.getGateway().getClient().newTransactionProposalRequest();
         configureRequest(request, args);
         if (transientData != null) {
@@ -133,7 +136,7 @@ public final class TransactionImpl implements Transaction {
         return request;
     }
 
-    private void configureRequest(TransactionRequest request, String[] args) {
+    private void configureRequest(final TransactionRequest request, final String[] args) {
         request.setChaincodeID(getChaincodeId());
         request.setFcn(name);
         request.setArgs(args);
@@ -145,7 +148,8 @@ public final class TransactionImpl implements Transaction {
                 .build();
     }
 
-    private Collection<ProposalResponse> sendTransactionProposal(TransactionProposalRequest request) throws InvalidArgumentException, ServiceDiscoveryException, ProposalException {
+    private Collection<ProposalResponse> sendTransactionProposal(final TransactionProposalRequest request)
+            throws InvalidArgumentException, ServiceDiscoveryException, ProposalException {
         if (endorsingPeers != null) {
             return channel.sendTransactionProposal(request, endorsingPeers);
         } else if (network.getGateway().isDiscoveryEnabled()) {
@@ -158,24 +162,25 @@ public final class TransactionImpl implements Transaction {
         }
     }
 
-    private Collection<ProposalResponse> validatePeerResponses(Collection<ProposalResponse> proposalResponses) throws ContractException {
+    private Collection<ProposalResponse> validatePeerResponses(final Collection<ProposalResponse> proposalResponses)
+            throws ContractException {
         final Collection<ProposalResponse> validResponses = new ArrayList<>();
         final Collection<String> invalidResponseMsgs = new ArrayList<>();
         proposalResponses.forEach(response -> {
             String peerUrl = response.getPeer() != null ? response.getPeer().getUrl() : "<unknown>";
             if (response.getStatus().equals(ChaincodeResponse.Status.SUCCESS)) {
-                logger.debug(String.format("validatePeerResponses: valid response from peer %s", peerUrl));
+                LOG.debug(String.format("validatePeerResponses: valid response from peer %s", peerUrl));
                 validResponses.add(response);
             } else {
-                logger.warn(String.format("validatePeerResponses: invalid response from peer %s, message %s", peerUrl, response.getMessage()));
+                LOG.warn(String.format("validatePeerResponses: invalid response from peer %s, message %s", peerUrl, response.getMessage()));
                 invalidResponseMsgs.add(response.getMessage());
             }
         });
 
-        if(validResponses.size() < 1) {
-        	String msg = String.format("No valid proposal responses received. %d peer error responses: %s",
-        			invalidResponseMsgs.size(), String.join("; ", invalidResponseMsgs));
-            logger.error(msg);
+        if (validResponses.size() < 1) {
+            String msg = String.format("No valid proposal responses received. %d peer error responses: %s",
+                    invalidResponseMsgs.size(), String.join("; ", invalidResponseMsgs));
+            LOG.error(msg);
             throw new ContractException(msg);
         }
 
@@ -183,7 +188,7 @@ public final class TransactionImpl implements Transaction {
     }
 
     @Override
-    public byte[] evaluate(String... args) throws ContractException {
+    public byte[] evaluate(final String... args) throws ContractException {
         QueryByChaincodeRequest request = newQueryRequest(args);
         Query query = new QueryImpl(network.getChannel(), request);
 
@@ -196,7 +201,7 @@ public final class TransactionImpl implements Transaction {
         }
     }
 
-    private QueryByChaincodeRequest newQueryRequest(String[] args) {
+    private QueryByChaincodeRequest newQueryRequest(final String[] args) {
         QueryByChaincodeRequest request = gateway.getClient().newQueryProposalRequest();
         configureRequest(request, args);
         if (transientData != null) {

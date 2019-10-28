@@ -71,18 +71,18 @@ public enum DefaultCommitHandlers implements CommitHandlerFactory {
 
     private final CommitHandlerFactory factory;
 
-    DefaultCommitHandlers(CommitHandlerFactory factory) {
+    DefaultCommitHandlers(final CommitHandlerFactory factory) {
         this.factory = factory;
     }
 
-    private static Collection<Peer> getEventSourcePeersForOrganization(Network network) {
+    private static Collection<Peer> getEventSourcePeersForOrganization(final Network network) {
         Collection<Peer> eventSourcePeers = getEventSourcePeers(network);
         Collection<Peer> orgPeers = getPeersForOrganization(network);
         orgPeers.retainAll(eventSourcePeers);
         return orgPeers;
     }
 
-    private static Collection<Peer> getPeersForOrganization(Network network) {
+    private static Collection<Peer> getPeersForOrganization(final Network network) {
         String mspId = network.getGateway().getIdentity().getMspId();
         try {
             return network.getChannel().getPeersForOrganization(mspId);
@@ -92,11 +92,12 @@ public enum DefaultCommitHandlers implements CommitHandlerFactory {
         }
     }
 
-    private static Collection<Peer> getEventSourcePeers(Network network) {
+    private static Collection<Peer> getEventSourcePeers(final Network network) {
         return network.getChannel().getPeers(EVENT_SOURCE_ROLES);
     }
 
-    public CommitHandler create(String transactionId, Network network) {
+    @Override
+    public CommitHandler create(final String transactionId, final Network network) {
         return factory.create(transactionId, network);
     }
 }

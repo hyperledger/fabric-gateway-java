@@ -6,9 +6,9 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
-import org.hyperledger.fabric.sdk.Channel;
-
 import java.util.function.Function;
+
+import org.hyperledger.fabric.sdk.Channel;
 
 /**
  * Factory for creating BlockEventSource instances for channels.
@@ -28,7 +28,7 @@ public final class BlockEventSourceFactory {
      * Used only for testing. Sets the factory function for creating event sources.
      * @param newFactoryFn New factory function.
      */
-    static void setFactoryFunction(Function<Channel, BlockEventSource> newFactoryFn) {
+    static void setFactoryFunction(final Function<Channel, BlockEventSource> newFactoryFn) {
         factoryFn = newFactoryFn;
     }
 
@@ -36,9 +36,10 @@ public final class BlockEventSourceFactory {
 
     /**
      * Create an event source for a given channel. The event source is owned and should be closed by the caller.
+     * @param channel Channel for which an event source should be created.
      * @return Event source instance.
      */
-    public BlockEventSource newBlockEventSource(Channel channel) {
+    public BlockEventSource newBlockEventSource(final Channel channel) {
         return factoryFn.apply(channel);
     }
 }
