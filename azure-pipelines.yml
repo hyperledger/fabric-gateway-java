@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 trigger:
-- master
+- release-1.4
 
 pool:
   vmImage: 'ubuntu-latest'
