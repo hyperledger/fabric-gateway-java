@@ -39,6 +39,7 @@ Feature: Query handler strategies for evaluating transactions
 		When I prepare a queryCar transaction that I expect to fail
 		And I evaluate the transaction with arguments ["INVALID_CAR_ID"]
 		Then the error message should contain "INVALID_CAR_ID"
+		And the error should include proposal responses
 
 	Scenario: Evaluate transaction using MSPID_SCOPE_ROUND_ROBIN query handler
 		Given I have a gateway as user User1 using the tls connection profile
@@ -70,3 +71,4 @@ Feature: Query handler strategies for evaluating transactions
 		When I prepare a queryCar transaction that I expect to fail
 		And I evaluate the transaction with arguments ["INVALID_CAR_ID"]
 		Then the error message should contain "INVALID_CAR_ID"
+		And the error should include proposal responses

@@ -37,6 +37,7 @@ import io.cucumber.datatable.DataTable;
 import io.cucumber.java8.En;
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.ContractEvent;
+import org.hyperledger.fabric.gateway.ContractException;
 import org.hyperledger.fabric.gateway.DefaultCheckpointers;
 import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
 import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
@@ -50,6 +51,7 @@ import org.hyperledger.fabric.gateway.sample.SampleCommitHandlerFactory;
 import org.hyperledger.fabric.gateway.spi.Checkpointer;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Peer;
+import org.hyperledger.fabric.sdk.ProposalResponse;
 import org.hyperledger.fabric.sdk.helper.Config;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -337,6 +339,14 @@ public class ScenarioSteps implements En {
 
         Then("the error message should contain {string}",
                 (String expected) -> assertThat(transactionInvocation.getError().getMessage()).contains(expected));
+
+        Then("the error should include proposal responses", () -> {
+            Throwable t = transactionInvocation.getError();
+            assertThat(t).isInstanceOf(ContractException.class);
+
+            Collection<ProposalResponse> proposalResponses = ((ContractException) t).getProposalResponses();
+            assertThat(proposalResponses).isNotEmpty();
+        });
 
         Then("a block event should be received", this::getBlockEvent);
 
