@@ -30,3 +30,13 @@ Feature: Configure Fabric using SDK using discovery service and submit/evaluate 
 			"size":50
 		}
 		"""
+
+	Scenario: Using a Gateway with discovery I can see proposal responses for a failed transaction submit
+		Given I have a gateway as user User1 using the discovery connection profile
+		And I connect the gateway
+		And I use the mychannel network
+		And I use the marbles0 contract
+		When I prepare a delete transaction that I expect to fail
+		And I submit the transaction with arguments ["INVALID_MARBLE_ID"]
+#		Then the error message should contain "INVALID_MARBLE_ID"
+		Then the error should include proposal responses
