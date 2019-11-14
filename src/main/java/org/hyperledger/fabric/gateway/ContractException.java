@@ -6,13 +6,17 @@
 
 package org.hyperledger.fabric.gateway;
 
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+
+import org.hyperledger.fabric.sdk.ProposalResponse;
 
 /**
  * Thrown when an error occurs invoking a smart contract.
  */
 public class ContractException extends GatewayException {
-    private final byte[] payload;
+    private Collection<ProposalResponse> proposalResponses;
 
     /**
      * Constructs a new exception with the specified detail message. The cause and payload are not initialized.
@@ -20,7 +24,7 @@ public class ContractException extends GatewayException {
      */
     public ContractException(final String message) {
         super(message);
-        this.payload = null;
+        this.proposalResponses = Collections.emptyList();
     }
 
     /**
@@ -30,24 +34,33 @@ public class ContractException extends GatewayException {
      */
     public ContractException(final String message, final Throwable cause) {
         super(message, cause);
-        this.payload = null;
+        this.proposalResponses = Collections.emptyList();
     }
 
     /**
-     * Constructs a new exception with the specified detail message and response payload. The cause is not initialized.
+     * Constructs a new exception with the specified detail message and proposal responses returned from peer
+     * invocations. The cause is not initialized.
      * @param message the detail message.
-     * @param payload the error response payload.
+     * @param proposalResponses the proposal responses.
      */
-    public ContractException(final String message, final byte[] payload) {
+    public ContractException(final String message, final Collection<ProposalResponse> proposalResponses) {
         super(message);
-        this.payload = payload;
+        this.proposalResponses = proposalResponses;
     }
 
     /**
-     * Get the error response payload received from the smart contract.
-     * @return the response payload.
+     * Get the proposal responses received from peer invocations.
+     * @return the proposal responses.
      */
-    public Optional<byte[]> getPayload() {
-        return Optional.ofNullable(payload);
+    public Collection<ProposalResponse> getProposalResponses() {
+        return new ArrayList<>(proposalResponses);
+    }
+
+    /**
+     * Set the proposal responses received from peer invocations.
+     * @param proposalResponses the proposal responses.
+     */
+    public void setProposalResponses(final Collection<ProposalResponse> proposalResponses) {
+        this.proposalResponses = proposalResponses;
     }
 }

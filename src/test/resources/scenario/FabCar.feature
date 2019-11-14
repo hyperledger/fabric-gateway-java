@@ -38,3 +38,4 @@ Feature: Configure Fabric using SDK and submit/evaluate using a network Gateway
 		And I set endorsing peers on the transaction to ["badpeer.org1.example.com"]
 		And I submit the transaction with arguments ["ENDORSING_PEERS", "Trabant", "601 Estate", "brown", "Simon"]
 		Then the error message should contain "No valid proposal responses received"
+		And the error should include proposal responses
