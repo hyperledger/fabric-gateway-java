@@ -89,40 +89,72 @@ public final class TransactionImpl implements Transaction {
 
     @Override
     public byte[] submit(final String... args) throws ContractException, TimeoutException, InterruptedException {
+        Collection<ProposalResponse> proposalResponses = endorseTransaction(args);
+        Collection<ProposalResponse> validResponses = validatePeerResponses(proposalResponses);
+
+        try {
+            return commitTransaction(validResponses);
+        } catch (ContractException e) {
+            e.setProposalResponses(proposalResponses);
+            throw e;
+        }
+    }
+
+    private Collection<ProposalResponse> endorseTransaction(final String... args) {
         try {
             TransactionProposalRequest request = newProposalRequest(args);
-            Collection<ProposalResponse> proposalResponses = sendTransactionProposal(request);
-
-            Collection<ProposalResponse> validResponses = validatePeerResponses(proposalResponses);
-            ProposalResponse proposalResponse = validResponses.iterator().next();
-            byte[] result = proposalResponse.getChaincodeActionResponsePayload();
-            String transactionId = proposalResponse.getTransactionID();
-
-            Channel.TransactionOptions transactionOptions = Channel.TransactionOptions.createTransactionOptions()
-                    .nOfEvents(Channel.NOfEvents.createNoEvents()); // Disable default commit wait behaviour
-
-            CommitHandler commitHandler = commitHandlerFactory.create(transactionId, network);
-            commitHandler.startListening();
-
-            try {
-                channel.sendTransaction(validResponses, transactionOptions).get(DEFAULT_ORDERER_TIMEOUT, DEFAULT_ORDERER_TIMEOUT_UNIT);
-            } catch (TimeoutException e) {
-                commitHandler.cancelListening();
-                throw e;
-            } catch (Exception e) {
-                commitHandler.cancelListening();
-                throw new ContractException("Failed to send transaction to the orderer", e);
-            }
-
-            commitHandler.waitForEvents(commitTimeout.getTime(), commitTimeout.getTimeUnit());
-
-            return result;
+            return sendTransactionProposal(request);
         } catch (InvalidArgumentException | ProposalException | ServiceDiscoveryException e) {
             throw new GatewayRuntimeException(e);
         }
     }
 
-    private TransactionProposalRequest newProposalRequest(final String[] args) {
+    private Collection<ProposalResponse> sendTransactionProposal(final TransactionProposalRequest request)
+            throws ProposalException, InvalidArgumentException, ServiceDiscoveryException {
+        if (endorsingPeers != null) {
+            return channel.sendTransactionProposal(request, endorsingPeers);
+        } else if (network.getGateway().isDiscoveryEnabled()) {
+            Channel.DiscoveryOptions discoveryOptions = createDiscoveryOptions()
+                    .setEndorsementSelector(ServiceDiscovery.EndorsementSelector.ENDORSEMENT_SELECTION_RANDOM)
+                    .setInspectResults(true)
+                    .setForceDiscovery(true);
+            return channel.sendTransactionProposalToEndorsers(request, discoveryOptions);
+        } else {
+            return channel.sendTransactionProposal(request);
+        }
+    }
+
+    private byte[] commitTransaction(final Collection<ProposalResponse> validResponses)
+            throws TimeoutException, ContractException, InterruptedException {
+        ProposalResponse proposalResponse = validResponses.iterator().next();
+        String transactionId = proposalResponse.getTransactionID();
+
+        CommitHandler commitHandler = commitHandlerFactory.create(transactionId, network);
+        commitHandler.startListening();
+
+        try {
+            Channel.TransactionOptions transactionOptions = Channel.TransactionOptions.createTransactionOptions()
+                    .nOfEvents(Channel.NOfEvents.createNoEvents()); // Disable default commit wait behaviour
+            channel.sendTransaction(validResponses, transactionOptions)
+                    .get(DEFAULT_ORDERER_TIMEOUT, DEFAULT_ORDERER_TIMEOUT_UNIT);
+        } catch (TimeoutException e) {
+            commitHandler.cancelListening();
+            throw e;
+        } catch (Exception e) {
+            commitHandler.cancelListening();
+            throw new ContractException("Failed to send transaction to the orderer", e);
+        }
+
+        commitHandler.waitForEvents(commitTimeout.getTime(), commitTimeout.getTimeUnit());
+
+        try {
+            return proposalResponse.getChaincodeActionResponsePayload();
+        } catch (InvalidArgumentException e) {
+            throw new GatewayRuntimeException(e);
+        }
+    }
+
+    private TransactionProposalRequest newProposalRequest(final String... args) {
         TransactionProposalRequest request = network.getGateway().getClient().newTransactionProposalRequest();
         configureRequest(request, args);
         if (transientData != null) {
@@ -136,7 +168,7 @@ public final class TransactionImpl implements Transaction {
         return request;
     }
 
-    private void configureRequest(final TransactionRequest request, final String[] args) {
+    private void configureRequest(final TransactionRequest request, final String... args) {
         request.setChaincodeID(getChaincodeId());
         request.setFcn(name);
         request.setArgs(args);
@@ -146,20 +178,6 @@ public final class TransactionImpl implements Transaction {
         return ChaincodeID.newBuilder()
                 .setName(contract.getChaincodeId())
                 .build();
-    }
-
-    private Collection<ProposalResponse> sendTransactionProposal(final TransactionProposalRequest request)
-            throws InvalidArgumentException, ServiceDiscoveryException, ProposalException {
-        if (endorsingPeers != null) {
-            return channel.sendTransactionProposal(request, endorsingPeers);
-        } else if (network.getGateway().isDiscoveryEnabled()) {
-            Channel.DiscoveryOptions discoveryOptions = createDiscoveryOptions()
-                    .setEndorsementSelector(ServiceDiscovery.EndorsementSelector.ENDORSEMENT_SELECTION_RANDOM)
-                    .setForceDiscovery(true);
-            return channel.sendTransactionProposalToEndorsers(request, discoveryOptions);
-        } else {
-            return channel.sendTransactionProposal(request);
-        }
     }
 
     private Collection<ProposalResponse> validatePeerResponses(final Collection<ProposalResponse> proposalResponses)
@@ -181,7 +199,7 @@ public final class TransactionImpl implements Transaction {
             String msg = String.format("No valid proposal responses received. %d peer error responses: %s",
                     invalidResponseMsgs.size(), String.join("; ", invalidResponseMsgs));
             LOG.error(msg);
-            throw new ContractException(msg);
+            throw new ContractException(msg, proposalResponses);
         }
 
         return validResponses;
@@ -201,7 +219,7 @@ public final class TransactionImpl implements Transaction {
         }
     }
 
-    private QueryByChaincodeRequest newQueryRequest(final String[] args) {
+    private QueryByChaincodeRequest newQueryRequest(final String... args) {
         QueryByChaincodeRequest request = gateway.getClient().newQueryProposalRequest();
         configureRequest(request, args);
         if (transientData != null) {

@@ -8,8 +8,10 @@ package org.hyperledger.fabric.gateway.impl;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import org.hyperledger.fabric.gateway.ContractException;
 import org.hyperledger.fabric.gateway.spi.Query;
@@ -33,7 +35,7 @@ public final class SingleQueryHandler implements QueryHandler {
     @Override
     public ProposalResponse evaluate(final Query query) throws ContractException {
         int startPeerIndex = currentPeerIndex.get();
-        Collection<String> errorMessages = new ArrayList<>();
+        Collection<ProposalResponse> failResponses = new ArrayList<>();
 
         for (int i = 0; i < peers.size(); i++) {
             int peerIndex = (startPeerIndex + i) % peers.size();
@@ -45,12 +47,14 @@ public final class SingleQueryHandler implements QueryHandler {
             }
             if (response.getProposalResponse() != null) {
                 currentPeerIndex.set(peerIndex);
-                throw new ContractException(response.getMessage());
+                throw new ContractException(response.getMessage(), Collections.singletonList(response));
             }
-            errorMessages.add(response.getMessage());
+            failResponses.add(response);
         }
 
-        String message = "No successful responses received. Errors: " + errorMessages;
-        throw new ContractException(message);
+        String message = "No successful responses received. Errors: " + failResponses.stream()
+                .map(ProposalResponse::getMessage)
+                .collect(Collectors.joining("; "));
+        throw new ContractException(message, failResponses);
     }
 }
