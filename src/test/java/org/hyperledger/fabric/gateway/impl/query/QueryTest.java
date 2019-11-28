@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.hyperledger.fabric.gateway.impl;
+package org.hyperledger.fabric.gateway.impl.query;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 
 import org.hyperledger.fabric.gateway.GatewayRuntimeException;
 import org.hyperledger.fabric.gateway.TestUtils;
+import org.hyperledger.fabric.gateway.impl.query.QueryImpl;
 import org.hyperledger.fabric.gateway.spi.Query;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.Peer;

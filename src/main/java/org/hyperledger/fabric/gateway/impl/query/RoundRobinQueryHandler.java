@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.hyperledger.fabric.gateway.impl;
+package org.hyperledger.fabric.gateway.impl.query;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -20,11 +20,11 @@ import org.hyperledger.fabric.sdk.ChaincodeResponse;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.ProposalResponse;
 
-public final class SingleQueryHandler implements QueryHandler {
+public final class RoundRobinQueryHandler implements QueryHandler {
     private final List<Peer> peers;
     private final AtomicInteger currentPeerIndex = new AtomicInteger(0);
 
-    public SingleQueryHandler(final Collection<Peer> peers) {
+    public RoundRobinQueryHandler(final Collection<Peer> peers) {
         if (peers.size() < 1) {
             throw new IllegalArgumentException("No peers provided");
         }
@@ -34,7 +34,7 @@ public final class SingleQueryHandler implements QueryHandler {
 
     @Override
     public ProposalResponse evaluate(final Query query) throws ContractException {
-        int startPeerIndex = currentPeerIndex.get();
+        int startPeerIndex = currentPeerIndex.getAndUpdate(i -> (i + 1) % peers.size());
         Collection<ProposalResponse> failResponses = new ArrayList<>();
 
         for (int i = 0; i < peers.size(); i++) {
@@ -42,17 +42,15 @@ public final class SingleQueryHandler implements QueryHandler {
             Peer peer = peers.get(peerIndex);
             ProposalResponse response = query.evaluate(peer);
             if (response.getStatus().equals(ChaincodeResponse.Status.SUCCESS)) {
-                currentPeerIndex.set(peerIndex);
                 return response;
             }
             if (response.getProposalResponse() != null) {
-                currentPeerIndex.set(peerIndex);
                 throw new ContractException(response.getMessage(), Collections.singletonList(response));
             }
             failResponses.add(response);
         }
 
-        String message = "No successful responses received. Errors: " + failResponses.stream()
+        String message = "No responses received. Errors: " + failResponses.stream()
                 .map(ProposalResponse::getMessage)
                 .collect(Collectors.joining("; "));
         throw new ContractException(message, failResponses);

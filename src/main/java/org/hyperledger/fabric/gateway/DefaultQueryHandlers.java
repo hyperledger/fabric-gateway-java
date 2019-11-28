@@ -9,8 +9,8 @@ package org.hyperledger.fabric.gateway;
 import java.util.Collection;
 import java.util.EnumSet;
 
-import org.hyperledger.fabric.gateway.impl.RoundRobinQueryHandler;
-import org.hyperledger.fabric.gateway.impl.SingleQueryHandler;
+import org.hyperledger.fabric.gateway.impl.query.RoundRobinQueryHandler;
+import org.hyperledger.fabric.gateway.impl.query.SingleQueryHandler;
 import org.hyperledger.fabric.gateway.spi.QueryHandler;
 import org.hyperledger.fabric.gateway.spi.QueryHandlerFactory;
 import org.hyperledger.fabric.sdk.Peer;

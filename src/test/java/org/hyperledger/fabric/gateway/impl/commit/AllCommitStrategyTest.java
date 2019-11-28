@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.hyperledger.fabric.gateway.impl;
+package org.hyperledger.fabric.gateway.impl.commit;
 
 import org.hyperledger.fabric.gateway.TestUtils;
+import org.hyperledger.fabric.gateway.impl.commit.AllCommitStrategy;
+import org.hyperledger.fabric.gateway.impl.commit.CommitStrategy;
 import org.hyperledger.fabric.sdk.Peer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,10 +16,9 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public class AnyCommitStrategyTest {
+public class AllCommitStrategyTest {
     private final TestUtils testUtils = TestUtils.getInstance();
     private CommitStrategy strategy;
     private Collection<Peer> peers;
@@ -29,26 +30,34 @@ public class AnyCommitStrategyTest {
         peer1 = testUtils.newMockPeer("peer1");
         peer2 = testUtils.newMockPeer("peer2");
         peers = Arrays.asList(peer1, peer2);
-        strategy = new AnyCommitStrategy(peers);
+        strategy = new AllCommitStrategy(peers);
     }
 
     @Test
     public void returns_configured_peers() {
-        assertThat(strategy.getPeers(), equalTo(peers));
+        assertThat(strategy.getPeers()).isEqualTo(peers);
     }
 
     @Test
-    public void success_if_one_event_received() {
+    public void continue_if_one_event_received() {
         CommitStrategy.Result result = strategy.onEvent(testUtils.newValidMockTransactionEvent(peer1, "txId"));
 
-        assertThat(result, equalTo(CommitStrategy.Result.SUCCESS));
+        assertThat(result).isEqualTo(CommitStrategy.Result.CONTINUE);
     }
 
     @Test
     public void continue_if_one_disconnect_received() {
         CommitStrategy.Result result = strategy.onError(testUtils.newPeerDisconnectedEvent(peer1));
 
-        assertThat(result, equalTo(CommitStrategy.Result.CONTINUE));
+        assertThat(result).isEqualTo(CommitStrategy.Result.CONTINUE);
+    }
+
+    @Test
+    public void success_if_all_events_received() {
+        strategy.onEvent(testUtils.newValidMockTransactionEvent(peer1, "txId"));
+        CommitStrategy.Result result = strategy.onEvent(testUtils.newValidMockTransactionEvent(peer2, "txId"));
+
+        assertThat(result).isEqualTo(CommitStrategy.Result.SUCCESS);
     }
 
     @Test
@@ -56,14 +65,14 @@ public class AnyCommitStrategyTest {
         strategy.onError(testUtils.newPeerDisconnectedEvent(peer1));
         CommitStrategy.Result result = strategy.onError(testUtils.newPeerDisconnectedEvent(peer2));
 
-        assertThat(result, equalTo(CommitStrategy.Result.FAIL));
+        assertThat(result).isEqualTo(CommitStrategy.Result.FAIL);
     }
 
     @Test
-    public void success_if_one_disconnect_and_one_event_received() {
-        strategy.onError(testUtils.newPeerDisconnectedEvent(peer2));
-        CommitStrategy.Result result = strategy.onEvent(testUtils.newValidMockTransactionEvent(peer1, "txId"));
+    public void success_if_one_event_and_one_disconnect_received() {
+        strategy.onEvent(testUtils.newValidMockTransactionEvent(peer1, "txId"));
+        CommitStrategy.Result result = strategy.onError(testUtils.newPeerDisconnectedEvent(peer2));
 
-        assertThat(result, equalTo(CommitStrategy.Result.SUCCESS));
+        assertThat(result).isEqualTo(CommitStrategy.Result.SUCCESS);
     }
 }

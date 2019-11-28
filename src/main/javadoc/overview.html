@@ -19,7 +19,7 @@
 
         // Load an existing wallet holding identities used to access the network.
         Path walletDirectory = Paths.get("wallet");
-        Wallet wallet = Wallet.createFileSystemWallet(walletDirectory);
+        Wallet wallet = Wallets.newFileSystemWallet(walletDirectory);
 
         // Path to a common connection profile describing the network.
         Path networkConfigFile = Paths.get("connection.json");

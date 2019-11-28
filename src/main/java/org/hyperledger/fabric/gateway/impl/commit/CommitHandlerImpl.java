@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.hyperledger.fabric.gateway.impl;
+package org.hyperledger.fabric.gateway.impl.commit;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.hyperledger.fabric.gateway.ContractException;
 import org.hyperledger.fabric.gateway.Network;
+import org.hyperledger.fabric.gateway.impl.GatewayUtils;
 import org.hyperledger.fabric.gateway.spi.CommitHandler;
 import org.hyperledger.fabric.gateway.spi.CommitListener;
 import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;

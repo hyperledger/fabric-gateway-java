@@ -5,12 +5,17 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.InvalidKeyException;
+import java.security.PrivateKey;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -44,10 +49,13 @@ import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
 import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
+import org.hyperledger.fabric.gateway.Identities;
+import org.hyperledger.fabric.gateway.Identity;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.gateway.Transaction;
 import org.hyperledger.fabric.gateway.Wallet;
+import org.hyperledger.fabric.gateway.Wallets;
 import org.hyperledger.fabric.gateway.sample.SampleCommitHandlerFactory;
 import org.hyperledger.fabric.gateway.spi.Checkpointer;
 import org.hyperledger.fabric.sdk.BlockEvent;
@@ -537,15 +545,34 @@ public class ScenarioSteps implements En {
         exec(fixtures, "./generate.sh");
     }
 
-    private static Wallet createWallet() throws IOException, GatewayException {
+    private static Wallet createWallet() throws IOException, GatewayException, CertificateException, InvalidKeyException {
         Path credentialPath = Paths.get("src", "test", "fixtures", "crypto-material", "crypto-config",
                 "peerOrganizations", "org1.example.com", "users", "User1@org1.example.com", "msp");
-        Path certificatePem = credentialPath.resolve(Paths.get("signcerts", "User1@org1.example.com-cert.pem"));
-        Path privateKey = credentialPath.resolve(Paths.get("keystore", "key.pem"));
-        Wallet wallet = Wallet.createInMemoryWallet();
-        wallet.put("User1", Wallet.Identity.createIdentity("Org1MSP",
-                Files.newBufferedReader(certificatePem), Files.newBufferedReader(privateKey)));
+
+        Path certificatePath = credentialPath.resolve(Paths.get("signcerts", "User1@org1.example.com-cert.pem"));
+        X509Certificate certificate = readX509Certificate(certificatePath);
+
+        Path privateKeyPath = credentialPath.resolve(Paths.get("keystore", "key.pem"));
+        PrivateKey privateKey = getPrivateKey(privateKeyPath);
+
+        Identity identity = Identities.newX509Identity("Org1MSP", certificate, privateKey);
+
+        Wallet wallet = Wallets.newInMemoryWallet();
+        wallet.put("User1", identity);
+
         return wallet;
+    }
+
+    private static X509Certificate readX509Certificate(final Path certificatePath) throws IOException, CertificateException {
+        try (Reader certificateReader = Files.newBufferedReader(certificatePath, StandardCharsets.UTF_8)) {
+            return Identities.readX509Certificate(certificateReader);
+        }
+    }
+
+    private static PrivateKey getPrivateKey(final Path privateKeyPath) throws IOException, InvalidKeyException {
+        try (Reader privateKeyReader = Files.newBufferedReader(privateKeyPath, StandardCharsets.UTF_8)) {
+            return Identities.readPrivateKey(privateKeyReader);
+        }
     }
 
     private BlockEvent getBlockEvent() throws InterruptedException {

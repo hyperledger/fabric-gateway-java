@@ -21,14 +21,13 @@ import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.ContractException;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
-import org.hyperledger.fabric.gateway.Wallet;
 
 public final class Sample {
     public static void main(String[] args) throws IOException {
 
         // Load an existing wallet holding identities used to access the network.
         Path walletDirectory = Paths.get("wallet");
-        Wallet wallet = Wallet.createFileSystemWallet(walletDirectory);
+        Wallet wallet = Wallets.newFileSystemWallet(walletDirectory);
 
         // Path to a common connection profile describing the network.
         Path networkConfigFile = Paths.get("connection.json");
