@@ -25,6 +25,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.json.Json;
@@ -201,35 +202,72 @@ public class ScenarioSteps implements En {
                     String ccPath = Paths.get(FileSystems.getDefault().getSeparator(),
                             "opt", "gopath", "src", "github.com", "chaincode", ccType, ccName).toString();
 
-                    exec("docker", "exec", "org1_cli", "peer", "chaincode", "install",
-                            "-l", ccType,
-                            "-n", ccName,
-                            "-v", version,
-                            "-p", ccPath
-                    );
+                    String ccLabel = ccName + "v" + version;
+                    String ccPackage = ccName + ".tar.gz";
 
-                    exec("docker", "exec", "org2_cli", "peer", "chaincode", "install",
-                            "-l", ccType,
-                            "-n", ccName,
-                            "-v", version,
-                            "-p", ccPath
-                    );
+                    // Org1
+                    exec("docker", "exec", "org1_cli", "peer", "lifecycle", "chaincode", "package", ccPackage, "--lang",
+                            ccType, "--label", ccLabel, "--path", ccPath);
 
-                    Thread.sleep(3000);
+                    exec("docker", "exec", "org1_cli", "peer", "lifecycle", "chaincode", "install", ccPackage);
 
-                    List<String> instantiateCommand = new ArrayList<>();
-                    Collections.addAll(instantiateCommand,
-                            "docker", "exec", "org1_cli", "peer", "chaincode", "instantiate",
-                            "-o", "orderer.example.com:7050",
-                            "-l", ccType,
-                            "-C", channelName,
-                            "-n", ccName,
-                            "-v", version,
-                            "-c", initArg,
-                            "-P", "AND(\"Org1MSP.member\",\"Org2MSP.member\")"
+                    String installed = exec("docker", "exec", "org1_cli", "peer", "lifecycle", "chaincode",
+                            "queryinstalled");
+                    Pattern regex = Pattern.compile(".*Package ID: (.*), Label: " + ccLabel + ".*");
+                    Matcher matcher = regex.matcher(installed);
+                    if (!matcher.matches()) {
+                        System.out.println(installed);
+                        throw new IllegalStateException("Cannot find installed chaincode for Org1: " + ccLabel);
+                    }
+                    String packageId = matcher.group(1);
+
+                    List<String> approveCommand = new ArrayList<>();
+                    Collections.addAll(approveCommand, "docker", "exec", "org1_cli", "peer", "lifecycle", "chaincode",
+                            "approveformyorg", "--package-id", packageId, "--channelID", channelName, "--name", ccName,
+                            "--version", version, "--signature-policy", "AND(\"Org1MSP.member\",\"Org2MSP.member\")",
+                            "--sequence", "1", "--waitForEvent"
                     );
-                    instantiateCommand.addAll(tlsOptions);
-                    exec(instantiateCommand);
+                    approveCommand.addAll(tlsOptions);
+                    exec(approveCommand);
+
+                    // Org2
+                    exec("docker", "exec", "org2_cli", "peer", "lifecycle", "chaincode", "package", ccPackage, "--lang",
+                            ccType, "--label", ccLabel,
+                            "--path", ccPath);
+
+                    exec("docker", "exec", "org2_cli", "peer", "lifecycle", "chaincode", "install", ccPackage);
+
+                    installed = exec("docker", "exec", "org2_cli", "peer", "lifecycle", "chaincode",
+                            "queryinstalled");
+                    matcher = regex.matcher(installed);
+                    if (!matcher.matches()) {
+                        System.err.println(installed);
+                        throw new IllegalStateException("Cannot find installed chaincode for Org2: " + ccLabel);
+                    }
+                    packageId = matcher.group(1);
+
+                    approveCommand = new ArrayList<>();
+                    Collections.addAll(approveCommand, "docker", "exec", "org2_cli", "peer", "lifecycle", "chaincode",
+                            "approveformyorg", "--package-id", packageId, "--channelID", channelName, "--name", ccName,
+                            "--version", version, "--signature-policy", "AND(\"Org1MSP.member\",\"Org2MSP.member\")",
+                            "--sequence", "1", "--waitForEvent");
+                    approveCommand.addAll(tlsOptions);
+                    exec(approveCommand);
+
+                    // commit
+                    List<String> commitCommand = new ArrayList<>();
+                    Collections.addAll(commitCommand, "docker", "exec", "org1_cli", "peer", "lifecycle", "chaincode",
+                            "commit", "--channelID", channelName, "--name", ccName, "--version", version,
+                            "--signature-policy", "AND(\"Org1MSP.member\",\"Org2MSP.member\")", "--sequence", "1",
+                            "--waitForEvent", "--peerAddresses", "peer0.org1.example.com:7051", "--peerAddresses",
+                            "peer0.org2.example.com:8051",
+                            "--tlsRootCertFiles",
+                            "/etc/hyperledger/configtx/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt",
+                            "--tlsRootCertFiles",
+                            "/etc/hyperledger/configtx/crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt");
+                    commitCommand.addAll(tlsOptions);
+                    exec(commitCommand);
+
 
                     runningChaincodes.add(mangledName);
                     Thread.sleep(60000);
@@ -435,21 +473,22 @@ public class ScenarioSteps implements En {
         return element;
     }
 
-    private static void exec(List<String> commandArgs) throws IOException, InterruptedException {
-        exec(null, commandArgs);
+    private static String exec(List<String> commandArgs) throws IOException, InterruptedException {
+        return exec(null, commandArgs);
     }
 
-    private static void exec(Path dir, List<String> commandArgs) throws IOException, InterruptedException {
-        exec(dir, commandArgs.toArray(new String[0]));
+    private static String exec(Path dir, List<String> commandArgs) throws IOException, InterruptedException {
+        return exec(dir, commandArgs.toArray(new String[0]));
     }
 
-    private static void exec(String... commandArgs) throws IOException, InterruptedException {
-        exec(null, commandArgs);
+    private static String exec(String... commandArgs) throws IOException, InterruptedException {
+        return exec(null, commandArgs);
     }
 
-    private static void exec(Path dir, String... commandArgs) throws IOException, InterruptedException {
+    private static String exec(Path dir, String... commandArgs) throws IOException, InterruptedException {
         String commandString = String.join(" ", commandArgs);
         System.err.println(commandString);
+        StringBuilder sb = new StringBuilder();
 
         File dirFile = dir != null ? dir.toFile() : null;
         Process process = Runtime.getRuntime().exec(commandArgs, null, dirFile);
@@ -460,12 +499,23 @@ public class ScenarioSteps implements En {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream))) {
             for (String line; (line = reader.readLine()) != null; ) {
                 System.err.println(line);
+                sb.append(line);
+            }
+        }
+
+        // get STDERR for the process and print it
+        InputStream inputStream = process.getInputStream();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            for (String line; (line = reader.readLine()) != null;) {
+                System.out.println(line);
+                sb.append(line);
             }
         }
 
         assertThat(exitCode)
                 .withFailMessage("Failed to execute command: %s",commandString)
                 .isEqualTo(0);
+        return sb.toString();
     }
 
     static void startFabric(boolean tls) throws Exception {
