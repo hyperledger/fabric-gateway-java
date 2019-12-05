@@ -51,7 +51,7 @@ import org.bouncycastle.util.io.pem.PemWriter;
 import org.hyperledger.fabric.gateway.impl.Enrollment;
 import org.hyperledger.fabric.gateway.impl.GatewayImpl;
 import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
-import org.hyperledger.fabric.protos.peer.FabricProposalResponse;
+import org.hyperledger.fabric.protos.peer.ProposalResponsePackage;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.ChaincodeResponse;
 import org.hyperledger.fabric.sdk.Channel;
@@ -263,8 +263,8 @@ public final class TestUtils {
         return response;
     }
 
-    private FabricProposalResponse.ProposalResponse newFabricProposalResponse() {
-        return FabricProposalResponse.ProposalResponse.getDefaultInstance();
+    private ProposalResponsePackage.ProposalResponse newFabricProposalResponse() {
+        return ProposalResponsePackage.ProposalResponse.getDefaultInstance();
     }
 
     public Enrollment newEnrollment() throws OperatorCreationException, IOException, NoSuchAlgorithmException, NoSuchProviderException, CertificateException {
