@@ -10,7 +10,8 @@ import java.io.IOException;
 import java.util.Set;
 
 /**
- * A wallet stores identity information used to connect to a Hyperledger Fabric network.
+ * A wallet stores identity information used to connect to a Hyperledger Fabric network. Instances are created using
+ * factory methods on {@link Wallets}.
  */
 public interface Wallet {
     /**

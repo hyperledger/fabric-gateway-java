@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public abstract class CommonWalletStoreTest {
     protected WalletStore store;
 
-    protected abstract WalletStore newWalletStore();
+    protected abstract WalletStore newWalletStore() throws IOException;
 
     protected InputStream asInputStream(String data) {
         return new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
@@ -40,7 +40,7 @@ public abstract class CommonWalletStoreTest {
     }
 
     @BeforeEach
-    public void beforeEach() {
+    public void beforeEach() throws IOException {
         store = newWalletStore();
     }
 
