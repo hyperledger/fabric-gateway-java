@@ -26,13 +26,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class WalletTest {
+    private WalletStore store;
     private Wallet wallet;
     private final X509Credentials credentials = new X509Credentials();
     private final Identity identity = Identities.newX509Identity("mspId", credentials.getCertificate(), credentials.getPrivateKey());
 
     @BeforeEach
     public void beforeEach() {
-        wallet = Wallets.newInMemoryWallet();
+        store = new InMemoryWalletStore();
+        wallet = Wallets.newWallet(store);
     }
 
     @Test
@@ -91,10 +93,8 @@ public class WalletTest {
 
     @Test
     void get_identity_with_bad_persistent_data_throws_IOException() throws IOException {
-        WalletStore store = new InMemoryWalletStore();
         InputStream dataInput = new ByteArrayInputStream("Bad data".getBytes(StandardCharsets.UTF_8));
         store.put("label", dataInput);
-        wallet = Wallets.newWallet(store);
 
         assertThatThrownBy(() -> wallet.get("label"))
                 .isInstanceOf(IOException.class);

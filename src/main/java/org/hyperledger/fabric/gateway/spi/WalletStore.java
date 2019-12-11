@@ -11,7 +11,8 @@ import java.io.InputStream;
 import java.util.Set;
 
 /**
- * Interface implemented by all backing stores used by wallets.
+ * Interface for store implementations that provide backing storage for identities in a
+ * {@link org.hyperledger.fabric.gateway.Wallet}.
  */
 public interface WalletStore {
     /**

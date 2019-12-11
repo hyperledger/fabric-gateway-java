@@ -6,6 +6,10 @@
 
 package org.hyperledger.fabric.gateway;
 
+import java.io.IOException;
+import java.nio.file.Path;
+
+import org.hyperledger.fabric.gateway.impl.identity.FileSystemWalletStore;
 import org.hyperledger.fabric.gateway.impl.identity.InMemoryWalletStore;
 import org.hyperledger.fabric.gateway.impl.identity.WalletImpl;
 import org.hyperledger.fabric.gateway.spi.WalletStore;
@@ -21,7 +25,18 @@ public final class Wallets {
      */
     public static Wallet newInMemoryWallet() {
         WalletStore store = new InMemoryWalletStore();
-        return new WalletImpl(store);
+        return newWallet(store);
+    }
+
+    /**
+     * Create a wallet backed by a directory on the file system.
+     * @param storeDirectory A directory.
+     * @return A wallet.
+     * @throws IOException if the specified directory does not exist and can not be created.
+     */
+    public static Wallet newFileSystemWallet(final Path storeDirectory) throws IOException {
+        WalletStore store = new FileSystemWalletStore(storeDirectory);
+        return newWallet(store);
     }
 
     /**
