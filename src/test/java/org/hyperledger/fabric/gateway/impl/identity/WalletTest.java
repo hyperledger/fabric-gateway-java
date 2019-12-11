@@ -10,6 +10,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.Set;
 
@@ -25,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class WalletTest {
+public final class WalletTest {
     private WalletStore store;
     private Wallet wallet;
     private final X509Credentials credentials = new X509Credentials();
@@ -44,7 +46,7 @@ public class WalletTest {
     }
 
     @Test
-    void list_returns_stored_identities() throws IOException {
+    public void list_returns_stored_identities() throws IOException {
         wallet.put("alice", identity);
 
         Set<String> result = wallet.list();
@@ -53,7 +55,7 @@ public class WalletTest {
     }
 
     @Test
-    void list_does_not_return_deleted_identities() throws IOException {
+    public void list_does_not_return_deleted_identities() throws IOException {
         wallet.put("alice", identity);
         wallet.remove("alice");
 
@@ -63,7 +65,7 @@ public class WalletTest {
     }
 
     @Test
-    void put_unsupported_identity_type_throws_IllegalArgumentException() {
+    public void put_unsupported_identity_type_throws_IllegalArgumentException() {
         Identity unsupportedIdentity = new Identity() {
             @Override
             public String getMspId() {
@@ -77,13 +79,13 @@ public class WalletTest {
     }
 
     @Test
-    void get_invalid_identity_returns_null() throws IOException {
+    public void get_invalid_identity_returns_null() throws IOException {
         Identity result = wallet.get("alice");
         assertThat(result).isNull();
     }
 
     @Test
-    void get_returns_stored_identities() throws IOException {
+    public void get_returns_stored_identities() throws IOException {
         wallet.put("alice", identity);
 
         Identity result = wallet.get("alice");
@@ -92,7 +94,7 @@ public class WalletTest {
     }
 
     @Test
-    void get_identity_with_bad_persistent_data_throws_IOException() throws IOException {
+    public void get_identity_with_bad_persistent_data_throws_IOException() throws IOException {
         InputStream dataInput = new ByteArrayInputStream("Bad data".getBytes(StandardCharsets.UTF_8));
         store.put("label", dataInput);
 
