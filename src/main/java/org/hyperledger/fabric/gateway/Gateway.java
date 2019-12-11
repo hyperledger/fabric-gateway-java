@@ -51,9 +51,9 @@ public interface Gateway extends AutoCloseable {
     /**
      * Get the identity associated with the gateway connection.
      *
-     * @return {@link Wallet.Identity}} The identity used by this Gateway.
+     * @return The identity used by this Gateway.
      */
-    Wallet.Identity getIdentity();
+    Identity getIdentity();
 
     /**
      * Creates a gateway builder which is used to configure the gateway options
@@ -103,7 +103,7 @@ public interface Gateway extends AutoCloseable {
         /**
          * Specifies the identity that is to be used to connect to the network.  All operations
          * under this gateway connection will be performed using this identity.
-         * @param wallet The {@link Wallet} object containing the identity.
+         * @param wallet The wallet object containing the identity.
          * @param id The name of the identity stored in the wallet.
          * @return The builder instance, allowing multiple configuration options to be chained.
          * @throws IOException if the specified identity can not be loaded from the wallet.

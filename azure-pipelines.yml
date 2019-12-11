@@ -6,7 +6,7 @@ trigger:
 - master
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: 'ubuntu-18.04'
 
 variables:
   ORG_HYPERLEDGER_FABRIC_SDK_PROPOSAL_WAIT_TIME: '55000'
@@ -18,14 +18,8 @@ variables:
   ORG_HYPERLEDGER_FABRIC_SDK_CHANNEL_GENESISBLOCK_WAIT_TIME: '180000'
 
 steps:
-- script: |
-    ########################
-    # Pull images from nexus and re-tag to latest
-    #######################
-    for IMAGE in peer orderer ca baseos ccenv javaenv nodeenv tools; do
-        docker pull nexus3.hyperledger.org:10001/hyperledger/fabric-$IMAGE:amd64-2.0.0-stable
-        docker tag nexus3.hyperledger.org:10001/hyperledger/fabric-$IMAGE:amd64-2.0.0-stable hyperledger/fabric-$IMAGE:amd64-latest
-        docker tag nexus3.hyperledger.org:10001/hyperledger/fabric-$IMAGE:amd64-2.0.0-stable hyperledger/fabric-$IMAGE
-    done
-    ##########
-    mvn clean install
+- script: scripts/pullFabricDockerImages.sh
+  displayName: Download Fabric Docker images
+
+- script: mvn clean install
+  displayName: Maven build

@@ -15,11 +15,13 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 
 import org.hyperledger.fabric.gateway.Gateway;
-import org.hyperledger.fabric.gateway.TestUtils;
+import org.hyperledger.fabric.gateway.Identities;
+import org.hyperledger.fabric.gateway.Identity;
 import org.hyperledger.fabric.gateway.Wallet;
+import org.hyperledger.fabric.gateway.Wallets;
+import org.hyperledger.fabric.gateway.X509Credentials;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.Peer;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,23 +32,19 @@ public class GatewayBuilderTest {
     private static final Path CONFIG_PATH = Paths.get("src", "test", "java", "org", "hyperledger", "fabric", "gateway");
     private static final Path JSON_NETWORK_CONFIG_PATH = CONFIG_PATH.resolve("connection.json");
     private static final Path YAML_NETWORK_CONFIG_PATH = CONFIG_PATH.resolve("connection.yaml");
-    private static Enrollment enrollment;
 
+    private final X509Credentials credentials = new X509Credentials();
+    private final Identity identity = Identities.newX509Identity("msp1", credentials.getCertificate(), credentials.getPrivateKey());
     private Gateway.Builder builder;
     private Wallet testWallet;
-
-    @BeforeAll
-    public static void enroll() throws Exception {
-        enrollment = TestUtils.getInstance().newEnrollment();
-    }
 
     @BeforeEach
     public void setup() throws IOException {
         builder = Gateway.createBuilder();
         builder.queryHandler(network -> (query -> null)); // Prevent failure if networks are created
 
-        testWallet = Wallet.createInMemoryWallet();
-        testWallet.put("admin", Wallet.Identity.createIdentity("msp1", enrollment.getCertificate(), enrollment.getPrivateKey()));
+        testWallet = Wallets.newInMemoryWallet();
+        testWallet.put("admin", identity);
     }
 
     @Test
@@ -66,12 +64,9 @@ public class GatewayBuilderTest {
 
     @Test
     public void testBuilderInvalidIdentity() throws IOException {
-        Wallet emptyWallet = Wallet.createInMemoryWallet();
-        builder.identity(emptyWallet, "admin")
-                .networkConfig(JSON_NETWORK_CONFIG_PATH);
-        assertThatThrownBy(() -> builder.connect())
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("The gateway identity must be set");
+        assertThatThrownBy(() -> builder.identity(testWallet, "INVALID_IDENTITY"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("INVALID_IDENTITY");
     }
 
     @Test
@@ -98,9 +93,9 @@ public class GatewayBuilderTest {
         builder.identity(testWallet, "admin")
                 .networkConfig(JSON_NETWORK_CONFIG_PATH);
         try (Gateway gateway = builder.connect()) {
-            assertThat(gateway.getIdentity().getCertificate()).isEqualTo(enrollment.getCertificate());
+            assertThat(gateway.getIdentity()).isEqualTo(identity);
             HFClient client = ((GatewayImpl) gateway).getClient();
-            assertThat(client.getUserContext().getEnrollment().getCert()).isEqualTo(enrollment.getCertificate());
+            assertThat(client.getUserContext().getEnrollment().getCert()).isEqualTo(credentials.getCertificatePem());
         }
     }
 

@@ -12,17 +12,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
@@ -31,9 +29,11 @@ import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
 import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayRuntimeException;
+import org.hyperledger.fabric.gateway.Identities;
+import org.hyperledger.fabric.gateway.Identity;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.Wallet;
-import org.hyperledger.fabric.gateway.Wallet.Identity;
+import org.hyperledger.fabric.gateway.impl.identity.X509IdentityProvider;
 import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
 import org.hyperledger.fabric.gateway.spi.QueryHandlerFactory;
 import org.hyperledger.fabric.sdk.Channel;
@@ -44,12 +44,8 @@ import org.hyperledger.fabric.sdk.NetworkConfig;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.Peer.PeerRole;
 import org.hyperledger.fabric.sdk.User;
-import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.NetworkConfigurationException;
-import org.hyperledger.fabric.sdk.identity.X509Enrollment;
-import org.hyperledger.fabric.sdk.security.CryptoSuite;
-import org.hyperledger.fabric.sdk.security.CryptoSuiteFactory;
 
 public final class GatewayImpl implements Gateway {
     private static final Log LOG = LogFactory.getLog(Gateway.class);
@@ -106,17 +102,16 @@ public final class GatewayImpl implements Gateway {
 
         private InputStream copyToMemory(final InputStream in) throws IOException {
             ExposedByteArrayOutputStream outBuff = new ExposedByteArrayOutputStream();
-
-            for (int b; (b = in.read()) > -1; ) { // checkstyle:ignore-line:InnerAssignment
-                outBuff.write(b);
-            }
-
+            GatewayUtils.copy(in, outBuff);
             return new ByteArrayInputStream(outBuff.getInternalBuffer(), 0, outBuff.size());
         }
 
         @Override
         public Builder identity(final Wallet wallet, final String id) throws IOException {
             this.identity = wallet.get(id);
+            if (null == identity) {
+                throw new IllegalArgumentException("Identity not found in wallet: " + id);
+            }
             return this;
         }
 
@@ -168,7 +163,11 @@ public final class GatewayImpl implements Gateway {
 
             User user = client.getUserContext();
             Enrollment enrollment = user.getEnrollment();
-            this.identity = Identity.createIdentity(user.getMspId(), enrollment.getCert(), enrollment.getKey());
+            try {
+                this.identity = Identities.newX509Identity(user.getMspId(), user.getEnrollment());
+            } catch (CertificateException e) {
+                throw new GatewayRuntimeException(e);
+            }
         } else {
             if (null == builder.identity) {
                 throw new IllegalStateException("The gateway identity must be set");
@@ -195,50 +194,9 @@ public final class GatewayImpl implements Gateway {
     }
 
     private HFClient createClient() {
-        Enrollment enrollment = new X509Enrollment(identity.getPrivateKey(), identity.getCertificate());
-        User user = new User() {
-            @Override
-            public String getName() {
-                return "gateway";
-            }
-
-            @Override
-            public Set<String> getRoles() {
-                return Collections.emptySet();
-            }
-
-            @Override
-            public String getAccount() {
-                return "";
-            }
-
-            @Override
-            public String getAffiliation() {
-                return "";
-            }
-
-            @Override
-            public Enrollment getEnrollment() {
-                return enrollment;
-            }
-
-            @Override
-            public String getMspId() {
-                return identity.getMspId();
-            }
-        };
-
         HFClient client = HFClient.createNewInstance();
-
-        try {
-            CryptoSuite cryptoSuite = CryptoSuiteFactory.getDefault().getCryptoSuite();
-            client.setCryptoSuite(cryptoSuite);
-            client.setUserContext(user);
-        } catch (ClassNotFoundException | CryptoException | IllegalAccessException | NoSuchMethodException
-                | InstantiationException | InvalidArgumentException | InvocationTargetException e) {
-            throw new GatewayRuntimeException("Failed to configure client", e);
-        }
-
+        // Hard-coded type for now but needs to get appropriate provider from wallet (or registry)
+        X509IdentityProvider.INSTANCE.setUserContext(client, identity, "gateway");
         return client;
     }
 
@@ -285,7 +243,7 @@ public final class GatewayImpl implements Gateway {
     }
 
     @Override
-    public Wallet.Identity getIdentity() {
+    public Identity getIdentity() {
         return identity;
     }
 

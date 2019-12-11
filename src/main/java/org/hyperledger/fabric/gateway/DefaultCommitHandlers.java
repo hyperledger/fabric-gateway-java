@@ -9,11 +9,11 @@ package org.hyperledger.fabric.gateway;
 import java.util.Collection;
 import java.util.EnumSet;
 
-import org.hyperledger.fabric.gateway.impl.AllCommitStrategy;
-import org.hyperledger.fabric.gateway.impl.AnyCommitStrategy;
-import org.hyperledger.fabric.gateway.impl.CommitHandlerImpl;
-import org.hyperledger.fabric.gateway.impl.CommitStrategy;
-import org.hyperledger.fabric.gateway.impl.NoOpCommitHandler;
+import org.hyperledger.fabric.gateway.impl.commit.AllCommitStrategy;
+import org.hyperledger.fabric.gateway.impl.commit.AnyCommitStrategy;
+import org.hyperledger.fabric.gateway.impl.commit.CommitHandlerImpl;
+import org.hyperledger.fabric.gateway.impl.commit.CommitStrategy;
+import org.hyperledger.fabric.gateway.impl.commit.NoOpCommitHandler;
 import org.hyperledger.fabric.gateway.spi.CommitHandler;
 import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
 import org.hyperledger.fabric.sdk.Peer;

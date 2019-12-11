@@ -7,60 +7,36 @@
 package org.hyperledger.fabric.gateway;
 
 import java.io.IOException;
-import java.io.StringWriter;
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileAttribute;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.Provider;
-import java.security.Security;
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
 import java.util.EnumSet;
-import java.util.Locale;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.X509v1CertificateBuilder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.crypto.util.PrivateKeyFactory;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
-import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.operator.bc.BcECContentSignerBuilder;
-import org.bouncycastle.util.io.pem.PemObject;
-import org.bouncycastle.util.io.pem.PemWriter;
-import org.hyperledger.fabric.gateway.impl.Enrollment;
 import org.hyperledger.fabric.gateway.impl.GatewayImpl;
+import org.hyperledger.fabric.gateway.impl.identity.GatewayUser;
 import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
 import org.hyperledger.fabric.protos.peer.ProposalResponsePackage;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.ChaincodeResponse;
 import org.hyperledger.fabric.sdk.Channel;
+import org.hyperledger.fabric.sdk.Enrollment;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.ProposalResponse;
 import org.hyperledger.fabric.sdk.User;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ServiceDiscoveryException;
+import org.hyperledger.fabric.sdk.identity.X509Enrollment;
 import org.mockito.Mockito;
 
 public final class TestUtils {
@@ -76,13 +52,11 @@ public final class TestUtils {
     private TestUtils() { }
 
     public GatewayImpl.Builder newGatewayBuilder() throws GatewayException, OperatorCreationException, CertificateException, NoSuchAlgorithmException, NoSuchProviderException, IOException {
-        Enrollment enrollment = newEnrollment();
-        PrivateKey privateKey = enrollment.getPrivateKey();
-        String certificate = enrollment.getCertificate();
+        X509Credentials credentials = new X509Credentials();
 
         GatewayImpl.Builder builder = (GatewayImpl.Builder)Gateway.createBuilder();
-        Wallet wallet = Wallet.createInMemoryWallet();
-        wallet.put("user", Wallet.Identity.createIdentity("msp1", certificate, privateKey));
+        Wallet wallet = Wallets.newInMemoryWallet();
+        wallet.put("user", Identities.newX509Identity("msp1", credentials.getCertificate(), credentials.getPrivateKey()));
         builder.identity(wallet, "user")
                 .networkConfig(NETWORK_CONFIG_PATH)
                 // Simple query handler so things work out-of-the-box
@@ -98,48 +72,9 @@ public final class TestUtils {
     }
 
     public HFClient newMockClient() throws OperatorCreationException, CertificateException, NoSuchAlgorithmException, NoSuchProviderException, IOException {
-        Enrollment enrollment = newEnrollment();
-        User user = new User() {
-            @Override
-            public String getName() {
-                return "user";
-            }
-
-            @Override
-            public Set<String> getRoles() {
-                return Collections.emptySet();
-            }
-
-            @Override
-            public String getAccount() {
-                return "";
-            }
-
-            @Override
-            public String getAffiliation() {
-                return "";
-            }
-
-            @Override
-            public org.hyperledger.fabric.sdk.Enrollment getEnrollment() {
-                return new org.hyperledger.fabric.sdk.Enrollment() {
-                    @Override
-                    public PrivateKey getKey() {
-                        return enrollment.getPrivateKey();
-                    }
-
-                    @Override
-                    public String getCert() {
-                        return enrollment.getCertificate();
-                    }
-                };
-            }
-
-            @Override
-            public String getMspId() {
-                return "msp1";
-            }
-        };
+        X509Credentials credentials = new X509Credentials();
+        Enrollment enrollment = new X509Enrollment(credentials.getPrivateKey(), credentials.getCertificatePem());
+        User user = new GatewayUser("user", "msp1", enrollment);
 
         HFClient mockClient = Mockito.mock(HFClient.class);
         Mockito.when(mockClient.getUserContext()).thenReturn(user);
@@ -265,59 +200,6 @@ public final class TestUtils {
 
     private ProposalResponsePackage.ProposalResponse newFabricProposalResponse() {
         return ProposalResponsePackage.ProposalResponse.getDefaultInstance();
-    }
-
-    public Enrollment newEnrollment() throws OperatorCreationException, IOException, NoSuchAlgorithmException, NoSuchProviderException, CertificateException {
-        Provider bcProvider = new BouncyCastleProvider();
-        Security.addProvider(bcProvider);
-        // GENERATE THE PUBLIC/PRIVATE RSA KEY PAIR
-        KeyPairGenerator generator = KeyPairGenerator.getInstance("EC", "BC");
-        generator.initialize(384);
-        KeyPair keyPair = generator.generateKeyPair();
-        // GENERATE THE X509 CERTIFICATE
-        X500Name dnName = new X500Name("CN=John Doe");
-        // yesterday
-        Date validityBeginDate = new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000);
-        // in 2 years
-        Date validityEndDate = new Date(System.currentTimeMillis() + 2 * 365 * 24 * 60 * 60 * 1000);
-        SubjectPublicKeyInfo subPubKeyInfo = SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded());
-        X509v1CertificateBuilder builder = new X509v1CertificateBuilder(
-                dnName,
-                BigInteger.valueOf(System.currentTimeMillis()),
-                validityBeginDate,
-                validityEndDate,
-                Locale.getDefault(),
-                dnName,
-                subPubKeyInfo);
-
-        AlgorithmIdentifier sigAlgId = new DefaultSignatureAlgorithmIdentifierFinder().find("SHA256WithRSAEncryption");
-        AlgorithmIdentifier digAlgId = new DefaultDigestAlgorithmIdentifierFinder().find(sigAlgId);
-        ContentSigner contentSigner = new BcECContentSignerBuilder(sigAlgId, digAlgId)
-                        .build(PrivateKeyFactory.createKey(keyPair.getPrivate().getEncoded()));
-
-        X509CertificateHolder holder = builder.build(contentSigner);
-
-        X509Certificate cert = new JcaX509CertificateConverter().getCertificate(holder);
-
-        StringWriter string = new StringWriter();
-        try(PemWriter pemWriter = new PemWriter(string)) {
-            PemObject pemObject = new PemObject("CERTIFICATE", cert.getEncoded());
-            pemWriter.writeObject(pemObject);
-        }
-        String certificate = string.toString();
-        PrivateKey pk = keyPair.getPrivate();
-        return new Enrollment() {
-
-            @Override
-            public String getCertificate() {
-                return certificate;
-            }
-
-            @Override
-            public PrivateKey getPrivateKey() {
-                return pk;
-            }
-        };
     }
 
     public Consumer<BlockEvent> stubBlockListener() {
