@@ -8,7 +8,6 @@ package org.hyperledger.fabric.gateway.spi;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -16,19 +15,19 @@ import java.util.Set;
  */
 public interface WalletStore {
     /**
-     * Delete data from the store. If the data does not exist, this does nothing.
+     * Remove data from the store. If the data does not exist, this does nothing.
      * @param label Name used to key the data.
      * @throws IOException if an error occurs accessing underlying persistent storage.
      */
-    void delete(String label) throws IOException;
+    void remove(String label) throws IOException;
 
     /**
-     * Get data from the store. If the data does not exist, an empty optional is returned.
+     * Get data from the store.
      * @param label Name used to key the data.
-     * @return The data, if it exists; otherwise an empty optional.
+     * @return The data, if it exists; otherwise null.
      * @throws IOException if an error occurs accessing underlying persistent storage.
      */
-    Optional<InputStream> get(String label) throws IOException;
+    InputStream get(String label) throws IOException;
 
     /**
      * List the labels for all stored data.

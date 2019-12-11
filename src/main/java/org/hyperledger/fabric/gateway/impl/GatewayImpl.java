@@ -102,18 +102,16 @@ public final class GatewayImpl implements Gateway {
 
         private InputStream copyToMemory(final InputStream in) throws IOException {
             ExposedByteArrayOutputStream outBuff = new ExposedByteArrayOutputStream();
-
-            for (int b; (b = in.read()) > -1; ) { // checkstyle:ignore-line:InnerAssignment
-                outBuff.write(b);
-            }
-
+            GatewayUtils.copy(in, outBuff);
             return new ByteArrayInputStream(outBuff.getInternalBuffer(), 0, outBuff.size());
         }
 
         @Override
         public Builder identity(final Wallet wallet, final String id) throws IOException {
-            this.identity = wallet.get(id)
-                    .orElseThrow(() -> new IllegalArgumentException("Identity not found in wallet: " + id));
+            this.identity = wallet.get(id);
+            if (null == identity) {
+                throw new IllegalArgumentException("Identity not found in wallet: " + id);
+            }
             return this;
         }
 

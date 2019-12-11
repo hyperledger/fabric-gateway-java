@@ -53,7 +53,7 @@ public class WalletTest {
     @Test
     void list_does_not_return_deleted_identities() throws IOException {
         wallet.put("alice", identity);
-        wallet.delete("alice");
+        wallet.remove("alice");
 
         Set<String> result = wallet.list();
 
@@ -75,20 +75,18 @@ public class WalletTest {
     }
 
     @Test
-    void get_invalid_identity_returns_empty_optional() throws IOException {
-        Optional<Identity> result = wallet.get("alice");
-        assertThat(result).isEmpty();
+    void get_invalid_identity_returns_null() throws IOException {
+        Identity result = wallet.get("alice");
+        assertThat(result).isNull();
     }
 
     @Test
     void get_returns_stored_identities() throws IOException {
         wallet.put("alice", identity);
 
-        Optional<Identity> result = wallet.get("alice");
+        Identity result = wallet.get("alice");
 
-        assertThat(result)
-                .get()
-                .isEqualTo(identity);
+        assertThat(result).isEqualTo(identity);
     }
 
     @Test

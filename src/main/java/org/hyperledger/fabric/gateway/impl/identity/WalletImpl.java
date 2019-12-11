@@ -13,7 +13,6 @@ import java.io.InputStream;
 import java.security.InvalidKeyException;
 import java.security.cert.CertificateException;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -64,15 +63,14 @@ public final class WalletImpl implements Wallet {
     }
 
     @Override
-    public Optional<Identity> get(final String label) throws IOException {
-        Optional<InputStream> identityData = store.get(label);
-        if (!identityData.isPresent()) {
-            return Optional.empty();
+    public Identity get(final String label) throws IOException {
+        final InputStream identityData = store.get(label);
+        if (identityData == null) {
+            return null;
         }
 
         try {
-            Identity identity = deserializeIdentity(identityData.get());
-            return Optional.of(identity);
+            return deserializeIdentity(identityData);
         } catch (RuntimeException e) {
             throw new IOException(e);
         }
@@ -103,7 +101,7 @@ public final class WalletImpl implements Wallet {
     }
 
     @Override
-    public void delete(final String label) throws IOException {
-        store.delete(label);
+    public void remove(final String label) throws IOException {
+        store.remove(label);
     }
 }

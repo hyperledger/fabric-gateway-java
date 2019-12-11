@@ -7,7 +7,6 @@
 package org.hyperledger.fabric.gateway;
 
 import java.io.IOException;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -25,10 +24,10 @@ public interface Wallet {
     /**
      * Get an identity from the wallet. The implementation class of the identity object will vary depending on its type.
      * @param label Label used to identify the identity within the wallet.
-     * @return An identity if it exists; otherwise an empty optional.
+     * @return An identity if it exists; otherwise null.
      * @throws IOException if an error occurs accessing the backing store.
      */
-    Optional<Identity> get(String label) throws IOException;
+    Identity get(String label) throws IOException;
 
     /**
      * Get the labels of all identities in the wallet.
@@ -38,9 +37,9 @@ public interface Wallet {
     Set<String> list() throws IOException;
 
     /**
-     * Delete an identity from the wallet. If the identity does not exist, this method does nothing.
+     * Remove an identity from the wallet. If the identity does not exist, this method does nothing.
      * @param label Label used to identify the identity within the wallet.
      * @throws IOException if an error occurs accessing the backing store.
      */
-    void delete(String label) throws IOException;
+    void remove(String label) throws IOException;
 }

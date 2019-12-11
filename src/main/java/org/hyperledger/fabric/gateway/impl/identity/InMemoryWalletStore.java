@@ -13,23 +13,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
+import org.hyperledger.fabric.gateway.impl.GatewayUtils;
 import org.hyperledger.fabric.gateway.spi.WalletStore;
 
 public final class InMemoryWalletStore implements WalletStore {
     private final Map<String, byte[]> store = new HashMap<>();
 
     @Override
-    public void delete(final String label) {
+    public void remove(final String label) {
         store.remove(label);
     }
 
     @Override
-    public Optional<InputStream> get(final String label) {
+    public InputStream get(final String label) {
         byte[] data = store.get(label);
-        return data != null ? Optional.of(new ByteArrayInputStream(data)) : Optional.empty();
+        return data != null ? new ByteArrayInputStream(data) : null;
     }
 
     @Override
@@ -41,9 +41,7 @@ public final class InMemoryWalletStore implements WalletStore {
     public void put(final String label, final InputStream data) throws IOException {
         try (InputStream bufferedInput = new BufferedInputStream(data);
              ByteArrayOutputStream byteOutput = new ByteArrayOutputStream()) {
-            for (int b; (b = bufferedInput.read()) >= 0; ) { // checkstyle:ignore-line:InnerAssignment
-                byteOutput.write(b);
-            }
+            GatewayUtils.copy(bufferedInput, byteOutput);
             store.put(label, byteOutput.toByteArray());
         }
     }

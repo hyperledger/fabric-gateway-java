@@ -12,9 +12,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 import java.util.Set;
 
+import org.hyperledger.fabric.gateway.impl.GatewayUtils;
 import org.hyperledger.fabric.gateway.spi.WalletStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,9 +32,7 @@ public abstract class CommonWalletStoreTest {
 
     protected String asString(InputStream dataInput) {
         try (ByteArrayOutputStream byteOutput = new ByteArrayOutputStream()) {
-            for (int b; (b = dataInput.read()) >= 0; ) {
-                byteOutput.write(b);
-            }
+            GatewayUtils.copy(dataInput, byteOutput);
             return new String(byteOutput.toByteArray(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -63,10 +61,10 @@ public abstract class CommonWalletStoreTest {
     }
 
     @Test
-    public void get_invalid_label_returns_empty_optional() throws IOException {
-        Optional<InputStream> result = store.get("label");
+    public void get_invalid_label_returns_null() throws IOException {
+        InputStream result = store.get("label");
 
-        assertThat(result).isEmpty();
+        assertThat(result).isNull();
     }
 
 
@@ -74,18 +72,15 @@ public abstract class CommonWalletStoreTest {
     public void get_valid_label_returns_stored_data() throws IOException {
         store.put("label", asInputStream("data"));
 
-        Optional<InputStream> result = store.get("label");
+        InputStream result = store.get("label");
 
-        assertThat(result)
-                .map(this::asString)
-                .get()
-                .isEqualTo("data");
+        assertThat(asString(result)).isEqualTo("data");
     }
 
     @Test
     public void list_does_not_return_deleted_data() throws IOException {
         store.put("label", asInputStream("data"));
-        store.delete("label");
+        store.remove("label");
 
         Set<String> results = store.list();
 
@@ -95,7 +90,7 @@ public abstract class CommonWalletStoreTest {
     @Test
     public void delete_invalid_label_does_nothing() throws IOException {
         store.put("label", asInputStream("data"));
-        store.delete("invalid");
+        store.remove("invalid");
 
         Set<String> results = store.list();
 
@@ -103,13 +98,13 @@ public abstract class CommonWalletStoreTest {
     }
 
     @Test
-    public void get_deleted_data_returns_empty_optional() throws IOException {
+    public void get_deleted_data_returns_null() throws IOException {
         store.put("label", asInputStream("data"));
-        store.delete("label");
+        store.remove("label");
 
-        Optional<InputStream> result = store.get("label");
+        InputStream result = store.get("label");
 
-        assertThat(result).isEmpty();
+        assertThat(result).isNull();
     }
 
     @Test
@@ -117,11 +112,8 @@ public abstract class CommonWalletStoreTest {
         store.put("label", asInputStream("old"));
         store.put("label", asInputStream("new"));
 
-        Optional<InputStream> result = store.get("label");
+        InputStream result = store.get("label");
 
-        assertThat(result)
-                .map(this::asString)
-                .get()
-                .isEqualTo("new");
+        assertThat(asString(result)).isEqualTo("new");
     }
 }
