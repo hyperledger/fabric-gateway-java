@@ -9,18 +9,21 @@ package org.hyperledger.fabric.gateway.impl.identity;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.stream.Stream;
 
 import org.hyperledger.fabric.gateway.Identities;
-import org.hyperledger.fabric.gateway.X509Identity;
 import org.hyperledger.fabric.gateway.X509Credentials;
+import org.hyperledger.fabric.gateway.X509Identity;
 import org.hyperledger.fabric.sdk.Enrollment;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public final class X509IdentityTest {
     private static final String mspId = "mspId";
@@ -90,8 +93,31 @@ public final class X509IdentityTest {
 
     @ParameterizedTest
     @MethodSource("identityProvider")
-    public void hashCode_returns_same_value_for_equal_objects(X509Identity identity) {
-        int expected = new X509IdentityImpl(mspId, credentials.getCertificate(), credentials.getPrivateKey()).hashCode();
-        assertThat(identity.hashCode()).isEqualTo(expected);
+    public void hashCode_returns_same_value_for_equal_objects(X509Identity identity) throws CertificateException, InvalidKeyException {
+        // De/serialize credentials to ensure not just comparing the same objects
+        X509Certificate certificate = Identities.readX509Certificate(credentials.getCertificatePem());
+        PrivateKey privateKey = Identities.readPrivateKey(credentials.getPrivateKeyPem());
+
+        X509Identity expected = new X509IdentityImpl(mspId, certificate, privateKey);
+
+        assertThat(identity).hasSameHashCodeAs(expected);
+    }
+
+    @Test
+    public void throws_NullPointerException_if_MSP_ID_is_null() {
+        assertThatThrownBy(() -> Identities.newX509Identity(null, credentials.getCertificate(), credentials.getPrivateKey()))
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    public void throws_NullPointerException_if_certificate_is_null() {
+        assertThatThrownBy(() -> Identities.newX509Identity(mspId, null, credentials.getPrivateKey()))
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    public void throws_NullPointerException_if_privateKey_is_null() {
+        assertThatThrownBy(() -> Identities.newX509Identity(mspId, credentials.getCertificate(), null))
+                .isInstanceOf(NullPointerException.class);
     }
 }

@@ -18,6 +18,16 @@ public final class X509IdentityImpl implements X509Identity {
     private final PrivateKey privateKey;
 
     public X509IdentityImpl(final String mspId, final X509Certificate certificate, final PrivateKey privateKey) {
+        if (mspId == null) {
+            throw new NullPointerException("mspId must not be null");
+        }
+        if (certificate == null) {
+            throw new NullPointerException("certificate must not be null");
+        }
+        if (privateKey == null) {
+            throw new NullPointerException("privateKey must not be null");
+        }
+
         this.mspId = mspId;
         this.certificate = certificate;
         this.privateKey = privateKey;
