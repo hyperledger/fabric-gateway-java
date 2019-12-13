@@ -48,7 +48,7 @@ public enum X509IdentityProvider implements IdentityProvider<X509Identity> {
 
     @Override
     public JsonObject toJson(final Identity identity) {
-        X509Identity x509identity = X509Identity.class.cast(identity);
+        X509Identity x509identity = (X509Identity) identity;
 
         String certificatePem = Identities.toPemString(x509identity.getCertificate());
         String privateKeyPem = Identities.toPemString(x509identity.getPrivateKey());
@@ -102,7 +102,7 @@ public enum X509IdentityProvider implements IdentityProvider<X509Identity> {
 
     @Override
     public void setUserContext(final HFClient client, final Identity identity, final String name) {
-        X509Identity x509Identity = X509Identity.class.cast(identity);
+        X509Identity x509Identity = (X509Identity) identity;
 
         String certificatePem = Identities.toPemString(x509Identity.getCertificate());
         Enrollment enrollment = new X509Enrollment(x509Identity.getPrivateKey(), certificatePem);

@@ -27,7 +27,7 @@ import org.hyperledger.fabric.gateway.spi.WalletStore;
 public final class WalletImpl implements Wallet {
     private final WalletStore store;
     private final Map<String, IdentityProvider<?>> providers = Stream.of(X509IdentityProvider.INSTANCE)
-            .collect(Collectors.toMap(provider -> provider.getTypeId(), provider -> provider));
+            .collect(Collectors.toMap(X509IdentityProvider::getTypeId, provider -> provider));
 
     public WalletImpl(final WalletStore store) {
         this.store = store;

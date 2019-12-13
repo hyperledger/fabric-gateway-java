@@ -60,7 +60,7 @@ public class CommitHandlerImplTest {
         peer = testUtils.newMockPeer("peer");
         peerDisconnectSources.put(peer, new StubPeerDisconnectEventSource(peer));
 
-        Collection<Peer> peers = Arrays.asList(peer);
+        Collection<Peer> peers = Collections.singletonList(peer);
 
         gateway = testUtils.newGatewayBuilder().connect();
         network = gateway.getNetwork("ch1");
