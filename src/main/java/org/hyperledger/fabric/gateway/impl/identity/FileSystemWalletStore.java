@@ -60,7 +60,7 @@ public final class FileSystemWalletStore implements WalletStore {
     }
 
     private boolean isDataFile(final String fileName) {
-        return fileName.toString().endsWith(DATA_FILE_EXTENTION);
+        return fileName.endsWith(DATA_FILE_EXTENTION);
     }
 
     private String getLabelForFile(final String fileName) {

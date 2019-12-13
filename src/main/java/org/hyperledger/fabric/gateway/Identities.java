@@ -32,7 +32,7 @@ import org.hyperledger.fabric.gateway.impl.identity.X509IdentityImpl;
 import org.hyperledger.fabric.sdk.Enrollment;
 
 /**
- * This class consists excusively of static methods used to create and operate on identity information.
+ * This class consists exclusively of static methods used to create and operate on identity information.
  */
 public final class Identities {
     /**
@@ -41,6 +41,7 @@ public final class Identities {
      * @param certificate An X.509 certificate.
      * @param privateKey Private key.
      * @return An identity.
+     * @throws NullPointerException if any of the arguments are null.
      */
     public static X509Identity newX509Identity(final String mspId, final X509Certificate certificate, final PrivateKey privateKey) {
         return new X509IdentityImpl(mspId, certificate, privateKey);
@@ -52,6 +53,7 @@ public final class Identities {
      * @param enrollment Identity credentials.
      * @return An identity.
      * @throws CertificateException if the certificate is invalid.
+     * @throws NullPointerException if any of the arguments are null.
      */
     public static X509Identity newX509Identity(final String mspId, final Enrollment enrollment) throws CertificateException {
         return newX509Identity(mspId, readX509Certificate(enrollment.getCert()), enrollment.getKey());

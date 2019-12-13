@@ -9,7 +9,6 @@ package org.hyperledger.fabric.gateway.impl.identity;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.stream.Stream;

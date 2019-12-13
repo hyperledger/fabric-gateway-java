@@ -9,13 +9,21 @@ pool:
   vmImage: 'ubuntu-18.04'
 
 variables:
-  ORG_HYPERLEDGER_FABRIC_SDK_PROPOSAL_WAIT_TIME: '55000'
-  ORG_HYPERLEDGER_FABRIC_SDK_CHANNELCONFIG_WAIT_TIME: '20000'
-  ORG_HYPERLEDGER_FABRIC_SDK_CLIENT_TRANSACTION_CLEANUP_UP_TIMEOUT_WAIT_TIME: '65000'
-  ORG_HYPERLEDGER_FABRIC_SDK_ORDERER_ORDERERWAITTIMEMILLISECS: '180000'
-  ORG_HYPERLEDGER_FABRIC_SDK_PEER_EVENTREGISTRATION_WAIT_TIME: '180000'
-  ORG_HYPERLEDGER_FABRIC_SDK_EVENTHUB_CONNECTION_WAIT_TIME: '180000'
-  ORG_HYPERLEDGER_FABRIC_SDK_CHANNEL_GENESISBLOCK_WAIT_TIME: '180000'
+- group: Gateway_Java_Vars
+- name: ORG_HYPERLEDGER_FABRIC_SDK_PROPOSAL_WAIT_TIME
+  value: '55000'
+- name: ORG_HYPERLEDGER_FABRIC_SDK_CHANNELCONFIG_WAIT_TIME
+  value: '20000'
+- name: ORG_HYPERLEDGER_FABRIC_SDK_CLIENT_TRANSACTION_CLEANUP_UP_TIMEOUT_WAIT_TIME
+  value: '65000'
+- name: ORG_HYPERLEDGER_FABRIC_SDK_ORDERER_ORDERERWAITTIMEMILLISECS
+  value: '180000'
+- name: ORG_HYPERLEDGER_FABRIC_SDK_PEER_EVENTREGISTRATION_WAIT_TIME
+  value: '180000'
+- name: ORG_HYPERLEDGER_FABRIC_SDK_EVENTHUB_CONNECTION_WAIT_TIME
+  value: '180000'
+- name: ORG_HYPERLEDGER_FABRIC_SDK_CHANNEL_GENESISBLOCK_WAIT_TIME
+  value: '180000'
 
 steps:
 - script: scripts/pullFabricDockerImages.sh
@@ -23,3 +31,14 @@ steps:
 
 - script: mvn clean install
   displayName: Maven build
+
+- script: scripts/ci_scripts/publishJavaApiDocs.sh
+  condition: and(succeeded(), eq(variables['Build.Reason'], 'IndividualCI'))
+  displayName: 'Publish API documentation'
+  env:
+    GITHUB_USER: 'Hyperledger Bot'
+    GITHUB_EMAIL: 'hlfdev.azp@gmail.com'
+    PUBLISH_URL: "https://$(GITHUB-PAT)@github.com/hyperledger/fabric-gateway-java.git"
+    PROJECT_DIR: "$(Build.Repository.LocalPath)"
+    STAGING_DIR: "$(Build.StagingDirectory)/gh-pages"
+    SOURCE_BRANCH: "$(Build.SourceBranchName)"
