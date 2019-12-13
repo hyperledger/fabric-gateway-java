@@ -1,25 +1,81 @@
-#!/bin/bash -e
+#!/bin/bash
 #
 # Copyright IBM Corp All Rights Reserved
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
-cd ${WORKSPACE}/gopath/src/github.com/hyperledger/fabric-gateway-java
-# Short Head commit
-gateway_java_commit=$(git rev-parse --short HEAD)
-echo "-------> gateway_java_commit:" $gateway_java_commit
-target_repo=$GATEWAY_JAVA_GH_USERNAME.github.io.git
-git config --global user.email "fabric-gateway-java@gmail.com"
-git config --global user.name "fabric-gateway-java"
-# Clone GATEWAY_JAVA API docs repository
-git clone https://github.com/$GATEWAY_JAVA_GH_USERNAME/$target_repo
-# Copy API docs to target repository & push to gh-pages URL
-cp -r $WORKSPACE/$BASE_DIR/target/apidocs/* $GATEWAY_JAVA_GH_USERNAME.github.io
-cd $GATEWAY_JAVA_GH_USERNAME.github.io
-git add .
-git commit -m "gateway_java_commit - $gateway_java_commit"
-# Credentials are stored as Global Variables in Jenkins
-git config remote.gh-pages.url https://$GATEWAY_JAVA_GH_USERNAME:$GATEWAY_JAVA_GH_PASSWORD@github.com/$GATEWAY_JAVA_GH_USERNAME/$target_repo
-# Push API docs to target repository
-git push gh-pages master
+set -e -o pipefail
+
+# Input environment variables:
+: "${GITHUB_USER:?}" # The GitHub user name for publishing
+: "${GITHUB_EMAIL:?}" # Email address of the GitHub user
+: "${PUBLISH_URL:?}" # Git URL used to push published content
+: "${PROJECT_DIR:?}" # Root directory for the Git project
+: "${STAGING_DIR:?}" # Directory used to store content to publish to GitHub Pages
+: "${SOURCE_BRANCH:?}" # Source code branch name
+
+readonly COMMIT_HASH=$(git rev-parse HEAD)
+readonly BUILD_DIR="${PROJECT_DIR}/target/apidocs"
+readonly DOCS_BRANCH='gh-pages'
+readonly JAVADOC_DIR="${STAGING_DIR}/${SOURCE_BRANCH}"
+
+prepareStaging() {
+    echo "Preparing staging directory: ${STAGING_DIR}"
+    rm -rf "${STAGING_DIR}"
+    rsync -r --exclude-from="${PROJECT_DIR}/.gitignore" "${PROJECT_DIR}/" "${STAGING_DIR}"
+    (cd "${STAGING_DIR}" && _stagingGitSetUp)
+}
+
+_stagingGitSetUp() {
+    git config --local user.name "${GITHUB_USER}"
+    git config --local user.email "${GITHUB_EMAIL}"
+    git reset --hard
+    git clean -xdf
+    git fetch origin
+    git checkout -B "${DOCS_BRANCH}" "origin/${DOCS_BRANCH}"
+    git clean -xdf
+}
+
+cleanStaging() {
+    echo "Removing ${JAVADOC_DIR}"
+    rm -rf "${JAVADOC_DIR}"
+
+    if [[ ${SOURCE_BRANCH} = master ]]; then
+        removeStagingRootFiles
+    fi
+}
+
+removeStagingRootFiles() {
+    local rootFile
+    find "${STAGING_DIR}" -type f -maxdepth 1 -mindepth 1 -print | while read -r rootFile; do
+        echo "Removing ${rootFile}"
+        rm -f "${rootFile}"
+    done
+}
+
+copyToStaging() {
+    echo "Copying built documentation from ${BUILD_DIR} to ${JAVADOC_DIR}"
+    rsync -r "${BUILD_DIR}/" "${JAVADOC_DIR}"
+
+    if [[ ${SOURCE_BRANCH} = master ]]; then
+        echo 'Copying root directory markup files'
+        cp -p "${PROJECT_DIR}"/*.md "${STAGING_DIR}"
+    fi
+}
+
+publishDocs() {
+    echo 'Publishing documentation from staging'
+    (cd "${STAGING_DIR}" && _stagingPushDocs)
+}
+
+_stagingPushDocs() {
+    git add .
+    git commit -m "Commit ${COMMIT_HASH}"
+    git push "${PUBLISH_URL}" "${DOCS_BRANCH}"
+}
+
+prepareStaging
+cleanStaging
+copyToStaging
+publishDocs
