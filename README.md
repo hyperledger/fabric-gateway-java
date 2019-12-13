@@ -62,8 +62,8 @@ class Sample {
 ### API documentation
 
 Full Javadoc documentation is published for each of the following versions:
-- [1.4](https://hyperledger.github.io/fabric-gateway-java/release-1.4)
-- [2.0 (beta)](https://hyperledger.github.io/fabric-gateway-java/master)
+- [1.4](https://hyperledger.github.io/fabric-gateway-java/release-1.4/)
+- [2.0 (beta)](https://hyperledger.github.io/fabric-gateway-java/master/)
 
 ### Maven
 
