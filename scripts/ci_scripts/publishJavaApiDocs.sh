@@ -47,11 +47,9 @@ cleanStaging() {
 }
 
 removeStagingRootFiles() {
-    local rootFile
-    find "${STAGING_DIR}" -type f -maxdepth 1 -mindepth 1 -print | while read -r rootFile; do
-        echo "Removing ${rootFile}"
-        rm -f "${rootFile}"
-    done
+    find "${STAGING_DIR}" -type f -maxdepth 1 -mindepth 1 \
+        -exec echo Removing {} \; \
+        -exec rm -f {} \;
 }
 
 copyToStaging() {
