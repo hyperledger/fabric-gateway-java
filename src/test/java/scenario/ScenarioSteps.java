@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -69,19 +70,21 @@ public class ScenarioSteps implements En {
     private static final long EVENT_TIMEOUT_SECONDS = 30;
     private static final Set<String> runningChaincodes = new HashSet<>();
     private static boolean channelsJoined = false;
+    private static String COUCHDB_SERVER_URL = "http://localhost:5984";
 
-    private String fabricNetworkType = null;
-    private Gateway.Builder gatewayBuilder = null;
-    private Gateway gateway = null;
-    private Network network = null;
-    private Contract contract = null;
+    private String fabricNetworkType;
+    private Gateway.Builder gatewayBuilder;
+    private Gateway gateway;
+    private Network network;
+    private Contract contract;
     private TransactionInvocation transactionInvocation;
-    private Consumer<BlockEvent> blockListener = null;
+    private Consumer<BlockEvent> blockListener;
     private final BlockingQueue<BlockEvent> blockEvents = new LinkedBlockingQueue<>();
-    private Consumer<ContractEvent> contractListener = null;
+    private Consumer<ContractEvent> contractListener;
     private final BlockingQueue<ContractEvent> contractEvents = new LinkedBlockingQueue<>();
     private final Path checkpointFile;
-    private Checkpointer checkpointer = null;
+    private Checkpointer checkpointer;
+    private Wallet wallet = Wallets.newInMemoryWallet();
 
     static {
         System.setProperty(Config.SERVICE_DISCOVER_AS_LOCALHOST, "true");
@@ -94,6 +97,8 @@ public class ScenarioSteps implements En {
             if (gateway != null) {
                 gateway.close();
             }
+
+            emptyWallet();
         });
 
         Given("I have deployed a {word} Fabric network", (String tlsType) -> {
@@ -161,9 +166,14 @@ public class ScenarioSteps implements En {
             }
         });
 
+        Given("I use a CouchDB wallet", () -> {
+            URL serverUrl = new URL(COUCHDB_SERVER_URL);
+            wallet = Wallets.newCouchDBWallet(serverUrl, "wallet");
+        });
+
         Given("I have a gateway as user {word} using the {word} connection profile",
                 (String userName, String tlsType) -> {
-                    Wallet wallet = createWallet();
+                    populateWallet();
                     gatewayBuilder = Gateway.createBuilder();
                     gatewayBuilder.identity(wallet, userName);
                     gatewayBuilder.networkConfig(getNetworkConfigPath(tlsType));
@@ -369,6 +379,15 @@ public class ScenarioSteps implements En {
 
         When("I remove the contract listener", this::clearContractListener);
 
+        When("I put an identity named {string} into the wallet", (String label) -> {
+            Identity identity = newOrg1UserIdentity();
+            wallet.put(label, identity);
+        });
+
+        When("I remove an identity named {string} from the wallet", (String label) -> {
+            wallet.remove(label);
+        });
+
         Then("a response should be received", () -> transactionInvocation.getResponse());
 
         Then("the response should match {}",
@@ -397,6 +416,33 @@ public class ScenarioSteps implements En {
         Then("a block event should be received", this::getBlockEvent);
 
         Then("a contract event with payload {string} should be received", this::getContractEvent);
+
+        Then("the wallet should contain {int} identities", (Integer number) -> {
+            Set<String> labels = wallet.list();
+            assertThat(labels).hasSize(number);
+        });
+
+        Then("the wallet should contain an identity named {string}", (String label) -> {
+            Set<String> labels = wallet.list();
+            assertThat(labels).contains(label);
+        });
+
+        Then("I should be able to get an identity named {string} from the wallet", (String label) -> {
+            Identity identity = wallet.get(label);
+            Identity expected = newOrg1UserIdentity();
+            assertThat(identity).isEqualTo(expected);
+        });
+
+        Then("I should not be able to get an identity named {string} from the wallet", (String label) -> {
+            Identity identity = wallet.get(label);
+            assertThat(identity).isNull();
+        });
+    }
+
+    private void emptyWallet() throws IOException {
+        for (String label : wallet.list()) {
+            wallet.remove(label);
+        }
     }
 
     private Checkpointer fileCheckpointer() throws IOException {
@@ -545,7 +591,12 @@ public class ScenarioSteps implements En {
         exec(fixtures, "./generate.sh");
     }
 
-    private static Wallet createWallet() throws IOException, GatewayException, CertificateException, InvalidKeyException {
+    private void populateWallet() throws IOException, GatewayException, CertificateException, InvalidKeyException {
+        Identity identity = newOrg1UserIdentity();
+        wallet.put("User1", identity);
+    }
+
+    private static Identity newOrg1UserIdentity() throws IOException, CertificateException, InvalidKeyException {
         Path credentialPath = Paths.get("src", "test", "fixtures", "crypto-material", "crypto-config",
                 "peerOrganizations", "org1.example.com", "users", "User1@org1.example.com", "msp");
 
@@ -555,12 +606,7 @@ public class ScenarioSteps implements En {
         Path privateKeyPath = credentialPath.resolve(Paths.get("keystore", "key.pem"));
         PrivateKey privateKey = getPrivateKey(privateKeyPath);
 
-        Identity identity = Identities.newX509Identity("Org1MSP", certificate, privateKey);
-
-        Wallet wallet = Wallets.newInMemoryWallet();
-        wallet.put("User1", identity);
-
-        return wallet;
+        return Identities.newX509Identity("Org1MSP", certificate, privateKey);
     }
 
     private static X509Certificate readX509Certificate(final Path certificatePath) throws IOException, CertificateException {
