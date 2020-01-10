@@ -28,7 +28,7 @@ public class GatewayTest {
     }
 
     @Test
-    public void testGetNetworkFromConfig() throws GatewayException {
+    public void testGetNetworkFromConfig() {
         try (Gateway gateway = builder.connect()) {
             Network network = gateway.getNetwork("mychannel");
             assertThat(network.getChannel().getName()).isEqualTo("mychannel");
@@ -36,7 +36,7 @@ public class GatewayTest {
     }
 
     @Test
-    public void testGetAssumedNetwork() throws Exception {
+    public void testGetAssumedNetwork() {
         try (Gateway gateway = builder.connect()) {
             Network network = gateway.getNetwork("assumed");
             assertThat(network.getChannel().getName()).isEqualTo("assumed");
@@ -44,7 +44,7 @@ public class GatewayTest {
     }
 
     @Test
-    public void testGetCachedNetwork() throws GatewayException {
+    public void testGetCachedNetwork() {
         try (Gateway gateway = builder.connect()) {
             Network network = gateway.getNetwork("assumed");
             Network network2 = gateway.getNetwork("assumed");
@@ -53,7 +53,7 @@ public class GatewayTest {
     }
 
     @Test
-    public void testGetNetworkEmptyString() throws Exception {
+    public void testGetNetworkEmptyString() {
         try (Gateway gateway = builder.connect()) {
             assertThatThrownBy(() -> gateway.getNetwork(""))
                     .isInstanceOf(IllegalArgumentException.class)
@@ -62,7 +62,7 @@ public class GatewayTest {
     }
 
     @Test
-    public void testGetNetworkNullString() throws Exception {
+    public void testGetNetworkNullString() {
         try (Gateway gateway = builder.connect()) {
             assertThatThrownBy(() -> gateway.getNetwork(null))
                     .isInstanceOf(IllegalArgumentException.class)
@@ -71,7 +71,7 @@ public class GatewayTest {
     }
 
     @Test
-    public void testCloseGatewayClosesNetworks() throws Exception {
+    public void testCloseGatewayClosesNetworks() {
         Gateway gateway = builder.connect();
         Channel channel = gateway.getNetwork("assumed").getChannel();
 

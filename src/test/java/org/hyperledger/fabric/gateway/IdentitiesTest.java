@@ -21,6 +21,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class IdentitiesTest {
+    private static final TestUtils testUtils = TestUtils.getInstance();
+
     private final X509Credentials credentials = new X509Credentials();
     private final String x509CertificatePem = "-----BEGIN CERTIFICATE-----\n" +
             "MIICGDCCAb+gAwIBAgIQHWBLQRSL/SxAckSUBCAceDAKBggqhkjOPQQDAjBzMQsw\n" +
@@ -45,15 +47,7 @@ public class IdentitiesTest {
     @Test
     public void certificate_read_error_throws_IOException() {
         String failMessage = "read failure";
-        Reader reader = new Reader() {
-            @Override
-            public int read(char[] cbuf, int offset, int length) throws IOException {
-                throw new IOException(failMessage);
-            }
-
-            @Override
-            public void close() { }
-        };
+        Reader reader = testUtils.newFailingReader(failMessage);
 
         assertThatThrownBy(() -> Identities.readX509Certificate(reader))
                 .isInstanceOf(IOException.class)
@@ -79,15 +73,7 @@ public class IdentitiesTest {
     @Test
     public void private_key_read_error_throws_IOException() {
         String failMessage = "read failure";
-        Reader reader = new Reader() {
-            @Override
-            public int read(char[] cbuf, int offset, int length) throws IOException {
-                throw new IOException(failMessage);
-            }
-
-            @Override
-            public void close() { }
-        };
+        Reader reader = testUtils.newFailingReader(failMessage);
 
         assertThatThrownBy(() -> Identities.readPrivateKey(reader))
                 .isInstanceOf(IOException.class)

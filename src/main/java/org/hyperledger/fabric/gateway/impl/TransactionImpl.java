@@ -22,7 +22,6 @@ import org.hyperledger.fabric.gateway.spi.CommitHandler;
 import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
 import org.hyperledger.fabric.gateway.spi.Query;
 import org.hyperledger.fabric.gateway.spi.QueryHandler;
-import org.hyperledger.fabric.sdk.ChaincodeID;
 import org.hyperledger.fabric.sdk.ChaincodeResponse;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.Peer;
@@ -170,13 +169,17 @@ public final class TransactionImpl implements Transaction {
     }
 
     private void configureRequest(final TransactionRequest request, final String... args) {
+        // Replace setChaincodeID() with setChaincodeName() once the low-level SDK allows this for transaction
+        // invocations using service discovery
         request.setChaincodeID(getChaincodeId());
+//        request.setChaincodeName(contract.getChaincodeId());
         request.setFcn(name);
         request.setArgs(args);
     }
 
-    private ChaincodeID getChaincodeId() {
-        return ChaincodeID.newBuilder()
+    @SuppressWarnings("deprecation")
+    private org.hyperledger.fabric.sdk.ChaincodeID getChaincodeId() {
+        return org.hyperledger.fabric.sdk.ChaincodeID.newBuilder()
                 .setName(contract.getChaincodeId())
                 .build();
     }
