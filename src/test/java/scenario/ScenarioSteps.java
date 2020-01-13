@@ -384,9 +384,7 @@ public class ScenarioSteps implements En {
             wallet.put(label, identity);
         });
 
-        When("I remove an identity named {string} from the wallet", (String label) -> {
-            wallet.remove(label);
-        });
+        When("I remove an identity named {string} from the wallet", (String label) -> wallet.remove(label));
 
         Then("a response should be received", () -> transactionInvocation.getResponse());
 
@@ -591,7 +589,7 @@ public class ScenarioSteps implements En {
         exec(fixtures, "./generate.sh");
     }
 
-    private void populateWallet() throws IOException, GatewayException, CertificateException, InvalidKeyException {
+    private void populateWallet() throws IOException, CertificateException, InvalidKeyException {
         Identity identity = newOrg1UserIdentity();
         wallet.put("User1", identity);
     }

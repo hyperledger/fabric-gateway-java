@@ -41,7 +41,7 @@ public final class FileSystemWalletStore implements WalletStore {
     }
 
     @Override
-    public InputStream get(final String label) throws IOException {
+    public InputStream get(final String label) {
         try {
             return Files.newInputStream(getPathForLabel(label));
         } catch (IOException e) {

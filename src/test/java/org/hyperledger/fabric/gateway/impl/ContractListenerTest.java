@@ -81,14 +81,6 @@ public class ContractListenerTest {
         return result;
     }
 
-    private ChaincodeEvent mockChaincodeEvent(String chaincodeId, String name, byte[] payload) {
-        ChaincodeEvent result = mock(ChaincodeEvent.class);
-        when(result.getChaincodeId()).thenReturn(chaincodeId);
-        when(result.getEventName()).thenReturn(name);
-        when(result.getPayload()).thenReturn(payload);
-        return result;
-    }
-
     private void fireEvents(ChaincodeEvent... chaincodeEvents) {
         BlockEvent event = newBlockEvent(1, chaincodeEvents);
         blockSource.sendEvent(event);
@@ -254,7 +246,7 @@ public class ContractListenerTest {
     }
 
     @Test
-    public void add_checkpoint_listener_returns_the_listener() throws IOException, GatewayException {
+    public void add_checkpoint_listener_returns_the_listener() throws IOException {
         Consumer<ContractEvent> listener = event -> {};
         Checkpointer checkpointer = new InMemoryCheckpointer();
 
@@ -264,7 +256,7 @@ public class ContractListenerTest {
     }
 
     @Test
-    public void add_checkpoint_listener_with_event_name_returns_the_listener() throws IOException, GatewayException {
+    public void add_checkpoint_listener_with_event_name_returns_the_listener() throws IOException {
         Consumer<ContractEvent> listener = event -> {};
         Checkpointer checkpointer = new InMemoryCheckpointer();
 
@@ -274,7 +266,7 @@ public class ContractListenerTest {
     }
 
     @Test
-    public void add_checkpoint_listener_with_event_pattern_returns_the_listener() throws IOException, GatewayException {
+    public void add_checkpoint_listener_with_event_pattern_returns_the_listener() throws IOException {
         Consumer<ContractEvent> listener = event -> {};
         Checkpointer checkpointer = new InMemoryCheckpointer();
 
@@ -284,7 +276,7 @@ public class ContractListenerTest {
     }
 
     @Test
-    public void listener_with_new_checkpointer_receives_all_events() throws IOException, GatewayException {
+    public void listener_with_new_checkpointer_receives_all_events() throws IOException {
         Consumer<ContractEvent> listener = spy(testUtils.stubContractListener());
         Checkpointer checkpointer = new InMemoryCheckpointer();
         ChaincodeEvent chaincodeEvent1 = mockChaincodeEvent(chaincodeId, eventName + 1);
@@ -298,7 +290,7 @@ public class ContractListenerTest {
     }
 
     @Test
-    public void listener_with_saved_checkpointer_resumes_from_previous_event() throws IOException, GatewayException {
+    public void listener_with_saved_checkpointer_resumes_from_previous_event() throws IOException {
         Consumer<ContractEvent> realtimeListener = event -> {};
         Consumer<ContractEvent> replayListener = spy(testUtils.stubContractListener());
         Checkpointer checkpointer = new InMemoryCheckpointer();
@@ -317,7 +309,7 @@ public class ContractListenerTest {
     }
 
     @Test
-    public void listener_with_new_checkpointer_only_receives_events_with_specific_name() throws IOException, GatewayException {
+    public void listener_with_new_checkpointer_only_receives_events_with_specific_name() throws IOException {
         Consumer<ContractEvent> listener = spy(testUtils.stubContractListener());
         Checkpointer checkpointer = new InMemoryCheckpointer();
         ChaincodeEvent badEvent = mockChaincodeEvent(chaincodeId, "BAD_" + eventName);
@@ -331,7 +323,7 @@ public class ContractListenerTest {
     }
 
     @Test
-    public void listener_with_new_checkpointer_only_receives_events_matching_a_pattern() throws IOException, GatewayException {
+    public void listener_with_new_checkpointer_only_receives_events_matching_a_pattern() throws IOException {
         Consumer<ContractEvent> listener = spy(testUtils.stubContractListener());
         Checkpointer checkpointer = new InMemoryCheckpointer();
         ChaincodeEvent badEvent = mockChaincodeEvent(chaincodeId, "BAD_" + eventName);
@@ -346,7 +338,7 @@ public class ContractListenerTest {
     }
 
     @Test
-    public void add_replay_listener_returns_the_listener() throws IOException, GatewayException {
+    public void add_replay_listener_returns_the_listener() {
         Consumer<ContractEvent> listener = event -> {};
 
         Consumer<ContractEvent> result = contract.addContractListener(1, listener);
@@ -355,7 +347,7 @@ public class ContractListenerTest {
     }
 
     @Test
-    public void add_replay_listener_with_event_name_returns_the_listener() throws IOException, GatewayException {
+    public void add_replay_listener_with_event_name_returns_the_listener() {
         Consumer<ContractEvent> listener = event -> {};
 
         Consumer<ContractEvent> result = contract.addContractListener(1, listener, eventName);
@@ -364,7 +356,7 @@ public class ContractListenerTest {
     }
 
     @Test
-    public void add_replay_listener_with_event_pattern_returns_the_listener() throws IOException, GatewayException {
+    public void add_replay_listener_with_event_pattern_returns_the_listener() {
         Consumer<ContractEvent> listener = event -> {};
 
         Consumer<ContractEvent> result = contract.addContractListener(1, listener, eventNamePattern);
@@ -373,7 +365,7 @@ public class ContractListenerTest {
     }
 
     @Test
-    public void replay_listener_receives_events_from_start_block() throws IOException, GatewayException {
+    public void replay_listener_receives_events_from_start_block() {
         Consumer<ContractEvent> replayListener = spy(testUtils.stubContractListener());
         ChaincodeEvent chaincodeEvent = mockChaincodeEvent(chaincodeId, eventName);
         BlockEvent blockEvent1 = newBlockEvent(1, chaincodeEvent);
@@ -389,7 +381,7 @@ public class ContractListenerTest {
     }
 
     @Test
-    public void replay_listener_with_event_name_receives_events_from_start_block() throws IOException, GatewayException {
+    public void replay_listener_with_event_name_receives_events_from_start_block() {
         Consumer<ContractEvent> replayListener = spy(testUtils.stubContractListener());
         ChaincodeEvent goodEvent = mockChaincodeEvent(chaincodeId, eventName);
         ChaincodeEvent badEvent = mockChaincodeEvent(chaincodeId, "BAD_" + eventName);
@@ -408,7 +400,7 @@ public class ContractListenerTest {
     }
 
     @Test
-    public void replay_listener_with_event_pattern_receives_events_from_start_block() throws IOException, GatewayException {
+    public void replay_listener_with_event_pattern_receives_events_from_start_block() {
         Consumer<ContractEvent> replayListener = spy(testUtils.stubContractListener());
         ChaincodeEvent goodEvent = mockChaincodeEvent(chaincodeId, eventName);
         ChaincodeEvent badEvent = mockChaincodeEvent(chaincodeId, "BAD_" + eventName);

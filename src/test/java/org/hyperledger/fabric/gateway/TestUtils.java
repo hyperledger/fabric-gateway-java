@@ -7,6 +7,7 @@
 package org.hyperledger.fabric.gateway;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -51,7 +52,7 @@ public final class TestUtils {
 
     private TestUtils() { }
 
-    public GatewayImpl.Builder newGatewayBuilder() throws GatewayException, OperatorCreationException, CertificateException, NoSuchAlgorithmException, NoSuchProviderException, IOException {
+    public GatewayImpl.Builder newGatewayBuilder() throws IOException {
         X509Credentials credentials = new X509Credentials();
 
         GatewayImpl.Builder builder = (GatewayImpl.Builder)Gateway.createBuilder();
@@ -71,7 +72,7 @@ public final class TestUtils {
         return builder;
     }
 
-    public HFClient newMockClient() throws OperatorCreationException, CertificateException, NoSuchAlgorithmException, NoSuchProviderException, IOException {
+    public HFClient newMockClient() {
         X509Credentials credentials = new X509Credentials();
         Enrollment enrollment = new X509Enrollment(credentials.getPrivateKey(), credentials.getCertificatePem());
         User user = new GatewayUser("user", "msp1", enrollment);
@@ -306,4 +307,21 @@ public final class TestUtils {
         return tempDir;
     }
 
+    /**
+     * Create a new Reader instance that will fail on any read attempt with the provided exception message.
+     * @param failMessage Read exception message.
+     * @return A reader.
+     */
+    public Reader newFailingReader(final String failMessage) {
+        return new Reader() {
+            @Override
+            public int read(char[] cbuf, int offset, int length) throws IOException {
+                throw new IOException(failMessage);
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+    }
 }

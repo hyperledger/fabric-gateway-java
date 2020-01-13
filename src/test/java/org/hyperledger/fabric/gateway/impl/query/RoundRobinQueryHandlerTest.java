@@ -10,8 +10,6 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import org.hyperledger.fabric.gateway.ContractException;
-import org.hyperledger.fabric.gateway.impl.CommonQueryHandlerTest;
-import org.hyperledger.fabric.gateway.impl.query.RoundRobinQueryHandler;
 import org.hyperledger.fabric.gateway.spi.Query;
 import org.hyperledger.fabric.gateway.spi.QueryHandler;
 import org.hyperledger.fabric.sdk.Peer;

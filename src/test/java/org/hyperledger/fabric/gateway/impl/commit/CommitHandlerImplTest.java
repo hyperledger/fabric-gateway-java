@@ -6,7 +6,6 @@
 
 package org.hyperledger.fabric.gateway.impl.commit;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,8 +17,6 @@ import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.TestUtils;
-import org.hyperledger.fabric.gateway.impl.commit.CommitHandlerImpl;
-import org.hyperledger.fabric.gateway.impl.commit.CommitStrategy;
 import org.hyperledger.fabric.gateway.impl.event.StubBlockEventSource;
 import org.hyperledger.fabric.gateway.impl.event.StubPeerDisconnectEventSource;
 import org.hyperledger.fabric.gateway.spi.CommitHandler;

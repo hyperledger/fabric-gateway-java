@@ -63,7 +63,7 @@ public class GatewayBuilderTest {
     }
 
     @Test
-    public void testBuilderInvalidIdentity() throws IOException {
+    public void testBuilderInvalidIdentity() {
         assertThatThrownBy(() -> builder.identity(testWallet, "INVALID_IDENTITY"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("INVALID_IDENTITY");
