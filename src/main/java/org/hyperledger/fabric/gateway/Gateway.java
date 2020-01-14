@@ -23,7 +23,8 @@ import org.hyperledger.fabric.gateway.spi.QueryHandlerFactory;
  * using the {@link #getNetwork(String) getNetwork} method which in turn can access the {@link Contract} installed on a
  * network and {@link Contract#submitTransaction(String, String...) submit transactions} to the ledger.
  *
- * <p>Gateway instances should be closed only once connection to the Fabric network is no longer required.</p>
+ * <p>Gateway instances should be reused for multiple transaction invocations and only closed once connection to the
+ * Fabric network is no longer required.</p>
  *
  * <pre><code>
  *     Gateway.Builder builder = Gateway.createBuilder()
@@ -35,6 +36,27 @@ import org.hyperledger.fabric.gateway.spi.QueryHandlerFactory;
  *         // Interactions with the network
  *     }
  * </code></pre>
+ *
+ * <h2>Service discovery</h2>
+ *
+ * <p>Service discovery allows the client to dynamically discover nodes (peers and orderers) within a network that are
+ * not defined in the connection profile, and is enabled using {@link Gateway.Builder#discovery(boolean)}. With
+ * service discovery enabled, the client will receive the public network address of each node. If these network
+ * addresses can be reached directly by the client, no additional configuration is required.</p>
+ *
+ * <p>In some cases nodes cannot be accessed directly by the client on their public network address. For example, when
+ * nodes are hosted in Docker containers, and the client is running on the local machine outside of the Docker
+ * network. In this case service discovery will report the network address of nodes within the Docker network but the
+ * client will need to access nodes using the <em>localhost</em> address. Setting the following environment variable
+ * will force service discovery to report the <em>localhost</em> address for all nodes.
+ *
+ * <pre>org.hyperledger.fabric.sdk.service_discovery.as_localhost=true</pre>
+ *
+ * <p>An alternative approach is to modify the local <strong>hosts</strong> file for the client machine to resolve the
+ * network address of nodes running in a Docker network to the <em>localhost</em> address.</p>
+ *
+ * <p>Note that the port numbers of nodes obtained through service discovery remain unchanged so ports forwarded from
+ * the local machine's network must match the port numbers of nodes within the Docker network.</p>
  *
  * @see <a href="https://hyperledger-fabric.readthedocs.io/en/release-1.4/developapps/application.html#gateway">Developing Fabric Applications - Gateway</a>
  */
@@ -139,6 +161,7 @@ public interface Gateway extends AutoCloseable {
 
         /**
          * <em>Optional</em> - Enable or disable service discovery for all transaction submissions for this gateway.
+         * Service discovery is disabled by default.
          * @param enabled - true to enable service discovery
          * @return The builder instance, allowing multiple configuration options to be chained.
          */
