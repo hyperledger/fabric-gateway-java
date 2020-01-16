@@ -73,7 +73,7 @@ Add the following dependency to your project's `pom.xml` file:
 <dependency>
   <groupId>org.hyperledger.fabric</groupId>
   <artifactId>fabric-gateway-java</artifactId>
-  <version>1.4.0</version>
+  <version>1.4.2</version>
 </dependency>
 ```
 
@@ -82,8 +82,18 @@ Add the following dependency to your project's `pom.xml` file:
 Add the following dependency to your project's `build.gradle` file:
 
 ```groovy
-implementation 'org.hyperledger.fabric:fabric-gateway-java:1.4.0'
+implementation 'org.hyperledger.fabric:fabric-gateway-java:1.4.2'
 ```
+
+### Compatibility
+
+The following table shows versions of Fabric, Java and other dependencies that are explicitly tested and that are supported for use with version 2.0 of the Fabric Gateway SDK. Refer to the appropriate GitHub branch for compatibility of other release versions.
+
+|     | Tested | Supported |
+| --- | ------ | --------- |
+| **Fabric** | 2.0 | 2.0.x |
+| **Java** | 8 | 8+ |
+| **Platform** | Ubuntu 18.04 | |
 
 ## Building and testing
 
