@@ -62,7 +62,7 @@ public final class Sample {
 
 ### API documentation
 
-Full Javadoc documentation of the SDK is published at [fabric-gateway-java.github.io](https://fabric-gateway-java.github.io/).
+Full Javadoc documentation of the SDK is published at [hyperledger.github.io/fabric-gateway-java/release-1.4/](https://hyperledger.github.io/fabric-gateway-java/release-1.4/).
 
 ### Maven
 
@@ -72,7 +72,7 @@ Add the following dependency to your project's `pom.xml` file:
 <dependency>
   <groupId>org.hyperledger.fabric</groupId>
   <artifactId>fabric-gateway-java</artifactId>
-  <version>1.4.0</version>
+  <version>1.4.2</version>
 </dependency>
 ```
 
@@ -81,8 +81,18 @@ Add the following dependency to your project's `pom.xml` file:
 Add the following dependency to your project's `build.gradle` file:
 
 ```groovy
-implementation 'org.hyperledger.fabric:fabric-gateway-java:1.4.0'
+implementation 'org.hyperledger.fabric:fabric-gateway-java:1.4.2'
 ```
+
+### Compatibility
+
+The following table shows versions of Fabric, Java and other dependencies that are explicitly tested and that are supported for use with version 1.4 of the Fabric Gateway SDK. Refer to the appropriate GitHub branch for compatibility of other release versions.
+
+|     | Tested | Supported |
+| --- | ------ | --------- |
+| **Fabric** | 1.4 | 1.4.x |
+| **Java** | 8 | 8+ |
+| **Platform** | Ubuntu 18.04 | |
 
 ## Building and testing
 
