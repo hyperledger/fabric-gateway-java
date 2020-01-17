@@ -12,7 +12,7 @@
 
     <name>fabric-gateway-java</name>
     <description>Simple API for interacting with Hyperledger Fabric blockchain networks</description>
-    <url>https://fabric-gateway-java.github.io/</url>
+    <url>https://hyperledger.github.io/fabric-gateway-java/</url>
 
     <licenses>
         <license>
