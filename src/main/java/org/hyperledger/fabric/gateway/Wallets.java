@@ -7,8 +7,12 @@
 package org.hyperledger.fabric.gateway;
 
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Path;
 
+import com.cloudant.client.api.ClientBuilder;
+import com.cloudant.client.api.Database;
+import org.hyperledger.fabric.gateway.impl.identity.CloudantWalletStore;
 import org.hyperledger.fabric.gateway.impl.identity.FileSystemWalletStore;
 import org.hyperledger.fabric.gateway.impl.identity.InMemoryWalletStore;
 import org.hyperledger.fabric.gateway.impl.identity.WalletImpl;
@@ -36,6 +40,18 @@ public final class Wallets {
      */
     public static Wallet newFileSystemWallet(final Path storeDirectory) throws IOException {
         WalletStore store = new FileSystemWalletStore(storeDirectory);
+        return newWallet(store);
+    }
+
+    /**
+     * Create a wallet backed by a CouchDB database.
+     * @param serverUrl Connection URL for CouchDB server.
+     * @param databaseName Wallet database name.
+     * @return A wallet.
+     */
+    public static Wallet newCouchDBWallet(final URL serverUrl, final String databaseName) {
+        Database database = ClientBuilder.url(serverUrl).build().database(databaseName, true);
+        WalletStore store = new CloudantWalletStore(database);
         return newWallet(store);
     }
 

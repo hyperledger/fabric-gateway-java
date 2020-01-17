@@ -28,7 +28,7 @@ public final class X509IdentityTest {
     private static final String mspId = "mspId";
     private static final X509Credentials credentials = new X509Credentials();
 
-    public static Stream<X509Identity> identityProvider() throws CertificateException, InvalidKeyException, IOException {
+    public static Stream<X509Identity> identityProvider() throws CertificateException {
         return Stream.of(
                 newIdentityFromFromCertificateAndPrivateKey(),
                 newIdentityFromEnrollment()

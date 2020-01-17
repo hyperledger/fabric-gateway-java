@@ -139,7 +139,7 @@ public class BlockListenerTest {
     }
 
     @Test
-    public void add_checkpoint_listener_returns_the_listener() throws GatewayException, IOException {
+    public void add_checkpoint_listener_returns_the_listener() throws IOException {
         Consumer<BlockEvent> listener = blockEvent -> {};
         Checkpointer checkpointer = new InMemoryCheckpointer();
 
@@ -149,7 +149,7 @@ public class BlockListenerTest {
     }
 
     @Test
-    public void listener_with_new_checkpointer_receives_events() throws GatewayException, IOException {
+    public void listener_with_new_checkpointer_receives_events() throws IOException {
         Consumer<BlockEvent> listener = Mockito.spy(testUtils.stubBlockListener());
         Checkpointer checkpointer = new InMemoryCheckpointer();
         BlockEvent event = testUtils.newMockBlockEvent(peer1, 2);
@@ -161,7 +161,7 @@ public class BlockListenerTest {
     }
 
     @Test
-    public void removed_checkpoint_listener_does_not_receive_events() throws GatewayException, IOException {
+    public void removed_checkpoint_listener_does_not_receive_events() throws IOException {
         Consumer<BlockEvent> listener = Mockito.spy(testUtils.stubBlockListener());
         Checkpointer checkpointer = new InMemoryCheckpointer();
         BlockEvent event = testUtils.newMockBlockEvent(peer1, 2);
@@ -174,7 +174,7 @@ public class BlockListenerTest {
     }
 
     @Test
-    public void listener_with_saved_checkpointer_resumes_from_previous_event() throws GatewayException, IOException {
+    public void listener_with_saved_checkpointer_resumes_from_previous_event() throws IOException {
         Consumer<BlockEvent> listener = Mockito.spy(testUtils.stubBlockListener());
         Checkpointer checkpointer = new InMemoryCheckpointer();
         BlockEvent event1 = testUtils.newMockBlockEvent(peer1, 1);
@@ -191,7 +191,7 @@ public class BlockListenerTest {
     }
 
     @Test
-    public void add_replay_listener_returns_the_listener() throws GatewayException, IOException {
+    public void add_replay_listener_returns_the_listener() {
         Consumer<BlockEvent> listener = blockEvent -> {};
 
         Consumer<BlockEvent> result = network.addBlockListener(1, listener);
@@ -200,7 +200,7 @@ public class BlockListenerTest {
     }
 
     @Test
-    public void replay_listener_receives_replay_events() throws GatewayException, IOException {
+    public void replay_listener_receives_replay_events() {
         Consumer<BlockEvent> realtimeListener = event -> {};
         Consumer<BlockEvent> replayListener = Mockito.spy(testUtils.stubBlockListener());
         BlockEvent event1 = testUtils.newMockBlockEvent(peer1, 1);

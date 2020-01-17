@@ -64,7 +64,7 @@ public class X509IdentityProviderTest {
     }
 
     @Test
-    public void from_JSON_with_invalid_type_ID_throws_IOException() throws CertificateException, InvalidKeyException, IOException {
+    public void from_JSON_with_invalid_type_ID_throws_IOException() {
         JsonObject jsonData = Json.createObjectBuilder(jsonV1())
                 .add("type", "BAD_TYPE")
                 .build();
@@ -75,7 +75,7 @@ public class X509IdentityProviderTest {
     }
 
     @Test
-    public void from_JSON_with_invalid_version_throws_IOException() throws CertificateException, InvalidKeyException, IOException {
+    public void from_JSON_with_invalid_version_throws_IOException() {
         JsonObject jsonData = Json.createObjectBuilder(jsonV1())
                 .add("version", Integer.MAX_VALUE)
                 .build();
@@ -86,7 +86,7 @@ public class X509IdentityProviderTest {
     }
 
     @Test
-    public void from_JSON_with_missing_fields_throws_IOException() throws CertificateException, InvalidKeyException, IOException {
+    public void from_JSON_with_missing_fields_throws_IOException() {
         JsonObject jsonData = Json.createObjectBuilder(jsonV1())
                 .remove(IdentityConstants.JSON_MSP_ID)
                 .build();

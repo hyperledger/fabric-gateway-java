@@ -16,6 +16,8 @@ import org.hyperledger.fabric.sdk.ProposalResponse;
  * Thrown when an error occurs invoking a smart contract.
  */
 public class ContractException extends GatewayException {
+    private static final long serialVersionUID = -1278679656087547825L;
+
     private Collection<ProposalResponse> proposalResponses;
 
     /**

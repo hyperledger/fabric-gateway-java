@@ -10,6 +10,8 @@ package org.hyperledger.fabric.gateway;
  * Runtime exception for gateway classes. Typically indicates misconfiguration or misuse of the API.
  */
 public class GatewayRuntimeException extends RuntimeException {
+    private static final long serialVersionUID = -1051523683665686266L;
+
     /**
      * Constructs a new exception with the specified detail message. The cause is not initialized.
      * @param message the detail message.

@@ -88,7 +88,7 @@ public enum X509IdentityProvider implements IdentityProvider<X509Identity> {
         }
     }
 
-    private X509Identity newIdentity(final JsonObject identityData) throws CertificateException, InvalidKeyException, IOException {
+    private X509Identity newIdentity(final JsonObject identityData) throws CertificateException, InvalidKeyException {
         String mspId = identityData.getString(IdentityConstants.JSON_MSP_ID);
 
         JsonObject credentials = identityData.getJsonObject(JSON_CREDENTIALS);

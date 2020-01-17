@@ -107,7 +107,7 @@ public class ChannelBlockEventSourceTest {
     }
 
     @Test
-    public void forwards_channel_block_events_to_listener() throws Exception {
+    public void forwards_channel_block_events_to_listener() {
         Consumer<BlockEvent> listener = spy(testUtils.stubBlockListener());
         BlockEvent blockEvent = mock(BlockEvent.class);
 

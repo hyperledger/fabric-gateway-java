@@ -10,6 +10,8 @@ package org.hyperledger.fabric.gateway;
  * Base class for exceptions thrown by the Gateway SDK or by components of the underlying Fabric.
  */
 public class GatewayException extends Exception {
+    private static final long serialVersionUID = -6313392932347237084L;
+
     /**
      * Constructs a new exception with the specified detail message. The cause is not initialized.
      * @param message the detail message.

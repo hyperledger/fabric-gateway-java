@@ -57,8 +57,8 @@ public final class X509Credentials {
 
     private X509Certificate generateCertificate(KeyPair keyPair) {
         X500Name dnName = new X500Name("CN=John Doe");
-        Date validityBeginDate = new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000); // Yesterday
-        Date validityEndDate = new Date(System.currentTimeMillis() + 2 * 365 * 24 * 60 * 60 * 1000); // 2 years from now
+        Date validityBeginDate = new Date(System.currentTimeMillis() - 24L * 60 * 60 * 1000); // Yesterday
+        Date validityEndDate = new Date(System.currentTimeMillis() + 2L * 365 * 24 * 60 * 60 * 1000); // 2 years from now
         SubjectPublicKeyInfo subPubKeyInfo = SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded());
         X509v3CertificateBuilder builder = new X509v3CertificateBuilder(
                 dnName,
