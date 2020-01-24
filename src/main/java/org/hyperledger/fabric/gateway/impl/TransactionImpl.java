@@ -169,19 +169,9 @@ public final class TransactionImpl implements Transaction {
     }
 
     private void configureRequest(final TransactionRequest request, final String... args) {
-        // Replace setChaincodeID() with setChaincodeName() once the low-level SDK allows this for transaction
-        // invocations using service discovery
-        request.setChaincodeID(getChaincodeId());
-//        request.setChaincodeName(contract.getChaincodeId());
+        request.setChaincodeName(contract.getChaincodeId());
         request.setFcn(name);
         request.setArgs(args);
-    }
-
-    @SuppressWarnings("deprecation")
-    private org.hyperledger.fabric.sdk.ChaincodeID getChaincodeId() {
-        return org.hyperledger.fabric.sdk.ChaincodeID.newBuilder()
-                .setName(contract.getChaincodeId())
-                .build();
     }
 
     private Collection<ProposalResponse> validatePeerResponses(final Collection<ProposalResponse> proposalResponses)
