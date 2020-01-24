@@ -62,8 +62,8 @@ class Sample {
 ### API documentation
 
 Full Javadoc documentation is published for each of the following versions:
+- [2.0](https://hyperledger.github.io/fabric-gateway-java/master/)
 - [1.4](https://hyperledger.github.io/fabric-gateway-java/release-1.4/)
-- [2.0 (beta)](https://hyperledger.github.io/fabric-gateway-java/master/)
 
 ### Maven
 
@@ -73,7 +73,7 @@ Add the following dependency to your project's `pom.xml` file:
 <dependency>
   <groupId>org.hyperledger.fabric</groupId>
   <artifactId>fabric-gateway-java</artifactId>
-  <version>1.4.2</version>
+  <version>2.0.0</version>
 </dependency>
 ```
 
@@ -82,7 +82,7 @@ Add the following dependency to your project's `pom.xml` file:
 Add the following dependency to your project's `build.gradle` file:
 
 ```groovy
-implementation 'org.hyperledger.fabric:fabric-gateway-java:1.4.2'
+implementation 'org.hyperledger.fabric:fabric-gateway-java:2.0.0'
 ```
 
 ### Compatibility
