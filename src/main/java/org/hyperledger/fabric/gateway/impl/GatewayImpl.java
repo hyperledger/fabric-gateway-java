@@ -33,6 +33,7 @@ import org.hyperledger.fabric.gateway.Identities;
 import org.hyperledger.fabric.gateway.Identity;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.Wallet;
+import org.hyperledger.fabric.gateway.X509Identity;
 import org.hyperledger.fabric.gateway.impl.identity.X509IdentityProvider;
 import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
 import org.hyperledger.fabric.gateway.spi.QueryHandlerFactory;
@@ -112,6 +113,18 @@ public final class GatewayImpl implements Gateway {
             if (null == identity) {
                 throw new IllegalArgumentException("Identity not found in wallet: " + id);
             }
+            return this;
+        }
+
+        @Override
+        public Builder identity(final Identity identity) {
+            if (null == identity) {
+                throw new IllegalArgumentException("Identity must not be null");
+            }
+            if (!(identity instanceof X509Identity)) {
+                throw new IllegalArgumentException("No provider for identity type: " + identity.getClass().getName());
+            }
+            this.identity = identity;
             return this;
         }
 

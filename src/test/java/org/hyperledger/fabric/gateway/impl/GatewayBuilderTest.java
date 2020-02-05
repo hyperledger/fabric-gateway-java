@@ -6,6 +6,9 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,9 +27,6 @@ import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.Peer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class GatewayBuilderTest {
     private static final Path CONFIG_PATH = Paths.get("src", "test", "java", "org", "hyperledger", "fabric", "gateway");
@@ -124,6 +124,37 @@ public class GatewayBuilderTest {
                         .collect(Collectors.toList());
                 assertThat(peerNames).containsExactly("peer0.org1.example.com");
             }
+        }
+    }
+
+    @Test
+    public void testBuilderForUnsupportedIdentityType() throws IOException {
+        Identity unsupportedIdentity = new Identity() {
+            @Override
+            public String getMspId() {
+                return "mspId";
+            }
+        };
+        assertThatThrownBy(() -> builder.identity(unsupportedIdentity))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(unsupportedIdentity.getClass().getName());
+    }
+
+    @Test
+    public void testBuilderWithoutIdentity() throws IOException {
+        assertThatThrownBy(() -> builder.identity(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Identity must not be null");
+    }
+
+    @Test
+    public void testBuilderWithIdentity() throws IOException {
+        builder.identity(identity)
+                .networkConfig(JSON_NETWORK_CONFIG_PATH);
+        try (Gateway gateway = builder.connect()) {
+            assertThat(gateway.getIdentity()).isEqualTo(identity);
+            HFClient client = ((GatewayImpl) gateway).getClient();
+            assertThat(client.getUserContext().getEnrollment().getCert()).isEqualTo(credentials.getCertificatePem());
         }
     }
 
