@@ -173,15 +173,17 @@ public class ScenarioSteps implements En {
 
         Given("I have a gateway as user {word} using the {word} connection profile",
                 (String userName, String tlsType) -> {
+                    prepareGateway(tlsType);
                     populateWallet();
-                    gatewayBuilder = Gateway.createBuilder();
                     gatewayBuilder.identity(wallet, userName);
-                    gatewayBuilder.networkConfig(getNetworkConfigPath(tlsType));
-                    gatewayBuilder.commitTimeout(1, TimeUnit.MINUTES);
-                    if (tlsType.equals("discovery")) {
-                        gatewayBuilder.discovery(true);
-                    }
                 });
+
+	    Given("I have a gateway with identity User1 using the {word} connection profile",
+	            (String tlsType) -> {
+                    prepareGateway(tlsType);
+                    Identity identity = newOrg1UserIdentity();
+                    gatewayBuilder.identity(identity);
+	            });
 
         Given("I configure the gateway to use the default {word} commit handler",
                 (String handlerName) -> gatewayBuilder.commitHandler(DefaultCommitHandlers.valueOf(handlerName)));
@@ -592,6 +594,15 @@ public class ScenarioSteps implements En {
     private void populateWallet() throws IOException, CertificateException, InvalidKeyException {
         Identity identity = newOrg1UserIdentity();
         wallet.put("User1", identity);
+    }
+
+    private void prepareGateway(String tlsType) throws IOException {
+        gatewayBuilder = Gateway.createBuilder();
+        gatewayBuilder.networkConfig(getNetworkConfigPath(tlsType));
+        gatewayBuilder.commitTimeout(1, TimeUnit.MINUTES);
+        if (tlsType.equals("discovery")) {
+            gatewayBuilder.discovery(true);
+        }
     }
 
     private static Identity newOrg1UserIdentity() throws IOException, CertificateException, InvalidKeyException {

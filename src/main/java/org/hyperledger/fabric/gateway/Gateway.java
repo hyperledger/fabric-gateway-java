@@ -133,6 +133,14 @@ public interface Gateway extends AutoCloseable {
         Builder identity(Wallet wallet, String id) throws IOException;
 
         /**
+         * Specifies the identity that is to be used to connect to the network.  All operations
+         * under this gateway connection will be performed using this identity.
+         * @param identity An identity
+         * @return The builder instance, allowing multiple configuration options to be chained.
+         */
+        Builder identity(Identity identity);
+
+        /**
          * <em>Optional</em> - Allows an alternative commit handler to be specified. The commit handler defines how
          * client code should wait to receive commit events from peers following submit of a transaction.
          * <p>Default commit handler implementations are defined in {@link DefaultCommitHandlers}.</p>
