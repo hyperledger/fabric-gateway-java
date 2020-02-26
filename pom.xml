@@ -142,6 +142,8 @@
                         <showWarnings>true</showWarnings>
                         <compilerArgs>
                             <arg>-Xlint</arg>
+                            <!-- Disable command line warnings, seen when building against multiple releases: -->
+                            <arg>-Xlint:-options</arg>
                             <arg>-Werror</arg>
                         </compilerArgs>
                     </configuration>

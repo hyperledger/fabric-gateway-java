@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+# Pipeline-level keywords belong here
 trigger:
 - master
 
@@ -25,20 +26,51 @@ variables:
 - name: ORG_HYPERLEDGER_FABRIC_SDK_CHANNEL_GENESISBLOCK_WAIT_TIME
   value: '180000'
 
-steps:
-- script: scripts/pullFabricDockerImages.sh
-  displayName: Download Fabric Docker images
+# A Pipeline contains one or more stages
+# A stage is a related collection of jobs. By default stages run sequentially
+# A job is a collection of steps run by an agent or server
 
-- script: mvn clean install
-  displayName: Maven build
+stages:
+  - stage: SetupRunTests
+    displayName: Setup and Run Tests
+    jobs: 
+    - job: SetupRunTests
+      displayName: Setup and run tests on
+      strategy:
+        matrix:
+          Java8:
+            versionSpec: '1.8'
+          Java11:
+            versionSpec: '1.11'
+      steps:
+      - script: scripts/pullFabricDockerImages.sh
+        displayName: Download Fabric Docker images
+      - task: Maven@3
+        displayName: Maven build and run tests
+        inputs:
+          mavenPomFile: 'pom.xml'
+          goals: 'clean install'
+          javaHomeOption: 'JDKVersion'
+          jdkVersionOption: "$(versionSpec)" 
 
-- script: scripts/ci_scripts/publishJavaApiDocs.sh
-  condition: and(succeeded(), eq(variables['Build.Reason'], 'IndividualCI'))
-  displayName: 'Publish API documentation'
-  env:
-    GITHUB_USER: 'Hyperledger Bot'
-    GITHUB_EMAIL: 'hlfdev.azp@gmail.com'
-    PUBLISH_URL: "https://$(GITHUB-PAT)@github.com/hyperledger/fabric-gateway-java.git"
-    PROJECT_DIR: "$(Build.Repository.LocalPath)"
-    STAGING_DIR: "$(Build.StagingDirectory)/gh-pages"
-    SOURCE_BRANCH: "$(Build.SourceBranchName)"
+  - stage: PublishDocs
+    displayName: Publish API documentation
+    jobs:
+    - job: PublishDocs
+      displayName: Publish API documentation
+      condition: and(succeeded(), eq(variables['Build.Reason'], 'IndividualCI'))
+      steps:
+        - task: Maven@3
+          displayName: Maven compile
+          inputs:
+            mavenPomFile: 'pom.xml'
+            goals: 'clean install -DskipTests'
+        - script: scripts/ci_scripts/publishJavaApiDocs.sh
+          displayName: Publish API documentation
+          env:
+            GITHUB_USER: 'Hyperledger Bot'
+            GITHUB_EMAIL: 'hlfdev.azp@gmail.com'
+            PUBLISH_URL: "https://$(GITHUB-PAT)@github.com/hyperledger/fabric-gateway-java.git"
+            PROJECT_DIR: "$(Build.Repository.LocalPath)"
+            STAGING_DIR: "$(Build.StagingDirectory)/gh-pages"
+            SOURCE_BRANCH: "$(Build.SourceBranchName)"
