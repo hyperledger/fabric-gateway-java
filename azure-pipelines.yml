@@ -40,18 +40,22 @@ stages:
         matrix:
           Java8:
             versionSpec: '1.8'
+            sslProvider: 'openSSL'
           Java11:
             versionSpec: '1.11'
+            sslProvider: 'JDK'           
       steps:
       - script: scripts/pullFabricDockerImages.sh
         displayName: Download Fabric Docker images
       - task: Maven@3
         displayName: Maven build and run tests
+        env:
+          ORG_HYPERLEDGER_FABRIC_SDK_CONNECTIONS_SSL_SSLPROVIDER: '$(sslProvider)'
         inputs:
           mavenPomFile: 'pom.xml'
           goals: 'clean install'
           javaHomeOption: 'JDKVersion'
-          jdkVersionOption: "$(versionSpec)" 
+          jdkVersionOption: "$(versionSpec)"
 
   - stage: PublishDocs
     displayName: Publish API documentation
