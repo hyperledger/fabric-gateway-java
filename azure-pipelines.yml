@@ -31,11 +31,11 @@ variables:
 # A job is a collection of steps run by an agent or server
 
 stages:
-  - stage: SetupRunTests
-    displayName: Setup and Run Tests
+  - stage: RunTests
+    displayName: Run Tests
     jobs: 
-    - job: SetupRunTests
-      displayName: Setup and run tests on
+    - job: RunTests
+      displayName: Run tests on
       strategy:
         matrix:
           Java8:
@@ -45,8 +45,6 @@ stages:
             versionSpec: '1.11'
             sslProvider: 'JDK'           
       steps:
-      - script: scripts/pullFabricDockerImages.sh
-        displayName: Download Fabric Docker images
       - task: Maven@3
         displayName: Maven build and run tests
         env:
