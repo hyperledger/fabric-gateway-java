@@ -1,6 +1,7 @@
 .classpath
 .idea/
 .project
+.vscode/**
 .settings/
 target/
 src/test/fixtures/crypto-material/crypto-config/
