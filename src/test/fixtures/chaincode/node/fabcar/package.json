@@ -17,16 +17,8 @@
     "author": "Hyperledger",
     "license": "Apache-2.0",
     "dependencies": {
-        "fabric-contract-api": "unstable",
-        "fabric-shim": "unstable"
-    },
-    "devDependencies": {
-        "chai": "^4.1.2",
-        "eslint": "^4.19.1",
-        "mocha": "^5.2.0",
-        "nyc": "^14.1.1",
-        "sinon": "^6.0.0",
-        "sinon-chai": "^3.2.0"
+        "fabric-contract-api": "^2.0.0",
+        "fabric-shim": "^2.0.0"
     },
     "nyc": {
         "exclude": [

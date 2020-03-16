@@ -6,15 +6,13 @@
 
 package org.hyperledger.fabric.gateway.impl.commit;
 
+import java.util.Arrays;
+import java.util.Collection;
+
 import org.hyperledger.fabric.gateway.TestUtils;
-import org.hyperledger.fabric.gateway.impl.commit.AllCommitStrategy;
-import org.hyperledger.fabric.gateway.impl.commit.CommitStrategy;
 import org.hyperledger.fabric.sdk.Peer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.Arrays;
-import java.util.Collection;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

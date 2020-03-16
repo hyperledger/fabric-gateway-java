@@ -41,6 +41,7 @@ import javax.json.JsonReader;
 import javax.json.JsonString;
 
 import io.cucumber.datatable.DataTable;
+import io.cucumber.docstring.DocString;
 import io.cucumber.java8.En;
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.ContractEvent;
@@ -49,7 +50,6 @@ import org.hyperledger.fabric.gateway.DefaultCheckpointers;
 import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
 import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
 import org.hyperledger.fabric.gateway.Gateway;
-import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Identities;
 import org.hyperledger.fabric.gateway.Identity;
 import org.hyperledger.fabric.gateway.Network;
@@ -70,7 +70,11 @@ public class ScenarioSteps implements En {
     private static final long EVENT_TIMEOUT_SECONDS = 30;
     private static final Set<String> runningChaincodes = new HashSet<>();
     private static boolean channelsJoined = false;
-    private static String COUCHDB_SERVER_URL = "http://localhost:5984";
+    private static final String COUCHDB_SERVER_URL = "http://localhost:5984";
+    private static final String DOCKER_COMPOSE_TLS_FILE = "docker-compose-tls.yaml";
+    private static final String DOCKER_COMPOSE_FILE = "docker-compose.yaml";
+    private static final Path DOCKER_COMPOSE_DIR = Paths.get("src", "test", "fixtures", "docker-compose").toAbsolutePath();
+
 
     private String fabricNetworkType;
     private Gateway.Builder gatewayBuilder;
@@ -178,12 +182,12 @@ public class ScenarioSteps implements En {
                     gatewayBuilder.identity(wallet, userName);
                 });
 
-	    Given("I have a gateway with identity User1 using the {word} connection profile",
-	            (String tlsType) -> {
+        Given("I have a gateway with identity User1 using the {word} connection profile",
+                (String tlsType) -> {
                     prepareGateway(tlsType);
                     Identity identity = newOrg1UserIdentity();
                     gatewayBuilder.identity(identity);
-	            });
+                });
 
         Given("I configure the gateway to use the default {word} commit handler",
                 (String handlerName) -> gatewayBuilder.commitHandler(DefaultCommitHandlers.valueOf(handlerName)));
@@ -293,11 +297,6 @@ public class ScenarioSteps implements En {
                     Thread.sleep(60000);
                 });
 
-        Given("I update channel with name {word} with config file {string} from the {word} connection profile",
-                (String channelName, String txFileName, String tlsType) -> {
-                    throw new cucumber.api.PendingException();
-                });
-
         Given("I use the {word} network", (String networkName) -> network = gateway.getNetwork(networkName));
 
         Given("I use the {word} contract", (String contractName) -> contract = network.getContract(contractName));
@@ -393,8 +392,8 @@ public class ScenarioSteps implements En {
         Then("the response should match {}",
                 (String expected) -> assertThat(transactionInvocation.getResponse()).isEqualTo(expected));
 
-        Then("the response should be JSON matching", (String expected) -> {
-            try (JsonReader expectedReader = createJsonReader(expected);
+        Then("the response should be JSON matching", (DocString expected) -> {
+            try (JsonReader expectedReader = createJsonReader(expected.getContent());
                  JsonReader actualReader = createJsonReader(transactionInvocation.getResponse())) {
                 JsonObject expectedObject = expectedReader.readObject();
                 JsonObject actualObject = actualReader.readObject();
@@ -549,22 +548,23 @@ public class ScenarioSteps implements En {
         int exitCode = process.waitFor();
 
         // get STDERR for the process and print it
-        InputStream errorStream = process.getErrorStream();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream))) {
+        try (InputStream errorStream = process.getErrorStream();
+             BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream))) {
             for (String line; (line = reader.readLine()) != null; ) {
                 System.err.println(line);
                 sb.append(line);
             }
         }
 
-        // get STDERR for the process and print it
-        InputStream inputStream = process.getInputStream();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+        // get STDOUT for the process and print it
+        try (InputStream inputStream = process.getInputStream();
+             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
             for (String line; (line = reader.readLine()) != null;) {
                 System.out.println(line);
                 sb.append(line);
             }
         }
+
 
         assertThat(exitCode)
                 .withFailMessage("Failed to execute command: %s",commandString)
@@ -574,16 +574,14 @@ public class ScenarioSteps implements En {
 
     static void startFabric(boolean tls) throws Exception {
         createCryptoMaterial();
-        String yaml = tls ? "docker-compose-tls.yaml" : "docker-compose.yaml";
-        String dockerComposeFile = Paths.get("src", "test", "fixtures", "docker-compose", yaml).toString();
-        exec("docker-compose", "-f", dockerComposeFile, "-p", "node", "up", "-d");
+        String dockerComposeFile = tls ? DOCKER_COMPOSE_TLS_FILE : DOCKER_COMPOSE_FILE;
+        exec(DOCKER_COMPOSE_DIR, "docker-compose", "-f", dockerComposeFile, "-p", "node", "up", "-d");
         Thread.sleep(10000);
     }
 
     static void stopFabric(boolean tls) throws Exception {
-        String yaml = tls ? "docker-compose-tls.yaml" : "docker-compose.yaml";
-        Path dockerCompose = Paths.get("src", "test", "fixtures", "docker-compose", yaml);
-        exec("docker-compose", "-f", dockerCompose.toAbsolutePath().toString(), "-p", "node", "down");
+        String dockerComposeFile = tls ? DOCKER_COMPOSE_TLS_FILE : DOCKER_COMPOSE_FILE;
+        exec(DOCKER_COMPOSE_DIR, "docker-compose", "-f", dockerComposeFile, "-p", "node", "down");
     }
 
     private static void createCryptoMaterial() throws Exception {
