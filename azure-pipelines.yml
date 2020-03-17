@@ -6,6 +6,9 @@
 trigger:
 - release-1.4
 
+pr:
+  - release-1.4
+
 pool:
   vmImage: 'ubuntu-18.04'
 
