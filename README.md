@@ -95,6 +95,15 @@ The following table shows versions of Fabric, Java and other dependencies that a
 | **Java** | 8, 11 | 8+ |
 | **Platform** | Ubuntu 18.04 | |
 
+#### Client applications running on POWER architecture
+To run Java SDK clients on IBM POWER systems (e.g. zLinux), use Java 11 and set the SSL provider to ‘JDK’ by either supplying the -D command line option:
+
+```-Dorg.hyperledger.fabric.sdk.connections.ssl.sslProvider=JDK```
+
+or with the environment variable set as follows:
+
+```ORG_HYPERLEDGER_FABRIC_SDK_CONNECTIONS_SSL_SSLPROVIDER=JDK```
+
 ## Building and testing
 
 ```commandline
