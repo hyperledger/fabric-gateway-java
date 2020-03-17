@@ -92,7 +92,7 @@ The following table shows versions of Fabric, Java and other dependencies that a
 |     | Tested | Supported |
 | --- | ------ | --------- |
 | **Fabric** | 2.0 | 2.0.x |
-| **Java** | 8 | 8+ |
+| **Java** | 8, 11 | 8+ |
 | **Platform** | Ubuntu 18.04 | |
 
 ## Building and testing
