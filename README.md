@@ -87,11 +87,11 @@ implementation 'org.hyperledger.fabric:fabric-gateway-java:2.1.0'
 
 ### Compatibility
 
-The following table shows versions of Fabric, Java and other dependencies that are explicitly tested and that are supported for use with version 2.0 of the Fabric Gateway SDK. Refer to the appropriate GitHub branch for compatibility of other release versions.
+The following table shows versions of Fabric, Java and other dependencies that are explicitly tested and that are supported for use with version 2.x of the Fabric Gateway SDK. Refer to the appropriate GitHub branch for compatibility of other release versions.
 
 |     | Tested | Supported |
 | --- | ------ | --------- |
-| **Fabric** | 2.0 | 2.0.x |
+| **Fabric** | 2.1 | 2.0.x |
 | **Java** | 8, 11 | 8+ |
 | **Platform** | Ubuntu 18.04 | |
 
