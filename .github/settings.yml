@@ -1,0 +1,14 @@
+repository:
+  name: fabric-gateway-java
+  description: Hyperledger Fabric Gateway SDK for Java https://wiki.hyperledger.org/display/fabric
+  homepage: https://hyperledger.github.io/fabric-gateway-java/
+  default_branch: master
+  has_downloads: true
+  has_issues: false
+  has_projects: false
+  has_wiki: false
+  archived: false
+  private: false
+  allow_squash_merge: true
+  allow_merge_commit: false
+  allow_rebase_merge: true
