@@ -7,7 +7,7 @@
 
     <groupId>org.hyperledger.fabric</groupId>
     <artifactId>fabric-gateway-java</artifactId>
-    <version>2.0.0</version>
+    <version>2.1.0</version>
     <packaging>jar</packaging>
 
     <name>fabric-gateway-java</name>
@@ -86,7 +86,7 @@
         <dependency>
             <groupId>org.hyperledger.fabric-sdk-java</groupId>
             <artifactId>fabric-sdk-java</artifactId>
-            <version>2.0.0</version>
+            <version>2.1.0</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
