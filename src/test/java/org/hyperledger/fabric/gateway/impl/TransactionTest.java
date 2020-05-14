@@ -11,20 +11,29 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.ContractException;
+import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
+import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.TestUtils;
+import org.hyperledger.fabric.gateway.Transaction;
 import org.hyperledger.fabric.gateway.spi.CommitHandler;
+import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.ProposalResponse;
+import org.hyperledger.fabric.sdk.QueryByChaincodeRequest;
 import org.hyperledger.fabric.sdk.TransactionProposalRequest;
+import org.hyperledger.fabric.sdk.TransactionRequest;
+import org.hyperledger.fabric.sdk.User;
+import org.hyperledger.fabric.sdk.transaction.TransactionContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,6 +50,7 @@ import static org.mockito.Mockito.anyCollection;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -51,6 +61,7 @@ public class TransactionTest {
     private Gateway gateway;
     private Channel channel;
     private Contract contract;
+    private CommitHandlerFactory defaultCommithandlerFactory;
     private CommitHandler commitHandler;
     private Peer peer1;
     private Peer peer2;
@@ -63,6 +74,8 @@ public class TransactionTest {
     private ArgumentCaptor<Collection<Peer>> peerCaptor;
     @Captor
     private ArgumentCaptor<Channel.DiscoveryOptions> discoveryOptionsCaptor;
+    @Captor
+    private ArgumentCaptor<TransactionProposalRequest> proposalRequestCaptor;
 
     @BeforeEach
     public void setup() throws Exception {
@@ -78,13 +91,18 @@ public class TransactionTest {
 
         HFClient client = testUtils.newMockClient();
         when(client.getChannel(anyString())).thenReturn(channel);
-        when(client.newTransactionProposalRequest()).thenReturn(HFClient.createNewInstance().newTransactionProposalRequest());
-        when(client.newQueryProposalRequest()).thenReturn(HFClient.createNewInstance().newQueryProposalRequest());
 
         commitHandler = mock(CommitHandler.class);
+        defaultCommithandlerFactory = spy(new CommitHandlerFactory() {
+            @Override
+            public CommitHandler create(final String transactionId, final Network network) {
+                return commitHandler;
+            }
+        });
+
         gatewayBuilder = TestUtils.getInstance().newGatewayBuilder()
                 .client(client)
-                .commitHandler((transactionId, network) -> commitHandler)
+                .commitHandler(defaultCommithandlerFactory)
                 .commitTimeout(timeout.getTime(), timeout.getTimeUnit());
         gateway = gatewayBuilder.connect();
         contract = gateway.getNetwork("network").getContract("contract");
@@ -129,7 +147,7 @@ public class TransactionTest {
     @Test
     public void testEvaluateSuccess() throws Exception {
         String expected = "successful result";
-        ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
+        ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected);
         when(response.getPeer()).thenReturn(peer1);
         when(channel.queryByChaincode(any(), anyCollection())).thenReturn(Collections.singletonList(response));
 
@@ -140,7 +158,7 @@ public class TransactionTest {
     @Test
     public void testEvaluateSuccessWithTransient() throws Exception {
         String expected = "successful result";
-        ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
+        ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected);
         when(response.getPeer()).thenReturn(peer1);
         when(channel.queryByChaincode(any(), anyCollection())).thenReturn(Collections.singletonList(response));
 
@@ -175,7 +193,7 @@ public class TransactionTest {
     @Test
     public void testSubmitSuccess() throws Exception {
         String expected = "successful result";
-        ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
+        ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected);
         when(channel.sendTransactionProposal(any())).thenReturn(Collections.singletonList(response));
 
         byte[] result = contract.submitTransaction("txn", "arg1");
@@ -185,7 +203,7 @@ public class TransactionTest {
     @Test
     public void testSubmitSuccessWithTransient() throws Exception {
         String expected = "successful result";
-        ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
+        ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected);
         when(channel.sendTransactionProposal(any())).thenReturn(Collections.singletonList(response));
 
         byte[] result = contract.createTransaction("txn")
@@ -196,8 +214,7 @@ public class TransactionTest {
 
     @Test
     public void testUsesGatewayCommitTimeout() throws Exception {
-        String expected = "successful result";
-        ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
+        ProposalResponse response = testUtils.newSuccessfulProposalResponse();
         when(channel.sendTransactionProposal(any())).thenReturn(Collections.singletonList(response));
 
         contract.submitTransaction("txn", "arg1");
@@ -207,8 +224,7 @@ public class TransactionTest {
 
     @Test
     public void testSubmitSuccessWithSomeBadProposalResponses() throws Exception {
-        String expected = "successful result";
-        ProposalResponse goodResponse = testUtils.newSuccessfulProposalResponse(expected.getBytes());
+        ProposalResponse goodResponse = testUtils.newSuccessfulProposalResponse();
         when(channel.sendTransactionProposal(any())).thenReturn(Arrays.asList(failureResponse, goodResponse));
 
         contract.submitTransaction("txn", "arg1");
@@ -219,8 +235,7 @@ public class TransactionTest {
 
     @Test
     public void testSubmitWithEndorsingPeers() throws Exception {
-        String expected = "successful result";
-        ProposalResponse goodResponse = testUtils.newSuccessfulProposalResponse(expected.getBytes());
+        ProposalResponse goodResponse = testUtils.newSuccessfulProposalResponse();
         when(channel.sendTransactionProposal(any(TransactionProposalRequest.class), anyCollection()))
                 .thenReturn(Collections.singletonList(goodResponse));
 
@@ -235,7 +250,7 @@ public class TransactionTest {
     @Test
     public void submit_using_discovery_sets_inspect_results_option() throws Exception {
         String expected = "successful result";
-        ProposalResponse goodResponse = testUtils.newSuccessfulProposalResponse(expected.getBytes());
+        ProposalResponse goodResponse = testUtils.newSuccessfulProposalResponse(expected);
         when(channel.sendTransactionProposalToEndorsers(any(TransactionProposalRequest.class), any(Channel.DiscoveryOptions.class)))
                 .thenReturn(Collections.singletonList(goodResponse));
         gateway = gatewayBuilder
@@ -252,8 +267,7 @@ public class TransactionTest {
 
     @Test
     public void commit_failure_throws_ContractException_with_proposal_responses() throws Exception {
-        String expected = "successful result";
-        ProposalResponse response = testUtils.newSuccessfulProposalResponse(expected.getBytes());
+        ProposalResponse response = testUtils.newSuccessfulProposalResponse();
         when(channel.sendTransactionProposal(any())).thenReturn(Collections.singletonList(response));
         ContractException commitException = new ContractException("Commit failed");
         doThrow(commitException).when(commitHandler).waitForEvents(anyLong(), any(TimeUnit.class));
@@ -263,5 +277,56 @@ public class TransactionTest {
                 ContractException.class);
 
         assertThat(e.getProposalResponses()).containsExactly(response);
+    }
+
+    @Test
+    public void get_transaction_ID() {
+        String transactionId = contract.createTransaction("txn").getTransactionId();
+
+        assertThat(transactionId).isNotEmpty();
+    }
+
+    @Test
+    public void submit_proposal_includes_transaction_ID() throws Exception {
+        ProposalResponse response = testUtils.newSuccessfulProposalResponse();
+        when(channel.sendTransactionProposal(any())).thenReturn(Collections.singletonList(response));
+
+        Transaction transaction = contract.createTransaction("txn");
+        String expected = transaction.getTransactionId();
+        transaction.submit();
+
+        verify(channel).sendTransactionProposal(proposalRequestCaptor.capture());
+        Optional<TransactionContext> actual = proposalRequestCaptor.getValue().getTransactionContext();
+        assertThat(actual).hasValueSatisfying(context -> {
+           assertThat(context.getTxID()).isEqualTo(expected);
+        });
+    }
+
+    @Test
+    public void submit_uses_default_commit_handler() throws Exception {
+        ProposalResponse response = testUtils.newSuccessfulProposalResponse();
+        when(channel.sendTransactionProposal(any())).thenReturn(Collections.singletonList(response));
+
+        contract.submitTransaction("txn");
+
+        verify(defaultCommithandlerFactory).create(anyString(), any(Network.class));
+    }
+
+    @Test
+    public void submit_uses_specified_commit_handler() throws Exception {
+        CommitHandlerFactory commitHandlerFactory = spy(new CommitHandlerFactory() {
+            @Override
+            public CommitHandler create(final String transactionId, final Network network) {
+                return commitHandler;
+            }
+        });
+        ProposalResponse response = testUtils.newSuccessfulProposalResponse();
+        when(channel.sendTransactionProposal(any())).thenReturn(Collections.singletonList(response));
+
+        contract.createTransaction("txn")
+                .setCommitHandler(commitHandlerFactory)
+                .submit();
+
+        verify(commitHandlerFactory).create(anyString(), any(Network.class));
     }
 }
