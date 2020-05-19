@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
 import org.hyperledger.fabric.sdk.Peer;
 
 /**
@@ -32,6 +33,17 @@ public interface Transaction {
     String getName();
 
     /**
+     * Get the transaction ID that will be used when submitting this transaction. This can be useful for:
+     * <ul>
+     *     <li>Asynchronously listening for commit events for this transaction when using the
+     *     {@link DefaultCommitHandlers#NONE} commit handler.</li>
+     *     <li>Correlating client application operations with activity in Fabric peers and orderers.</li>
+     * </ul>
+     * @return A transaction ID.
+     */
+    String getTransactionId();
+
+    /**
      * Set transient data that will be passed to the transaction function
      * but will not be stored on the ledger. This can be used to pass
      * private data to a transaction function.
@@ -48,6 +60,14 @@ public interface Transaction {
      * @return this transaction object to allow method chaining.
      */
     Transaction setCommitTimeout(long timeout, TimeUnit timeUnit);
+
+    /**
+     * Set the commit handler to use for this transaction invocation instead of the default handler configured for the
+     * gateway.
+     * @param commitHandler A commit handler implementation.
+     * @return this transaction object to allow method chaining.
+     */
+    Transaction setCommitHandler(CommitHandlerFactory commitHandler);
 
     /**
      * Set the peers that should be used for endorsement of transaction submitted to the ledger using

@@ -13,16 +13,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileAttribute;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.cert.CertificateException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import org.bouncycastle.operator.OperatorCreationException;
 import org.hyperledger.fabric.gateway.impl.GatewayImpl;
 import org.hyperledger.fabric.gateway.impl.identity.GatewayUser;
 import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
@@ -34,10 +31,13 @@ import org.hyperledger.fabric.sdk.Enrollment;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.ProposalResponse;
+import org.hyperledger.fabric.sdk.QueryByChaincodeRequest;
+import org.hyperledger.fabric.sdk.TransactionProposalRequest;
 import org.hyperledger.fabric.sdk.User;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ServiceDiscoveryException;
 import org.hyperledger.fabric.sdk.identity.X509Enrollment;
+import org.hyperledger.fabric.sdk.transaction.TransactionContext;
 import org.mockito.Mockito;
 
 public final class TestUtils {
@@ -45,6 +45,8 @@ public final class TestUtils {
     private static final String TEST_FILE_PREFIX = "fgj-test-";
     private static final String UNUSED_FILE_PREFIX = "fgj-unused-";
     private static final Path NETWORK_CONFIG_PATH = Paths.get("src", "test", "java", "org", "hyperledger", "fabric", "gateway", "connection.json");
+
+    private final AtomicLong currentTransactionId = new AtomicLong();
 
     public static TestUtils getInstance() {
         return INSTANCE;
@@ -79,6 +81,8 @@ public final class TestUtils {
 
         HFClient mockClient = Mockito.mock(HFClient.class);
         Mockito.when(mockClient.getUserContext()).thenReturn(user);
+        Mockito.when(mockClient.newTransactionProposalRequest()).thenReturn(TransactionProposalRequest.newInstance(user));
+        Mockito.when(mockClient.newQueryProposalRequest()).thenReturn(QueryByChaincodeRequest.newInstance(user));
 
         return mockClient;
     }
@@ -100,6 +104,8 @@ public final class TestUtils {
     public Channel newMockChannel(String name) {
         Channel mockChannel = Mockito.mock(Channel.class);
         Mockito.when(mockChannel.getName()).thenReturn(name);
+        Mockito.when(mockChannel.newTransactionContext())
+                .thenAnswer(invocation -> newMockTransactionContext());
 
         AtomicReference<Channel.SDPeerAddition> sdPeerAdditionRef = new AtomicReference<>(newMockSDPeerAddition());
         Mockito.when(mockChannel.getSDPeerAddition())
@@ -108,6 +114,16 @@ public final class TestUtils {
                 .thenAnswer(invocation -> sdPeerAdditionRef.getAndSet(invocation.getArgument(0)));
 
         return mockChannel;
+    }
+
+    private TransactionContext newMockTransactionContext() {
+        TransactionContext mockContext = Mockito.mock(TransactionContext.class);
+        Mockito.when(mockContext.getTxID()).thenReturn(newFakeTransactionId());
+        return mockContext;
+    }
+
+    private String newFakeTransactionId() {
+        return Long.toHexString(currentTransactionId.incrementAndGet());
     }
 
     private Channel.SDPeerAddition newMockSDPeerAddition() {
@@ -164,6 +180,14 @@ public final class TestUtils {
                 return null;
             }
         };
+    }
+
+    public ProposalResponse newSuccessfulProposalResponse() {
+        return newSuccessfulProposalResponse(new byte[0]);
+    }
+
+    public ProposalResponse newSuccessfulProposalResponse(String responsePayload) {
+        return newSuccessfulProposalResponse(responsePayload.getBytes());
     }
 
     public ProposalResponse newSuccessfulProposalResponse(byte[] responsePayload) {

@@ -33,6 +33,7 @@ import org.hyperledger.fabric.sdk.TransactionRequest;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
 import org.hyperledger.fabric.sdk.exception.ServiceDiscoveryException;
+import org.hyperledger.fabric.sdk.transaction.TransactionContext;
 
 import static org.hyperledger.fabric.sdk.Channel.DiscoveryOptions.createDiscoveryOptions;
 
@@ -47,11 +48,12 @@ public final class TransactionImpl implements Transaction {
     private final NetworkImpl network;
     private final Channel channel;
     private final GatewayImpl gateway;
-    private final CommitHandlerFactory commitHandlerFactory;
+    private CommitHandlerFactory commitHandlerFactory;
     private TimePeriod commitTimeout;
     private final QueryHandler queryHandler;
     private Map<String, byte[]> transientData = null;
     private Collection<Peer> endorsingPeers = null;
+    private final TransactionContext transactionContext;
 
     TransactionImpl(final ContractImpl contract, final String name) {
         this.contract = contract;
@@ -62,11 +64,17 @@ public final class TransactionImpl implements Transaction {
         commitHandlerFactory = gateway.getCommitHandlerFactory();
         commitTimeout = gateway.getCommitTimeout();
         queryHandler = network.getQueryHandler();
+        transactionContext = channel.newTransactionContext();
     }
 
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public String getTransactionId() {
+        return transactionContext.getTxID();
     }
 
     @Override
@@ -78,6 +86,12 @@ public final class TransactionImpl implements Transaction {
     @Override
     public Transaction setCommitTimeout(final long timeout, final TimeUnit timeUnit) {
         commitTimeout = new TimePeriod(timeout, timeUnit);
+        return this;
+    }
+
+    @Override
+    public Transaction setCommitHandler(final CommitHandlerFactory commitHandler) {
+        commitHandlerFactory = commitHandler;
         return this;
     }
 
@@ -116,8 +130,7 @@ public final class TransactionImpl implements Transaction {
         } else if (network.getGateway().isDiscoveryEnabled()) {
             Channel.DiscoveryOptions discoveryOptions = createDiscoveryOptions()
                     .setEndorsementSelector(ServiceDiscovery.EndorsementSelector.ENDORSEMENT_SELECTION_RANDOM)
-                    .setInspectResults(true)
-                    .setForceDiscovery(true);
+                    .setInspectResults(true);
             return channel.sendTransactionProposalToEndorsers(request, discoveryOptions);
         } else {
             return channel.sendTransactionProposal(request);
@@ -127,9 +140,8 @@ public final class TransactionImpl implements Transaction {
     private byte[] commitTransaction(final Collection<ProposalResponse> validResponses)
             throws TimeoutException, ContractException, InterruptedException {
         ProposalResponse proposalResponse = validResponses.iterator().next();
-        String transactionId = proposalResponse.getTransactionID();
 
-        CommitHandler commitHandler = commitHandlerFactory.create(transactionId, network);
+        CommitHandler commitHandler = commitHandlerFactory.create(getTransactionId(), network);
         commitHandler.startListening();
 
         try {
@@ -172,6 +184,7 @@ public final class TransactionImpl implements Transaction {
         request.setChaincodeName(contract.getChaincodeId());
         request.setFcn(name);
         request.setArgs(args);
+        request.setTransactionContext(transactionContext);
     }
 
     private Collection<ProposalResponse> validatePeerResponses(final Collection<ProposalResponse> proposalResponses)
