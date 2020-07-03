@@ -95,7 +95,7 @@ public final class GatewayImpl implements Gateway {
                     bufferedStream.reset();
                     ccp = NetworkConfig.fromYamlStream(bufferedStream);
                 }
-            } catch (InvalidArgumentException | NetworkConfigurationException e) {
+            } catch (NetworkConfigurationException e) {
                 throw new IOException(e);
             }
             return this;
