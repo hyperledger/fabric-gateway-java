@@ -70,7 +70,7 @@ public class ScenarioSteps implements En {
     private static final long EVENT_TIMEOUT_SECONDS = 30;
     private static final Set<String> runningChaincodes = new HashSet<>();
     private static boolean channelsJoined = false;
-    private static final String COUCHDB_SERVER_URL = "http://localhost:5984";
+    private static final String COUCHDB_SERVER_URL = "http://admin:adminpw@localhost:5984";
     private static final String DOCKER_COMPOSE_TLS_FILE = "docker-compose-tls.yaml";
     private static final String DOCKER_COMPOSE_FILE = "docker-compose.yaml";
     private static final Path DOCKER_COMPOSE_DIR = Paths.get("src", "test", "fixtures", "docker-compose").toAbsolutePath();
