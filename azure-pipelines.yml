@@ -3,6 +3,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Pipeline-level keywords belong here
+schedules:
+  - cron: "0 0 * * *" # https://crontab.guru/#0_0_*_*_*
+    displayName: "Daily midnight build"
+    branches:
+      include:
+        - master
+    always: true
+
 trigger:
   - master
 
