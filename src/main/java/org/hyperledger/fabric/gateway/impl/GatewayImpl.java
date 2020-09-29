@@ -64,9 +64,9 @@ public final class GatewayImpl implements Gateway {
     private final boolean discovery;
 
     public static final class Builder implements Gateway.Builder {
-        private CommitHandlerFactory commitHandlerFactory = DefaultCommitHandlers.MSPID_SCOPE_ALLFORTX;
+        private CommitHandlerFactory commitHandlerFactory = DefaultCommitHandlers.PREFER_MSPID_SCOPE_ALLFORTX;
         private TimePeriod commitTimeout = new TimePeriod(DEFAULT_COMMIT_TIMEOUT, DEFAULT_COMMIT_TIMEOUT_UNIT);
-        private QueryHandlerFactory queryHandlerFactory = DefaultQueryHandlers.MSPID_SCOPE_SINGLE;
+        private QueryHandlerFactory queryHandlerFactory = DefaultQueryHandlers.PREFER_MSPID_SCOPE_SINGLE;
         private NetworkConfig ccp = null;
         private Identity identity = null;
         private HFClient client;

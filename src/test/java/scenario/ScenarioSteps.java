@@ -465,6 +465,8 @@ public class ScenarioSteps implements En {
                 return networkConfigDir.resolve("connection-discovery.json");
             case "basic":
                 return networkConfigDir.resolve("connection.json");
+            case "client-only":
+                return networkConfigDir.resolve("connection-client-only.json");
             default:
                 throw new IllegalArgumentException("Unknown network configuration type: " + configType);
         }

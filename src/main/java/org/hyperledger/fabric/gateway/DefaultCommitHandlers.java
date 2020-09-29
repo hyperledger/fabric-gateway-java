@@ -49,6 +49,20 @@ public enum DefaultCommitHandlers implements CommitHandlerFactory {
     }),
 
     /**
+     * Wait to receive commit events from all currently responding peers in the user's organization after submitting
+     * a transaction. If the user's organization has no peers, then wait to receive commit events from all currently
+     * responding peers in the network instead.
+     */
+    PREFER_MSPID_SCOPE_ALLFORTX((transactionId, network) -> {
+        Collection<Peer> peers = getEventSourcePeersForOrganization(network);
+        if (peers.isEmpty()) {
+            peers = getEventSourcePeers(network);
+        }
+        CommitStrategy strategy = new AllCommitStrategy(peers);
+        return new CommitHandlerImpl(transactionId, network, strategy);
+    }),
+
+    /**
      * Wait to receive a commit event from any currently responding peer in the user's organization after submitting
      * a transaction.
      */
@@ -63,6 +77,20 @@ public enum DefaultCommitHandlers implements CommitHandlerFactory {
      */
     NETWORK_SCOPE_ANYFORTX((transactionId, network) -> {
         Collection<Peer> peers = getEventSourcePeers(network);
+        CommitStrategy strategy = new AnyCommitStrategy(peers);
+        return new CommitHandlerImpl(transactionId, network, strategy);
+    }),
+
+    /**
+     * Wait to receive a commit event from any currently responding peer in the user's organization after submitting
+     * a transaction. If the user's organization has no peers, then wait to receive a commit event from any currently
+     * responding peer in the network.
+     */
+    PREFER_MSPID_SCOPE_ANYFORTX((transactionId, network) -> {
+        Collection<Peer> peers = getEventSourcePeersForOrganization(network);
+        if (peers.isEmpty()) {
+            peers = getEventSourcePeers(network);
+        }
         CommitStrategy strategy = new AnyCommitStrategy(peers);
         return new CommitHandlerImpl(transactionId, network, strategy);
     });
