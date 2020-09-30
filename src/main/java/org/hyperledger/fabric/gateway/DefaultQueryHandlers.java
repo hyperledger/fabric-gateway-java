@@ -37,6 +37,32 @@ public enum DefaultQueryHandlers implements QueryHandlerFactory {
     MSPID_SCOPE_ROUND_ROBIN(network -> {
         Collection<Peer> peers = getChaincodeQueryPeersForOrganization(network);
         return new RoundRobinQueryHandler(peers);
+    }),
+
+    /**
+     * The last peer that provided a successful response is used. If a peer fails then all other peers will be tried
+     * in turn until one provides a successful response. If no peers respond then an exception is thrown. If the user's
+     * organization has no peers, then all peers in the network will be used.
+     */
+    PREFER_MSPID_SCOPE_SINGLE(network -> {
+        Collection<Peer> peers = getChaincodeQueryPeersForOrganization(network);
+        if (peers.isEmpty()) {
+            peers = getChaincodeQueryPeers(network);
+        }
+        return new SingleQueryHandler(peers);
+    }),
+
+    /**
+     * For each subsequent query, the next peer in the list is used. If a peer fails then all other peers will be tried
+     * in turn until one provides a successful response. If no peers respond then an exception is thrown. If the user's
+     * organization has no peers, then all peers in the network will be used.
+     */
+    PREFER_MSPID_SCOPE_ROUND_ROBIN(network -> {
+        Collection<Peer> peers = getChaincodeQueryPeersForOrganization(network);
+        if (peers.isEmpty()) {
+            peers = getChaincodeQueryPeers(network);
+        }
+        return new RoundRobinQueryHandler(peers);
     });
 
     private static final EnumSet<Peer.PeerRole> QUERY_ROLES = EnumSet.of(Peer.PeerRole.CHAINCODE_QUERY);
