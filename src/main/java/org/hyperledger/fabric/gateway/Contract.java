@@ -29,7 +29,7 @@ import org.hyperledger.fabric.gateway.spi.Checkpointer;
  * <p>If more control over transaction invocation is required, such as including transient data, {@link #createTransaction(String)}
  * can be used to build a transaction request that is submitted to or evaluated by the smart contract.</p>
  *
- * @see <a href="https://hyperledger-fabric.readthedocs.io/en/release-1.4/developapps/application.html#construct-request">Developing Fabric Applications - Construct request</a>
+ * @see <a href="https://hyperledger-fabric.readthedocs.io/en/release-2.2/developapps/application.html#construct-request">Developing Fabric Applications - Construct request</a>
  */
 public interface Contract {
     /**
@@ -78,15 +78,15 @@ public interface Contract {
     byte[] evaluateTransaction(String name, String... args) throws ContractException;
 
     /**
-     * Add a listener to receive all contract events emitted by transactions.
+     * Add a listener to receive all contract events emitted by committed transactions.
      * @param listener A contract listener.
      * @return The contract listener argument.
      */
     Consumer<ContractEvent> addContractListener(Consumer<ContractEvent> listener);
 
     /**
-     * Add a listener to receive contract events emitted by transactions. The listener is only notified of events
-     * with exactly the given name.
+     * Add a listener to receive contract events emitted by committed transactions. The listener is only notified of
+     * events with exactly the given name.
      * @param listener A contract listener.
      * @param eventName Event name.
      * @return The contract listener argument.
@@ -94,8 +94,8 @@ public interface Contract {
     Consumer<ContractEvent> addContractListener(Consumer<ContractEvent> listener, String eventName);
 
     /**
-     * Add a listener to receive contract events emitted by transactions. The listener is only notified of events
-     * with names that entirely match the given pattern.
+     * Add a listener to receive contract events emitted by committed transactions. The listener is only notified of
+     * events with names that entirely match the given pattern.
      * @param listener A contract listener.
      * @param eventNamePattern Event name pattern.
      * @return The contract listener argument.
@@ -103,9 +103,9 @@ public interface Contract {
     Consumer<ContractEvent> addContractListener(Consumer<ContractEvent> listener, Pattern eventNamePattern);
 
     /**
-     * Add a listener to receive all contract events emitted by transactions with checkpointing. Re-adding a listener
-     * with the same checkpointer on subsequent application invocations will resume listening from the previous block
-     * and transaction position.
+     * Add a listener to receive all contract events emitted by committed transactions with checkpointing. Re-adding a
+     * listener with the same checkpointer on subsequent application invocations will resume listening from the previous
+     * block and transaction position.
      * @param checkpointer Checkpointer to persist block and transaction position.
      * @param listener A contract listener.
      * @return The contract listener argument.
@@ -115,8 +115,8 @@ public interface Contract {
     Consumer<ContractEvent> addContractListener(Checkpointer checkpointer, Consumer<ContractEvent> listener) throws IOException;
 
     /**
-     * Add a listener to receive contract events emitted by transactions with checkpointing. The listener is only
-     * notified of events with names that exactly match the given pattern. Re-adding a listener with the same
+     * Add a listener to receive contract events emitted by committed transactions with checkpointing. The listener is
+     * only notified of events with names that exactly match the given pattern. Re-adding a listener with the same
      * checkpointer on subsequent application invocations will resume listening from the previous block and transaction
      * position.
      * @param checkpointer Checkpointer to persist block and transaction position.
@@ -129,8 +129,8 @@ public interface Contract {
     Consumer<ContractEvent> addContractListener(Checkpointer checkpointer, Consumer<ContractEvent> listener, String eventName) throws IOException;
 
     /**
-     * Add a listener to receive contract events emitted by transactions with checkpointing. The listener is only
-     * notified of events with names that entirely match the given pattern. Re-adding a listener with the same
+     * Add a listener to receive contract events emitted by committed transactions with checkpointing. The listener is
+     * only notified of events with names that entirely match the given pattern. Re-adding a listener with the same
      * checkpointer on subsequent application invocations will resume listening from the previous block and transaction
      * position.
      * @param checkpointer Checkpointer to persist block and transaction position.
@@ -143,7 +143,7 @@ public interface Contract {
     Consumer<ContractEvent> addContractListener(Checkpointer checkpointer, Consumer<ContractEvent> listener, Pattern eventNamePattern) throws IOException;
 
     /**
-     * Add a listener to replay contract events emitted by transactions.
+     * Add a listener to replay contract events emitted by committed transactions.
      * @param startBlock The number of the block from which events should be replayed.
      * @param listener A contract listener.
      * @return The contract listener argument.
@@ -152,8 +152,8 @@ public interface Contract {
     Consumer<ContractEvent> addContractListener(long startBlock, Consumer<ContractEvent> listener);
 
     /**
-     * Add a listener to replay contract events emitted by transactions. The listener is only notified of events with
-     * names that exactly match the given pattern.
+     * Add a listener to replay contract events emitted by committed transactions. The listener is only notified of
+     * events with names that exactly match the given pattern.
      * @param startBlock The number of the block from which events should be replayed.
      * @param listener A contract listener.
      * @param eventName Event name.
@@ -163,8 +163,8 @@ public interface Contract {
     Consumer<ContractEvent> addContractListener(long startBlock, Consumer<ContractEvent> listener, String eventName);
 
     /**
-     * Add a listener to replay contract events emitted by transactions. The listener is only notified of events with
-     * names that entirely match the given pattern.
+     * Add a listener to replay contract events emitted by committed transactions. The listener is only notified of
+     * events with names that entirely match the given pattern.
      * @param startBlock The number of the block from which events should be replayed.
      * @param listener A contract listener.
      * @param eventNamePattern Event name pattern.
