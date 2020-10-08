@@ -37,11 +37,15 @@ public final class Listeners {
     }
 
     private static Consumer<BlockEvent.TransactionEvent> transactionFromContract(final Consumer<ContractEvent> listener) {
-        return transactionEvent -> StreamSupport.stream(transactionEvent.getTransactionActionInfos().spliterator(), false)
-                .map(BlockInfo.TransactionEnvelopeInfo.TransactionActionInfo::getEvent)
-                .filter(Objects::nonNull)
-                .map(chaincodeEvent -> new ContractEventImpl(transactionEvent, chaincodeEvent))
-                .forEach(listener);
+        return transactionEvent -> {
+            if (transactionEvent.isValid()) {
+                StreamSupport.stream(transactionEvent.getTransactionActionInfos().spliterator(), false)
+                        .map(BlockInfo.TransactionEnvelopeInfo.TransactionActionInfo::getEvent)
+                        .filter(Objects::nonNull)
+                        .map(chaincodeEvent -> new ContractEventImpl(transactionEvent, chaincodeEvent))
+                        .forEach(listener);
+            }
+        };
     }
 
     public static Consumer<BlockEvent> checkpointBlock(final Checkpointer checkpointer, final Consumer<BlockEvent> listener) {

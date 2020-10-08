@@ -223,6 +223,21 @@ public class ContractListenerTest {
     }
 
     @Test
+    public void listener_does_not_receive_events_from_uncommitted_transactions() {
+        Consumer<ContractEvent> listener = spy(testUtils.stubContractListener());
+        ChaincodeEvent event = mockChaincodeEvent(chaincodeId, eventName);
+        BlockEvent blockEvent = newBlockEvent(1, event);
+        for (BlockEvent.TransactionEvent transactionEvent : blockEvent.getTransactionEvents()) {
+            when(transactionEvent.isValid()).thenReturn(false);
+        }
+
+        contract.addContractListener(listener);
+        blockSource.sendEvent(blockEvent);
+
+        verify(listener, never()).accept(any(ContractEvent.class));
+    }
+
+    @Test
     public void removed_listener_does_not_receive_events() {
         Consumer<ContractEvent> listener = spy(testUtils.stubContractListener());
         ChaincodeEvent event = mockChaincodeEvent(chaincodeId, eventName);
