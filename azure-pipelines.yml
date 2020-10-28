@@ -18,7 +18,7 @@ pr:
   - master
 
 pool:
-  vmImage: 'ubuntu-18.04'
+  vmImage: 'ubuntu-20.04'
 
 variables:
   - group: Gateway_Java_Vars

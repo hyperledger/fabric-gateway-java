@@ -102,7 +102,7 @@ The following table shows versions of Fabric, Java and other dependencies that a
 | --- | ------ | --------- |
 | **Fabric** | 2.2 | 2.2 |
 | **Java** | 8, 11 | 8+ |
-| **Platform** | Ubuntu 18.04 | |
+| **Platform** | Ubuntu 20.04 | |
 
 #### Client applications running on POWER architecture
 To run Java SDK clients on IBM POWER systems (e.g. zLinux), use Java 11 and set the SSL provider to ‘JDK’ by either supplying the -D command line option:
