@@ -22,6 +22,7 @@ import org.hyperledger.fabric.gateway.spi.CommitListener;
 import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Peer;
+import org.hyperledger.fabric.sdk.exception.TransactionEventException;
 
 public final class CommitHandlerImpl implements CommitHandler {
     private final String transactionId;
@@ -101,7 +102,8 @@ public final class CommitHandlerImpl implements CommitHandler {
             processStrategyResult(result);
         } else {
             String peerName = event.getPeer().getName();
-            fail(new ContractException("Transaction commit was rejected by peer " + peerName));
+            TransactionEventException cause = new TransactionEventException("Transaction event is invalid", event);
+            fail(new ContractException("Transaction commit was rejected by peer " + peerName, cause));
         }
     }
 
