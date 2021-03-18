@@ -41,7 +41,7 @@ cleanStaging() {
     echo "Removing ${JAVADOC_DIR}"
     rm -rf "${JAVADOC_DIR}"
 
-    if [[ ${SOURCE_BRANCH} = master ]]; then
+    if [[ ${SOURCE_BRANCH} = main ]]; then
         removeStagingRootFiles
     fi
 }
