@@ -56,7 +56,7 @@ copyToStaging() {
     echo "Copying built documentation from ${BUILD_DIR} to ${JAVADOC_DIR}"
     rsync -r "${BUILD_DIR}/" "${JAVADOC_DIR}"
 
-    if [[ ${SOURCE_BRANCH} = master ]]; then
+    if [[ ${SOURCE_BRANCH} = main ]]; then
         echo 'Copying root directory markup files'
         cp -p "${PROJECT_DIR}"/*.md "${STAGING_DIR}"
     fi
