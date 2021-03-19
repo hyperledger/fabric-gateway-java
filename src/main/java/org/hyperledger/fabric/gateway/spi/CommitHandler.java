@@ -17,8 +17,8 @@ import org.hyperledger.fabric.gateway.ContractException;
  * instance state related to events received during its lifetime.
  * <p>Implementations may use {@link org.hyperledger.fabric.gateway.Network#addCommitListener(CommitListener, java.util.Collection, String)}
  * to identify when specific peers have committed the transaction they are tracking.</p>
- * @see <a href="https://github.com/hyperledger/fabric-gateway-java/blob/master/src/test/java/org/hyperledger/fabric/gateway/sample/SampleCommitHandlerFactory.java">SampleCommitHandlerFactory</a>
- * @see <a href="https://github.com/hyperledger/fabric-gateway-java/blob/master/src/test/java/org/hyperledger/fabric/gateway/sample/SampleCommitHandler.java">SampleCommitHandler</a>
+ * @see <a href="https://github.com/hyperledger/fabric-gateway-java/blob/main/src/test/java/org/hyperledger/fabric/gateway/sample/SampleCommitHandlerFactory.java">SampleCommitHandlerFactory</a>
+ * @see <a href="https://github.com/hyperledger/fabric-gateway-java/blob/main/src/test/java/org/hyperledger/fabric/gateway/sample/SampleCommitHandler.java">SampleCommitHandler</a>
  */
 public interface CommitHandler {
     /**
