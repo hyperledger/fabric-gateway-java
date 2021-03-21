@@ -3,7 +3,7 @@
 <div style="float: right">
 <table align="right">
   <tr><th>Branch</th><th>Build status</th></tr>
-  <tr><td>master</td><td><a href="https://dev.azure.com/Hyperledger/Fabric-Gateway-Java/_build/latest?definitionId=38&branchName=master"><img src="https://dev.azure.com/Hyperledger/Fabric-Gateway-Java/_apis/build/status/Fabric-Gateway-Java?branchName=master"></a></td></tr>
+  <tr><td>main</td><td><a href="https://dev.azure.com/Hyperledger/Fabric-Gateway-Java/_build/latest?definitionId=38&branchName=main"><img src="https://dev.azure.com/Hyperledger/Fabric-Gateway-Java/_apis/build/status/Fabric-Gateway-Java?branchName=main"></a></td></tr>
   <tr><td>release-2.2</td><td><a href="https://dev.azure.com/Hyperledger/Fabric-Gateway-Java/_build/latest?definitionId=38&branchName=release-2.2"><img src="https://dev.azure.com/Hyperledger/Fabric-Gateway-Java/_apis/build/status/Fabric-Gateway-Java?branchName=release-2.2"></a></td></tr>
   <tr><td>release-1.4</td><td><a href="https://dev.azure.com/Hyperledger/Fabric-Gateway-Java/_build/latest?definitionId=38&branchName=release-1.4"><img src="https://dev.azure.com/Hyperledger/Fabric-Gateway-Java/_apis/build/status/Fabric-Gateway-Java?branchName=release-1.4"></a></td></tr>
 </table>
