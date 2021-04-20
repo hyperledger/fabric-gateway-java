@@ -24,6 +24,8 @@ import java.security.cert.CertificateException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static java.lang.String.format;
+
 public final class GatewayImpl implements Gateway {
     private static final Log LOG = LogFactory.getLog(Gateway.class);
 
@@ -217,42 +219,38 @@ public final class GatewayImpl implements Gateway {
             if (channel == null && networkConfig != null) {
                 try {
                     channel =
-//                            client.loadChannelFromConfig(
-//                                    networkName,
-//                                    networkConfig,
-//                                    (networkConfig, client, channelArg, peerName, peerURL, peerProperties, peerOptions, jsonPeer) -> {
-//                                        try {
-//                                            Peer peer = client.newPeer(peerName, peerURL, peerProperties);
-//                                            if (this.isDeliverFilter()) {
-//                                                peerOptions.registerEventsForFilteredBlocks();
-//                                            }
-//                                            channelArg.addPeer(peer, peerOptions);
-//                                        } catch (Exception e) {
-//                                            throw new NetworkConfigurationException(
-//                                                    format(
-//                                                            "Error on creating channel %s peer %s",
-//                                                            channelArg.getName(),
-//                                                            peerName
-//                                                    ), e);
-//                                        }
-//                                    },
-//                                    (networkConfig, client, channelArg, ordererName, ordererURL, ordererProperties, jsonOrderer) -> {
-//                                        try {
-//                                            Orderer orderer = client.newOrderer(ordererName, ordererURL, ordererProperties);
-//                                            channelArg.addOrderer(orderer);
-//                                        } catch (Exception e) {
-//                                            throw new NetworkConfigurationException(
-//                                                    format(
-//                                                            "Error on creating channel %s orderer %s",
-//                                                            channelArg.getName(),
-//                                                            ordererName
-//                                                    ), e);
-//                                        }
-//                                    }
-//                            );
                             client.loadChannelFromConfig(
                                     networkName,
-                                    networkConfig
+                                    networkConfig,
+                                    (networkConfig, client, channelArg, peerName, peerURL, peerProperties, peerOptions, jsonPeer) -> {
+                                        try {
+                                            Peer peer = client.newPeer(peerName, peerURL, peerProperties);
+                                            if (this.isDeliverFilter()) {
+                                                peerOptions.registerEventsForFilteredBlocks();
+                                            }
+                                            channelArg.addPeer(peer, peerOptions);
+                                        } catch (Exception e) {
+                                            throw new NetworkConfigurationException(
+                                                    format(
+                                                            "Error on creating channel %s peer %s",
+                                                            channelArg.getName(),
+                                                            peerName
+                                                    ), e);
+                                        }
+                                    },
+                                    (networkConfig, client, channelArg, ordererName, ordererURL, ordererProperties, jsonOrderer) -> {
+                                        try {
+                                            Orderer orderer = client.newOrderer(ordererName, ordererURL, ordererProperties);
+                                            channelArg.addOrderer(orderer);
+                                        } catch (Exception e) {
+                                            throw new NetworkConfigurationException(
+                                                    format(
+                                                            "Error on creating channel %s orderer %s",
+                                                            channelArg.getName(),
+                                                            ordererName
+                                                    ), e);
+                                        }
+                                    }
                             );
                 } catch (InvalidArgumentException | NetworkConfigurationException ex) {
                     LOG.info("Unable to load channel configuration from connection profile: " + ex.getLocalizedMessage());
