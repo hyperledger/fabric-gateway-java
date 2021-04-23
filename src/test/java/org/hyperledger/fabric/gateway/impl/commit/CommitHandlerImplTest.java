@@ -13,16 +13,14 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.hyperledger.fabric.gateway.Gateway;
-import org.hyperledger.fabric.gateway.GatewayException;
-import org.hyperledger.fabric.gateway.Network;
-import org.hyperledger.fabric.gateway.TestUtils;
+import org.hyperledger.fabric.gateway.*;
 import org.hyperledger.fabric.gateway.impl.event.StubBlockEventSource;
 import org.hyperledger.fabric.gateway.impl.event.StubPeerDisconnectEventSource;
 import org.hyperledger.fabric.gateway.spi.CommitHandler;
 import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Peer;
+import org.hyperledger.fabric.sdk.exception.TransactionEventException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -196,13 +194,14 @@ public class CommitHandlerImplTest {
     }
 
     @Test
-    public void wait_throws_if_peer_commit_fails() {
+    public void wait_throws_contract_exception_caused_by_transaction_event_exception_if_peer_commit_fails() {
         when(strategy.onEvent(any())).thenReturn(CommitStrategy.Result.CONTINUE);
 
         commitHandler.startListening();
         sendInvalidTransactionEvent();
         assertThatThrownBy(() -> commitHandler.waitForEvents(timeout, timeUnit))
-                .isInstanceOf(GatewayException.class);
+                .isInstanceOf(ContractException.class)
+                .hasRootCauseExactlyInstanceOf(TransactionEventException.class);
     }
 
     @Test
