@@ -35,8 +35,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
+        <javaVersion>8</javaVersion>
+        <javadoc.version>3.2.0</javadoc.version>
     </properties>
 
     <repositories>
@@ -143,6 +143,8 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.8.1</version>
                     <configuration>
+                        <source>${javaVersion}</source>
+                        <target>${javaVersion}</target>
                         <showDeprecation>true</showDeprecation>
                         <showWarnings>true</showWarnings>
                         <compilerArgs>
@@ -232,7 +234,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.0.1</version>
+                <version>${javadoc.version}</version>
                 <configuration>
                     <excludePackageNames>
                         org.hyperledger.fabric.gateway.impl
@@ -244,6 +246,10 @@
                     <links>
                         <link>https://docs.oracle.com/javase/8/docs/api/</link>
                     </links>
+                    <source>${javaVersion}</source>
+                    <additionalJOptions>
+                        <additionalJOption>--no-module-directories</additionalJOption>
+                    </additionalJOptions>
                 </configuration>
                 <executions>
                     <execution>
@@ -387,7 +393,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>2.10.4</version>
+                        <version>${javadoc.version}</version>
                         <configuration>
                             <excludePackageNames>
                                 org.hyperledger.fabric.gateway.impl
@@ -396,6 +402,13 @@
                             <doctitle>Hyperledger Fabric Gateway SDK for Java</doctitle>
                             <nohelp>true</nohelp>
                             <failOnError>true</failOnError>
+                            <links>
+                                <link>https://docs.oracle.com/javase/8/docs/api/</link>
+                            </links>
+                            <source>${javaVersion}</source>
+                            <additionalJOptions>
+                                <additionalJOption>--no-module-directories</additionalJOption>
+                            </additionalJOptions>
                         </configuration>
                         <executions>
                             <execution>

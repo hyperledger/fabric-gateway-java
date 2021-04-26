@@ -42,8 +42,23 @@ variables:
 # A job is a collection of steps run by an agent or server
 
 stages:
+  - stage: BuildDocs
+    displayName: Generate JavaDoc
+    jobs:
+      - job: BuildDocs
+        displayName: Generate JavaDoc
+        steps:
+          - task: Maven@3
+            displayName: Maven compile
+            inputs:
+              mavenPomFile: 'pom.xml'
+              goals: 'clean install -DskipTests'
+          - publish: $(System.DefaultWorkingDirectory)/target/apidocs
+            artifact: JavaDoc
+            displayName: 'Upload generated JavaDoc'
   - stage: SetupRunTests
     displayName: Setup and Run Tests
+    dependsOn: []
     jobs:
       - job: SetupRunTests
         displayName: Setup and run tests on
@@ -62,22 +77,29 @@ stages:
               ORG_HYPERLEDGER_FABRIC_SDK_CONNECTIONS_SSL_SSLPROVIDER: '$(sslProvider)'
             inputs:
               mavenPomFile: 'pom.xml'
-              goals: 'clean install'
+              goals: 'clean install -Dmaven.javadoc.skip=true'
               javaHomeOption: 'JDKVersion'
               jdkVersionOption: "$(versionSpec)"
 
   - stage: PublishDocs
     displayName: Publish API documentation
+    dependsOn:
+      - BuildDocs
+      - SetupRunTests
     jobs:
       - job: PublishDocs
         displayName: Publish API documentation
         condition: and(succeeded(), eq(variables['Build.Reason'], 'IndividualCI'))
         steps:
-          - task: Maven@3
-            displayName: Maven compile
+          - script: |
+              rm -Rf target/apidocs
+              mkdir -p target/apidocs
+            displayName: 'Prepare JavaDoc directory'
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download generated JavaDoc'
             inputs:
-              mavenPomFile: 'pom.xml'
-              goals: 'clean install -DskipTests'
+              artifact: 'JavaDoc'
+              path: $(Build.SourcesDirectory)/target/apidocs
           - script: scripts/ci_scripts/publishJavaApiDocs.sh
             displayName: Publish API documentation
             env:
