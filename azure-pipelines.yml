@@ -62,7 +62,7 @@ stages:
               ORG_HYPERLEDGER_FABRIC_SDK_CONNECTIONS_SSL_SSLPROVIDER: '$(sslProvider)'
             inputs:
               mavenPomFile: 'pom.xml'
-              goals: 'clean install'
+              goals: 'clean install -Dmaven.javadoc.skip=true'
               javaHomeOption: 'JDKVersion'
               jdkVersionOption: "$(versionSpec)"
 
