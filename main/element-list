@@ -1,2 +1,6 @@
 org.hyperledger.fabric.gateway
+org.hyperledger.fabric.gateway.impl.commit
+org.hyperledger.fabric.gateway.impl.event
+org.hyperledger.fabric.gateway.impl.identity
+org.hyperledger.fabric.gateway.impl.query
 org.hyperledger.fabric.gateway.spi

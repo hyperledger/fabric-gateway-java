@@ -1,1 +1,1 @@
-packageSearchIndex = [{"l":"All Packages","url":"allpackages-index.html"},{"l":"org.hyperledger.fabric.gateway"},{"l":"org.hyperledger.fabric.gateway.spi"}]
+packageSearchIndex = [{"l":"All Packages","url":"allpackages-index.html"},{"l":"org.hyperledger.fabric.gateway"},{"l":"org.hyperledger.fabric.gateway.impl.commit"},{"l":"org.hyperledger.fabric.gateway.impl.event"},{"l":"org.hyperledger.fabric.gateway.impl.identity"},{"l":"org.hyperledger.fabric.gateway.impl.query"},{"l":"org.hyperledger.fabric.gateway.spi"}]
