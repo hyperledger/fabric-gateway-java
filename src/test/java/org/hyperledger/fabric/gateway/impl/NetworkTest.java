@@ -11,23 +11,31 @@ import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.sdk.Channel;
+import org.hyperledger.fabric.sdk.Peer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collection;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertTrue;
 
 public class NetworkTest {
     private static final TestUtils testUtils = TestUtils.getInstance();
 
     private Gateway gateway;
+    private Gateway gatewayFiltered;
     private Network network;
+    private Network networkFiltered;
 
     @BeforeEach
     public void beforeEach() throws Exception {
         gateway = testUtils.newGatewayBuilder().connect();
+        gatewayFiltered = testUtils.newGatewayBuilder().deliverFilter(true).connect();
         network = gateway.getNetwork("ch1");
+        networkFiltered = gatewayFiltered.getNetwork("ch1");
     }
 
     @AfterEach
@@ -40,6 +48,20 @@ public class NetworkTest {
         Channel ch1 = network.getChannel();
         assertThat(ch1.getName()).isEqualTo("ch1");
     }
+
+    @Test
+    public void testGetFilteredChannel() {
+        Channel ch1 = networkFiltered.getChannel();
+
+        Collection<Peer> peers = ch1.getPeers();
+        peers.forEach(peer -> {
+            Channel.PeerOptions peerOptions = ch1.getPeersOptions(peer);
+            assertTrue(peerOptions.isRegisterEventsForFilteredBlocks());
+        });
+
+        assertThat(ch1.getName()).isEqualTo("ch1");
+    }
+
 
     @Test
     public void testGetGateway() {
