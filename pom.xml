@@ -237,7 +237,7 @@
                 <version>${javadoc.version}</version>
                 <configuration>
                     <excludePackageNames>
-                        org.hyperledger.fabric.gateway.impl
+                        org.hyperledger.fabric.gateway.impl:org.hyperledger.fabric.gateway.impl.*
                     </excludePackageNames>
                     <show>public</show>
                     <doctitle>Hyperledger Fabric Gateway SDK for Java</doctitle>
@@ -396,7 +396,7 @@
                         <version>${javadoc.version}</version>
                         <configuration>
                             <excludePackageNames>
-                                org.hyperledger.fabric.gateway.impl
+                                org.hyperledger.fabric.gateway.impl:org.hyperledger.fabric.gateway.impl.*
                             </excludePackageNames>
                             <show>public</show>
                             <doctitle>Hyperledger Fabric Gateway SDK for Java</doctitle>
