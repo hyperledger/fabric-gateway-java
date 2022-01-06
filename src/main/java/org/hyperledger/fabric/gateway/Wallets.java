@@ -10,8 +10,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 
-import com.cloudant.client.api.ClientBuilder;
-import com.cloudant.client.api.Database;
 import org.hyperledger.fabric.gateway.impl.identity.CloudantWalletStore;
 import org.hyperledger.fabric.gateway.impl.identity.FileSystemWalletStore;
 import org.hyperledger.fabric.gateway.impl.identity.InMemoryWalletStore;
@@ -50,8 +48,7 @@ public final class Wallets {
      * @return A wallet.
      */
     public static Wallet newCouchDBWallet(final URL serverUrl, final String databaseName) {
-        Database database = ClientBuilder.url(serverUrl).build().database(databaseName, true);
-        WalletStore store = new CloudantWalletStore(database);
+        WalletStore store = CloudantWalletStore.newInstance(serverUrl, databaseName);
         return newWallet(store);
     }
 
