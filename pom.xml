@@ -112,9 +112,9 @@
             <version>1.14</version>
         </dependency>
         <dependency>
-            <groupId>com.cloudant</groupId>
-            <artifactId>cloudant-client</artifactId>
-            <version>2.19.0</version>
+            <groupId>com.ibm.cloud</groupId>
+            <artifactId>cloudant</artifactId>
+            <version>0.0.32</version>
         </dependency>
     </dependencies>
 
