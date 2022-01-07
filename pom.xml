@@ -248,7 +248,7 @@
                     </links>
                     <source>${javaVersion}</source>
                     <additionalJOptions>
-                        <additionalJOption>--no-module-directories</additionalJOption>
+                        <additionalJOption>${additionalJavadocOpts}</additionalJOption>
                     </additionalJOptions>
                 </configuration>
                 <executions>
@@ -314,7 +314,13 @@
                     <plugin>
                         <groupId>org.owasp</groupId>
                         <artifactId>dependency-check-maven</artifactId>
-                        <version>3.2.0</version>
+                        <version>6.5.2</version>
+                        <configuration>
+                            <skipProvidedScope>true</skipProvidedScope>
+                            <skipTestScope>true</skipTestScope>
+                            <skipSystemScope>true</skipSystemScope>
+                            <failBuildOnCVSS>7</failBuildOnCVSS>
+                        </configuration>
                         <executions>
                             <execution>
                                 <goals>
@@ -323,10 +329,17 @@
                             </execution>
                         </executions>
                     </plugin>
-
                 </plugins>
             </build>
-
+        </profile>
+        <profile>
+            <id>javadoc-no-module-directories</id>
+            <activation>
+                <jdk>[11,)</jdk>
+            </activation>
+            <properties>
+                <additionalJavadocOpts>--no-module-directories</additionalJavadocOpts>
+            </properties>
         </profile>
         <profile>
             <id>release</id>
@@ -407,7 +420,7 @@
                             </links>
                             <source>${javaVersion}</source>
                             <additionalJOptions>
-                                <additionalJOption>--no-module-directories</additionalJOption>
+                                <additionalJOption>${additionalJavadocOpts}</additionalJOption>
                             </additionalJOptions>
                         </configuration>
                         <executions>
