@@ -64,15 +64,16 @@ public final class WalletImpl implements Wallet {
 
     @Override
     public Identity get(final String label) throws IOException {
-        final InputStream identityData = store.get(label);
-        if (identityData == null) {
-            return null;
-        }
+        try (InputStream identityData = store.get(label)) {
+            if (identityData == null) {
+                return null;
+            }
 
-        try {
-            return deserializeIdentity(identityData);
-        } catch (RuntimeException e) {
-            throw new IOException(e);
+            try {
+                return deserializeIdentity(identityData);
+            } catch (RuntimeException e) {
+                throw new IOException(e);
+            }
         }
     }
 
