@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.ContractException;
-import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
@@ -29,17 +28,16 @@ import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.ProposalResponse;
-import org.hyperledger.fabric.sdk.QueryByChaincodeRequest;
 import org.hyperledger.fabric.sdk.TransactionProposalRequest;
-import org.hyperledger.fabric.sdk.TransactionRequest;
-import org.hyperledger.fabric.sdk.User;
 import org.hyperledger.fabric.sdk.transaction.TransactionContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.MockitoAnnotations;
+import org.mockito.Mockito;
+import org.mockito.MockitoSession;
+import org.mockito.quality.Strictness;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -57,6 +55,7 @@ import static org.mockito.Mockito.when;
 public class TransactionTest {
     private final TestUtils testUtils = TestUtils.getInstance();
     private final TimePeriod timeout = new TimePeriod(7, TimeUnit.DAYS);
+    private MockitoSession mockitoSession;
     private Gateway.Builder gatewayBuilder;
     private Gateway gateway;
     private Channel channel;
@@ -79,7 +78,10 @@ public class TransactionTest {
 
     @BeforeEach
     public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        mockitoSession = Mockito.mockitoSession()
+                .initMocks(this)
+                .strictness(Strictness.LENIENT)
+                .startMocking();
 
         peer1 = testUtils.newMockPeer("peer1");
         peer2 = testUtils.newMockPeer("peer2");
@@ -117,6 +119,7 @@ public class TransactionTest {
     @AfterEach
     public void afterEach() {
         gateway.close();
+        mockitoSession.finishMocking();
     }
 
     @Test
