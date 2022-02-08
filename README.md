@@ -13,6 +13,8 @@ The Fabric Gateway SDK allows applications to interact with a Fabric blockchain 
 
 The Gateway SDK implements the Fabric programming model as described in the [Developing Applications](https://hyperledger-fabric.readthedocs.io/en/latest/developapps/developing_applications.html) chapter of the Fabric documentation.
 
+> **Note:** When developing applications for Hyperledger Fabric v2.4 and later, you are strongly encouraged to use the new [Fabric Gateway client API](https://hyperledger.github.io/fabric-gateway/).
+
 ## How to use 
 
 The following shows a complete code sample of how to connect to a fabric network, submit a transaction and query the ledger state using an instantiated smart contract (fabcar sample).
