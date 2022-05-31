@@ -114,7 +114,7 @@
         <dependency>
             <groupId>com.ibm.cloud</groupId>
             <artifactId>cloudant</artifactId>
-            <version>0.0.36</version>
+            <version>0.1.4</version>
         </dependency>
     </dependencies>
 
@@ -324,7 +324,7 @@
                     <plugin>
                         <groupId>org.owasp</groupId>
                         <artifactId>dependency-check-maven</artifactId>
-                        <version>7.0.1</version>
+                        <version>7.1.0</version>
                         <configuration>
                             <skipProvidedScope>true</skipProvidedScope>
                             <skipTestScope>true</skipTestScope>
