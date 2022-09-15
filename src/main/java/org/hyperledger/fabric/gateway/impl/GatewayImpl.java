@@ -6,23 +6,6 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Path;
-import java.security.cert.CertificateException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.TimeUnit;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
@@ -39,14 +22,31 @@ import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
 import org.hyperledger.fabric.gateway.spi.QueryHandlerFactory;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.Channel.PeerOptions;
-import org.hyperledger.fabric.sdk.Enrollment;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.NetworkConfig;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.Peer.PeerRole;
 import org.hyperledger.fabric.sdk.User;
+import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.NetworkConfigurationException;
+
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.cert.CertificateException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 public final class GatewayImpl implements Gateway {
     private static final Log LOG = LogFactory.getLog(Gateway.class);
@@ -80,7 +80,7 @@ public final class GatewayImpl implements Gateway {
 
         @Override
         public Builder networkConfig(final Path config) throws IOException {
-            try (InputStream fileIn = new FileInputStream(config.toFile());
+            try (InputStream fileIn = Files.newInputStream(config);
                  InputStream bufferedIn = new BufferedInputStream(fileIn)) {
                 return networkConfig(bufferedIn);
             }
@@ -175,7 +175,6 @@ public final class GatewayImpl implements Gateway {
             this.networkConfig = null;
 
             User user = client.getUserContext();
-            Enrollment enrollment = user.getEnrollment();
             try {
                 this.identity = Identities.newX509Identity(user.getMspId(), user.getEnrollment());
             } catch (CertificateException e) {
@@ -191,7 +190,9 @@ public final class GatewayImpl implements Gateway {
             this.networkConfig = builder.ccp;
             this.identity = builder.identity;
 
-            this.client = createClient();
+            this.client = HFClient.createNewInstance();
+            // Hard-coded type for now but needs to get appropriate provider from wallet (or registry)
+            X509IdentityProvider.INSTANCE.setUserContext(client, identity, "gateway");
         }
     }
 
@@ -203,14 +204,13 @@ public final class GatewayImpl implements Gateway {
         this.networkConfig = that.networkConfig;
         this.identity = that.identity;
 
-        this.client = createClient();
-    }
-
-    private HFClient createClient() {
-        HFClient client = HFClient.createNewInstance();
-        // Hard-coded type for now but needs to get appropriate provider from wallet (or registry)
-        X509IdentityProvider.INSTANCE.setUserContext(client, identity, "gateway");
-        return client;
+        this.client = HFClient.createNewInstance();
+        try {
+            client.setCryptoSuite(that.client.getCryptoSuite());
+            client.setUserContext(that.client.getUserContext());
+        } catch (CryptoException | InvalidArgumentException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
