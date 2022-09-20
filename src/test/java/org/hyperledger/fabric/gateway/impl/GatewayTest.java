@@ -7,12 +7,14 @@
 package org.hyperledger.fabric.gateway.impl;
 
 import org.hyperledger.fabric.gateway.Gateway;
-import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.sdk.Channel;
+import org.hyperledger.fabric.sdk.HFClient;
+import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -20,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class GatewayTest {
     private static final TestUtils testUtils = TestUtils.getInstance();
 
-    private Gateway.Builder builder = null;
+    private GatewayImpl.Builder builder = null;
 
     @BeforeEach
     public void beforeEach() throws Exception {
@@ -78,5 +80,31 @@ public class GatewayTest {
         gateway.close();
 
         assertThat(channel.isShutdown()).isTrue();
+    }
+
+    @Test
+    public void testNewInstanceHasSameCryptoSuite() {
+        final HFClient clientSpy;
+        try (GatewayImpl gateway = builder.connect()) {
+            clientSpy = Mockito.spy(gateway.getClient());
+        }
+
+        // Mock the CryptoSuite so it isn't the default CryptoSuite
+        Mockito.when(clientSpy.getCryptoSuite()).thenReturn(Mockito.mock(CryptoSuite.class));
+
+        try (GatewayImpl gateway = builder.client(clientSpy).connect()) {
+            GatewayImpl copy = gateway.newInstance();
+
+            assertThat(copy.getClient().getCryptoSuite()).isSameAs(gateway.getClient().getCryptoSuite());
+        }
+    }
+
+    @Test
+    public void testNewInstanceHasSameUserContext() {
+        try (GatewayImpl gateway = builder.connect()) {
+            GatewayImpl copy = gateway.newInstance();
+
+            assertThat(copy.getClient().getUserContext()).isSameAs(gateway.getClient().getUserContext());
+        }
     }
 }

@@ -18,7 +18,7 @@ import org.hyperledger.fabric.sdk.ProposalResponse;
 public class ContractException extends GatewayException {
     private static final long serialVersionUID = -1278679656087547825L;
 
-    private Collection<ProposalResponse> proposalResponses;
+    private transient Collection<ProposalResponse> proposalResponses = Collections.emptyList();
 
     /**
      * Constructs a new exception with the specified detail message. The cause and payload are not initialized.
@@ -26,7 +26,6 @@ public class ContractException extends GatewayException {
      */
     public ContractException(final String message) {
         super(message);
-        this.proposalResponses = Collections.emptyList();
     }
 
     /**
@@ -36,7 +35,6 @@ public class ContractException extends GatewayException {
      */
     public ContractException(final String message, final Throwable cause) {
         super(message, cause);
-        this.proposalResponses = Collections.emptyList();
     }
 
     /**
