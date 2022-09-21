@@ -17,7 +17,7 @@
         <notes><![CDATA[
         CVE was reported in version 1.4-M1 to 1.4-RC and fixed in version 1.4.0
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin\-stdlib\-common@1\.4\.0$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin\-stdlib\-common@1\.4\..*$</packageUrl>
         <cve>CVE-2020-15824</cve>
     </suppress>
     <suppress>
@@ -26,5 +26,19 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/log4j\-.*$</packageUrl>
         <cve>CVE-2022-33915</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+       Vulnerability in core Fabric Go implementation, not the Java SDK
+       ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.hyperledger\.fabric\-sdk\-java/fabric\-sdk\-java@.*$</packageUrl>
+        <cve>CVE-2022-36023</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+       Vulnerability in WebKit browser, not netty-tcnative-boringssl
+       ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/netty\-tcnative\-boringssl\-static@.*$</packageUrl>
+        <cve>CVE-2011-1797</cve>
     </suppress>
 </suppressions>
