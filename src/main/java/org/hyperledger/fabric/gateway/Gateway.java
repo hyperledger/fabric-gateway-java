@@ -9,6 +9,7 @@ package org.hyperledger.fabric.gateway;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.hyperledger.fabric.gateway.impl.GatewayImpl;
@@ -174,6 +175,13 @@ public interface Gateway extends AutoCloseable {
          * @return The builder instance, allowing multiple configuration options to be chained.
          */
         Builder discovery(boolean enabled);
+
+        /**
+         * <em>Optional</em> - Set executor service for gateway client.
+         * @param executorService - The executor service the application wants to use.
+         * @return The builder instance, allowing multiple configuration options to be chained.
+         */
+        Builder executorService(ExecutorService executorService);
 
         /**
          * Connects to the gateway using the specified options.
