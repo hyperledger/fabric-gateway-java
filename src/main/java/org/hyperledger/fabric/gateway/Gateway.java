@@ -9,12 +9,12 @@ package org.hyperledger.fabric.gateway;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.hyperledger.fabric.gateway.impl.GatewayImpl;
 import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
 import org.hyperledger.fabric.gateway.spi.QueryHandlerFactory;
+import org.hyperledger.fabric.sdk.HFClient;
 
 /**
  * The Gateway provides the connection point for an application to access the Fabric network as a specific user. It is
@@ -87,6 +87,13 @@ public interface Gateway extends AutoCloseable {
     static Builder createBuilder() {
         return new GatewayImpl.Builder();
     }
+
+    /**
+     * Get the Client used by the gateway connection.
+     *
+     * @return The Client used by this Gateway.
+     */
+    HFClient getClient();
 
     /**
      * Close the gateway connection and all associated resources, including removing listeners attached to networks and
@@ -175,13 +182,6 @@ public interface Gateway extends AutoCloseable {
          * @return The builder instance, allowing multiple configuration options to be chained.
          */
         Builder discovery(boolean enabled);
-
-        /**
-         * <em>Optional</em> - Set executor service for gateway client.
-         * @param executorService - The executor service the application wants to use.
-         * @return The builder instance, allowing multiple configuration options to be chained.
-         */
-        Builder executorService(ExecutorService executorService);
 
         /**
          * Connects to the gateway using the specified options.

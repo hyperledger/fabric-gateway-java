@@ -46,7 +46,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public final class GatewayImpl implements Gateway {
@@ -56,7 +55,6 @@ public final class GatewayImpl implements Gateway {
     private static final TimeUnit DEFAULT_COMMIT_TIMEOUT_UNIT = TimeUnit.MINUTES;
 
     private final HFClient client;
-    private final ExecutorService executorService;
     private final NetworkConfig networkConfig;
     private final Identity identity;
     private final Map<String, NetworkImpl> networks = new HashMap<>();
@@ -72,7 +70,6 @@ public final class GatewayImpl implements Gateway {
         private NetworkConfig ccp = null;
         private Identity identity = null;
         private HFClient client;
-        private ExecutorService executorService;
         private boolean discovery = false;
 
         private static final class ExposedByteArrayOutputStream extends ByteArrayOutputStream {
@@ -161,12 +158,6 @@ public final class GatewayImpl implements Gateway {
         }
 
         @Override
-        public Builder executorService(final ExecutorService executorService) {
-            this.executorService = executorService;
-            return this;
-        }
-
-        @Override
         public GatewayImpl connect() {
             return new GatewayImpl(this);
         }
@@ -177,7 +168,6 @@ public final class GatewayImpl implements Gateway {
         this.commitTimeout = builder.commitTimeout;
         this.queryHandlerFactory = builder.queryHandlerFactory;
         this.discovery = builder.discovery;
-        this.executorService = builder.executorService;
 
         if (builder.client != null) {
             // Only for testing!
@@ -204,14 +194,6 @@ public final class GatewayImpl implements Gateway {
             // Hard-coded type for now but needs to get appropriate provider from wallet (or registry)
             X509IdentityProvider.INSTANCE.setUserContext(client, identity, "gateway");
         }
-
-        if (builder.executorService != null) {
-            try {
-                this.client.setExecutorService(builder.executorService);
-            } catch (InvalidArgumentException e) {
-                throw new GatewayRuntimeException(e);
-            }
-        }
     }
 
     private GatewayImpl(final GatewayImpl that) {
@@ -221,15 +203,12 @@ public final class GatewayImpl implements Gateway {
         this.discovery = that.discovery;
         this.networkConfig = that.networkConfig;
         this.identity = that.identity;
-        this.executorService = that.executorService;
 
         this.client = HFClient.createNewInstance();
         try {
             client.setCryptoSuite(that.client.getCryptoSuite());
             client.setUserContext(that.client.getUserContext());
-            if (that.executorService != null) {
-                client.setExecutorService(that.executorService);
-            }
+            client.setExecutorService(that.client.getExecutorService());
         } catch (CryptoException | InvalidArgumentException e) {
             throw new RuntimeException(e);
         }
