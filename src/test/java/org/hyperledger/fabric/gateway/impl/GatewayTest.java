@@ -107,4 +107,13 @@ public class GatewayTest {
             assertThat(copy.getClient().getUserContext()).isSameAs(gateway.getClient().getUserContext());
         }
     }
+
+    @Test
+    public void testNewInstanceHasSameExecutorService() {
+        try (GatewayImpl gateway = builder.connect()) {
+            GatewayImpl copy = gateway.newInstance();
+
+            assertThat(copy.getClient().getExecutorService()).isSameAs(gateway.getClient().getExecutorService());
+        }
+    }
 }
