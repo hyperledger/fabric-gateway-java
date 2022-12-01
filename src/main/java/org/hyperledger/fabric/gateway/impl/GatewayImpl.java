@@ -208,6 +208,7 @@ public final class GatewayImpl implements Gateway {
         try {
             client.setCryptoSuite(that.client.getCryptoSuite());
             client.setUserContext(that.client.getUserContext());
+            client.setExecutorService(that.client.getExecutorService());
         } catch (CryptoException | InvalidArgumentException e) {
             throw new RuntimeException(e);
         }

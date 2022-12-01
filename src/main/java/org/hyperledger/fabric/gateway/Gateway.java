@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import org.hyperledger.fabric.gateway.impl.GatewayImpl;
 import org.hyperledger.fabric.gateway.spi.CommitHandlerFactory;
 import org.hyperledger.fabric.gateway.spi.QueryHandlerFactory;
+import org.hyperledger.fabric.sdk.HFClient;
 
 /**
  * The Gateway provides the connection point for an application to access the Fabric network as a specific user. It is
@@ -86,6 +87,13 @@ public interface Gateway extends AutoCloseable {
     static Builder createBuilder() {
         return new GatewayImpl.Builder();
     }
+
+    /**
+     * Get the Client used by the gateway connection.
+     *
+     * @return The Client used by this Gateway.
+     */
+    HFClient getClient();
 
     /**
      * Close the gateway connection and all associated resources, including removing listeners attached to networks and
