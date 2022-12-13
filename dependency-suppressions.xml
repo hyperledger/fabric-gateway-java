@@ -20,4 +20,11 @@
         <packageUrl regex="true">^pkg:maven/org\.hyperledger\.fabric\-sdk\-java/fabric\-sdk\-java@.*$</packageUrl>
         <cve>CVE-2022-36023</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        fabric-sdk-java only uses SnakeYaml's SafeConstructor for parsing YAML, which mitigates the vulnerability
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
+        <vulnerabilityName>CVE-2022-1471</vulnerabilityName>
+    </suppress>
 </suppressions>
