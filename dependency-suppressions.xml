@@ -41,4 +41,11 @@
         <packageUrl regex="true">^pkg:maven/io\.netty/netty\-tcnative\-boringssl\-static@.*$</packageUrl>
         <cve>CVE-2011-1797</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        fabric-sdk-java only uses SnakeYaml's SafeConstructor for parsing YAML, which mitigates the vulnerability
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
+        <vulnerabilityName>CVE-2022-1471</vulnerabilityName>
+    </suppress>
 </suppressions>
