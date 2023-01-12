@@ -15,22 +15,8 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        CVE was reported in version 1.4-M1 to 1.4-RC and fixed in version 1.4.0
+        Vulnerability in core Fabric Go implementation, not the Java SDK
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin\-stdlib\-common@1\.4\..*$</packageUrl>
-        <cve>CVE-2020-15824</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        Vulnerability is reported against an AWS hotfix, not the Apache log4j package
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/log4j\-.*$</packageUrl>
-        <cve>CVE-2022-33915</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-       Vulnerability in core Fabric Go implementation, not the Java SDK
-       ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.hyperledger\.fabric\-sdk\-java/fabric\-sdk\-java@.*$</packageUrl>
         <cve>CVE-2022-36023</cve>
     </suppress>
@@ -47,5 +33,19 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
         <vulnerabilityName>CVE-2022-1471</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Vulnerability in gopkg.in/yaml.v3 Golang module, not SnakeYaml
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
+        <cve>CVE-2022-3064</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Vulnerability in gopkg.in/yaml.v3 Golang module, not SnakeYaml
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
+        <cve>CVE-2021-4235</cve>
     </suppress>
 </suppressions>
