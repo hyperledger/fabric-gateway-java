@@ -1,0 +1,39 @@
+name: Push
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    uses: ./.github/workflows/test.yml
+
+  publish-javadoc:
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+        with:
+          path: source
+      - name: Download JavaDoc
+        uses: actions/download-artifact@v3
+        with:
+          name: javadoc
+          path: javadoc
+      - name: Checkout publish
+        uses: actions/checkout@v3
+        with:
+          path: publish
+          ref: gh-pages
+      - name: Publish
+        run: ./scripts/ci_scripts/publishApiDocs.sh
+        working-directory: source
+        env:
+          GITHUB_USER: 'Hyperledger Bot'
+          GITHUB_EMAIL: 'hyperledger-bot@hyperledger.org'
+          SOURCE_DIR: ${{ github.workspace }}/source
+          PUBLISH_DIR: ${{ github.workspace }}/publish
+          SOURCE_BRANCH: ${{ github.ref_name }}
+          JAVADOC_DIR: ${{ github.workspace }}/javadoc
