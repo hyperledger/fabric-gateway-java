@@ -361,7 +361,7 @@
         <profile>
             <id>javadoc-no-module-directories</id>
             <activation>
-                <jdk>[11,)</jdk>
+                <jdk>[11,13)</jdk>
             </activation>
             <properties>
                 <additionalJavadocOpts>--no-module-directories</additionalJavadocOpts>
