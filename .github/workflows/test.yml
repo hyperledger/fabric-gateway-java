@@ -1,0 +1,65 @@
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      checkout-ref:
+        default: ""
+        required: false
+        type: string
+
+env:
+  ORG_HYPERLEDGER_FABRIC_SDK_PROPOSAL_WAIT_TIME: "55000"
+  ORG_HYPERLEDGER_FABRIC_SDK_CHANNELCONFIG_WAIT_TIME: "20000"
+  ORG_HYPERLEDGER_FABRIC_SDK_CLIENT_TRANSACTION_CLEANUP_UP_TIMEOUT_WAIT_TIME: "65000"
+  ORG_HYPERLEDGER_FABRIC_SDK_ORDERER_ORDERERWAITTIMEMILLISECS: "180000"
+  ORG_HYPERLEDGER_FABRIC_SDK_PEER_EVENTREGISTRATION_WAIT_TIME: "180000"
+  ORG_HYPERLEDGER_FABRIC_SDK_EVENTHUB_CONNECTION_WAIT_TIME: "180000"
+  ORG_HYPERLEDGER_FABRIC_SDK_CHANNEL_GENESISBLOCK_WAIT_TIME: "180000"
+
+jobs:
+  javadoc:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.checkout-ref }}
+      - uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          distribution: temurin
+          cache: maven
+      - name: Generate JavaDoc
+        run: mvn --batch-mode -DskipTests verify
+      - name: Upload JavaDoc
+        uses: actions/upload-artifact@v3
+        with:
+          name: javadoc
+          path: target/apidocs/
+
+  test:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - java-version: "8"
+            ssl-provider: openSSL
+          - java-version: "11"
+            ssl-provider: JDK
+          - java-version: "17"
+            ssl-provider: JDK
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.checkout-ref }}
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: temurin
+          cache: maven
+      - name: Build and test
+        run: mvn --batch-mode -Dmaven.javadoc.skip=true verify
+        env:
+          ORG_HYPERLEDGER_FABRIC_SDK_CONNECTIONS_SSL_SSLPROVIDER: ${{ matrix.ssl-provider }}
