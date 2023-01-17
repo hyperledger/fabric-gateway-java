@@ -1,13 +1,4 @@
-# Hyperledger Fabric Gateway SDK for Java
-
-<div style="float: right">
-<table align="right">
-  <tr><th>Branch</th><th>Build status</th></tr>
-  <tr><td>main</td><td><a href="https://dev.azure.com/Hyperledger/Fabric-Gateway-Java/_build/latest?definitionId=38&branchName=main"><img src="https://dev.azure.com/Hyperledger/Fabric-Gateway-Java/_apis/build/status/Fabric-Gateway-Java?branchName=main"></a></td></tr>
-  <tr><td>release-2.2</td><td><a href="https://dev.azure.com/Hyperledger/Fabric-Gateway-Java/_build/latest?definitionId=38&branchName=release-2.2"><img src="https://dev.azure.com/Hyperledger/Fabric-Gateway-Java/_apis/build/status/Fabric-Gateway-Java?branchName=release-2.2"></a></td></tr>
-  <tr><td>release-1.4</td><td><a href="https://dev.azure.com/Hyperledger/Fabric-Gateway-Java/_build/latest?definitionId=38&branchName=release-1.4"><img src="https://dev.azure.com/Hyperledger/Fabric-Gateway-Java/_apis/build/status/Fabric-Gateway-Java?branchName=release-1.4"></a></td></tr>
-</table>
-</div>
+# Hyperledger Fabric Gateway SDK for Java <a href="https://github.com/hyperledger/fabric-gateway-java/actions/workflows/schedule.yml"><img src="https://github.com/hyperledger/fabric-gateway-java/actions/workflows/schedule.yml/badge.svg" alt="Build status" style="float: right"></a>
 
 The Fabric Gateway SDK allows applications to interact with a Fabric blockchain network.  It provides a simple API to submit transactions to a ledger or query the contents of a ledger with minimal code.
 
