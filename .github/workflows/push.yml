@@ -27,6 +27,7 @@ jobs:
         with:
           path: publish
           ref: gh-pages
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
       - name: Publish
         run: ./scripts/ci_scripts/publishApiDocs.sh
         working-directory: source
