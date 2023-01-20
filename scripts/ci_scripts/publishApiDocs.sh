@@ -15,7 +15,8 @@ set -e -o pipefail
 : "${SOURCE_BRANCH:?}" # Source code branch name
 : "${JAVADOC_DIR:?}" # Directory where built JavaDoc is located
 
-readonly COMMIT_HASH=$(git rev-parse HEAD)
+COMMIT_HASH=$(git rev-parse HEAD)
+readonly COMMIT_HASH
 readonly PUBLISH_RELEASE_DIR="${PUBLISH_DIR}/${SOURCE_BRANCH}"
 
 cleanPublishDir() {
@@ -49,7 +50,7 @@ publishDocs() {
 }
 
 _stagingPushDocs() {
-    if [ -z "$(git status --porcelain=v1)" 2>/dev/null ]; then
+    if [ -z "$(git status --porcelain=v1 2>/dev/null)" ]; then
         echo 'No changes to publish'
         return
     fi
