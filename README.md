@@ -1,4 +1,6 @@
-# Hyperledger Fabric Gateway SDK for Java
+# Hyperledger Fabric Gateway SDK for Java <a href="https://github.com/hyperledger/fabric-gateway-java/actions/workflows/schedule.yml"><img src="https://github.com/hyperledger/fabric-gateway-java/actions/workflows/schedule.yml/badge.svg" alt="Build status" style="float: right"></a>
+
+> **Note:** When developing applications for Hyperledger Fabric v2.4 and later, you should use the [Fabric Gateway client API](https://hyperledger.github.io/fabric-gateway/).
 
 The Fabric Gateway SDK allows applications to interact with a Fabric blockchain network.  It provides a simple API to submit transactions to a ledger or query the contents of a ledger with minimal code.
 
@@ -62,7 +64,7 @@ class Sample {
 ### API documentation
 
 Full Javadoc documentation is published for each of the following versions:
-- [2.2](https://hyperledger.github.io/fabric-gateway-java/release-2.2/)
+- [2.2](https://hyperledger.github.io/fabric-gateway-java/main/)
 - [1.4](https://hyperledger.github.io/fabric-gateway-java/release-1.4/)
 
 ### Maven
@@ -89,11 +91,11 @@ implementation 'org.hyperledger.fabric:fabric-gateway-java:2.2.0'
 
 The following table shows versions of Fabric, Java and other dependencies that are explicitly tested and that are supported for use with version 2.2 of the Fabric Gateway SDK. Refer to the appropriate GitHub branch for compatibility of other release versions.
 
-|     | Tested | Supported |
-| --- | ------ | --------- |
+| | Tested | Supported |
+| --- | --- | --- |
 | **Fabric** | 2.2 | 2.2 |
-| **Java** | 8, 11 | 8+ |
-| **Platform** | Ubuntu 20.04 | |
+| **Java** | 8, 11, 17 | 8+ |
+| **Platform** | Ubuntu 22.04 | |
 
 #### Client applications running on POWER architecture
 To run Java SDK clients on IBM POWER systems (e.g. zLinux), use Java 11 and set the SSL provider to ‘JDK’ by either supplying the -D command line option:
