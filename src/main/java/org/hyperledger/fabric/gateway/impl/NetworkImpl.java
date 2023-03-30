@@ -179,7 +179,7 @@ public final class NetworkImpl implements Network, AutoCloseable {
         orderedBlockSource.close();
         channelBlockSource.close();
 
-        channel.shutdown(false);
+        channel.shutdown(gateway.isForceClose());
     }
 
     @Override

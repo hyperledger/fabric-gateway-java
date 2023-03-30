@@ -184,6 +184,14 @@ public interface Gateway extends AutoCloseable {
         Builder discovery(boolean enabled);
 
         /**
+         * <em>Optional</em> - Enable or disable force immediate shutdown of the network connection.
+         * forceClose is enabled by default.
+         * @param enabled - true to enable force immediate shutdown.
+         * @return The builder instance, allowing multiple configuration options to be chained.
+         */
+        Builder forceClose(boolean enabled);
+
+        /**
          * Connects to the gateway using the specified options.
          * @return The connected {@link Gateway} object.
          */

@@ -83,6 +83,18 @@ public class GatewayTest {
     }
 
     @Test
+    public void testCloseGatewayNotForceClosesNetworks() {
+        Gateway gateway = builder.forceClose(false).connect();
+        Channel channel = gateway.getNetwork("assumed").getChannel();
+
+        assertThat(((GatewayImpl)gateway).isForceClose()).isFalse();
+
+        gateway.close();
+
+        assertThat(channel.isShutdown()).isTrue();
+    }
+
+    @Test
     public void testNewInstanceHasSameCryptoSuite() {
         final HFClient clientSpy;
         try (GatewayImpl gateway = builder.connect()) {
