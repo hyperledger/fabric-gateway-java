@@ -62,6 +62,7 @@ public final class GatewayImpl implements Gateway {
     private final TimePeriod commitTimeout;
     private final QueryHandlerFactory queryHandlerFactory;
     private final boolean discovery;
+    private final boolean forceClose;
 
     public static final class Builder implements Gateway.Builder {
         private CommitHandlerFactory commitHandlerFactory = DefaultCommitHandlers.PREFER_MSPID_SCOPE_ALLFORTX;
@@ -71,6 +72,7 @@ public final class GatewayImpl implements Gateway {
         private Identity identity = null;
         private HFClient client;
         private boolean discovery = false;
+        private boolean forceClose = true;
 
         private static final class ExposedByteArrayOutputStream extends ByteArrayOutputStream {
             public byte[] getInternalBuffer() {
@@ -152,6 +154,12 @@ public final class GatewayImpl implements Gateway {
             return this;
         }
 
+        @Override
+        public Builder forceClose(final boolean enabled) {
+            this.forceClose = enabled;
+            return this;
+        }
+
         public Builder client(final HFClient client) {
             this.client = client;
             return this;
@@ -168,6 +176,7 @@ public final class GatewayImpl implements Gateway {
         this.commitTimeout = builder.commitTimeout;
         this.queryHandlerFactory = builder.queryHandlerFactory;
         this.discovery = builder.discovery;
+        this.forceClose = builder.forceClose;
 
         if (builder.client != null) {
             // Only for testing!
@@ -201,6 +210,7 @@ public final class GatewayImpl implements Gateway {
         this.commitTimeout = that.commitTimeout;
         this.queryHandlerFactory = that.queryHandlerFactory;
         this.discovery = that.discovery;
+        this.forceClose = that.forceClose;
         this.networkConfig = that.networkConfig;
         this.identity = that.identity;
 
@@ -279,6 +289,10 @@ public final class GatewayImpl implements Gateway {
 
     public boolean isDiscoveryEnabled() {
         return discovery;
+    }
+
+    public boolean isForceClose() {
+        return forceClose;
     }
 
     public GatewayImpl newInstance() {
