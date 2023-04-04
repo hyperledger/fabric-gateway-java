@@ -83,15 +83,34 @@ public class GatewayTest {
     }
 
     @Test
-    public void testCloseGatewayNotForceClosesNetworks() {
-        Gateway gateway = builder.forceClose(false).connect();
-        Channel channel = gateway.getNetwork("assumed").getChannel();
+    public void testCloseGatewayForceClosesNetworks() {
+        HFClient mockClient = testUtils.newMockClient();
+        Channel mockChannel = testUtils.newMockChannel("CHANNEL");
+        Mockito.when(mockClient.getChannel("CHANNEL")).thenReturn(mockChannel);
 
-        assertThat(((GatewayImpl)gateway).isForceClose()).isFalse();
+        builder.client(mockClient);
 
-        gateway.close();
+        try (Gateway gateway = builder.connect()) {
+            gateway.getNetwork("CHANNEL");
+        }
 
-        assertThat(channel.isShutdown()).isTrue();
+        Mockito.verify(mockChannel).shutdown(true);
+    }
+
+    @Test
+    public void testCloseGatewayWithForceCloseDisabledClosesNetworks() {
+        HFClient mockClient = testUtils.newMockClient();
+        Channel mockChannel = testUtils.newMockChannel("CHANNEL");
+        Mockito.when(mockClient.getChannel("CHANNEL")).thenReturn(mockChannel);
+
+        builder.client(mockClient);
+        builder.forceClose(false);
+
+        try (Gateway gateway = builder.connect()) {
+            gateway.getNetwork("CHANNEL");
+        }
+
+        Mockito.verify(mockChannel).shutdown(false);
     }
 
     @Test
