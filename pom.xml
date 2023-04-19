@@ -11,7 +11,7 @@
     <packaging>jar</packaging>
 
     <name>fabric-gateway-java</name>
-    <description>Simple API for interacting with Hyperledger Fabric blockchain networks</description>
+    <description>Simple API for interacting with Hyperledger Fabric blockchain networks. Deprecated as of Fabric v2.5, replaced by org.hyperledger.fabric:fabric-gateway.</description>
     <url>https://hyperledger.github.io/fabric-gateway-java/</url>
 
     <licenses>

@@ -12,6 +12,8 @@
  * <a href="https://hyperledger-fabric.readthedocs.io/en/release-1.4/developapps/developing_applications.html">Developing Applications</a>
  * chapter of the Fabric documentation.</p>
  *
+ *
  * @see <a href="https://hyperledger-fabric.readthedocs.io/en/release-1.4/developapps/developing_applications.html">Developing Fabric Applications</a>
+ * @deprecated As of Fabric v2.5, replaced by the <a href="https://hyperledger.github.io/fabric-gateway/">Fabric Gateway client API</a>.
  */
 package org.hyperledger.fabric.gateway;
