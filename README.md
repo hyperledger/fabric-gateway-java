@@ -1,6 +1,6 @@
 # Hyperledger Fabric Gateway SDK for Java <a href="https://github.com/hyperledger/fabric-gateway-java/actions/workflows/schedule.yml"><img src="https://github.com/hyperledger/fabric-gateway-java/actions/workflows/schedule.yml/badge.svg" alt="Build status" style="float: right"></a>
 
-> **Note:** When developing applications for Hyperledger Fabric v2.4 and later, you should use the [Fabric Gateway client API](https://hyperledger.github.io/fabric-gateway/).
+> **Note:** This API is deprecated as of Fabric v2.5. When developing applications for Hyperledger Fabric v2.4 and later, you should use the [Fabric Gateway client API](https://hyperledger.github.io/fabric-gateway/).
 
 The Fabric Gateway SDK allows applications to interact with a Fabric blockchain network.  It provides a simple API to submit transactions to a ledger or query the contents of a ledger with minimal code.
 
