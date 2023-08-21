@@ -27,4 +27,25 @@
         <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
         <vulnerabilityName>CVE-2022-1471</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Vulnerability in C++ gRPC implementation
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.instrumentation/opentelemetry\-grpc\-1\.6@.*$</packageUrl>
+        <cve>CVE-2023-33953</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Vulnerability in C++ gRPC implementation
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.instrumentation/opentelemetry\-grpc\-1\.6@.*$</packageUrl>
+        <cve>CVE-2023-32732</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Vulnerability in CouchDB itself, not cloudant client API
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.ibm\.cloud/cloudant(-common)?@.*$</packageUrl>
+        <cve>CVE-2023-26268</cve>
+    </suppress>
 </suppressions>
