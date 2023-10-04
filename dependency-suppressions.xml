@@ -48,4 +48,11 @@
         <packageUrl regex="true">^pkg:maven/com\.ibm\.cloud/cloudant(-common)?@.*$</packageUrl>
         <cve>CVE-2023-26268</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        gRPC Java is not affected by this vulnerability; only gRPC C++, Python and Ruby
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.instrumentation/opentelemetry\-grpc\-1\.6@.*$</packageUrl>
+        <cve>CVE-2023-4785</cve>
+    </suppress>
 </suppressions>
