@@ -27,13 +27,12 @@ jobs:
         with:
           path: publish
           ref: gh-pages
-          token: ${{ secrets.REPO_ACCESS_TOKEN }}
       - name: Publish
         run: ./scripts/ci_scripts/publishApiDocs.sh
         working-directory: source
         env:
-          GITHUB_USER: 'Hyperledger Bot'
-          GITHUB_EMAIL: 'hyperledger-bot@hyperledger.org'
+          GITHUB_USER: github-actions
+          GITHUB_EMAIL: github-actions@github.com
           SOURCE_DIR: ${{ github.workspace }}/source
           PUBLISH_DIR: ${{ github.workspace }}/publish
           SOURCE_BRANCH: ${{ github.ref_name }}
