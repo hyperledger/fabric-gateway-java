@@ -577,13 +577,13 @@ public class ScenarioSteps implements En {
     static void startFabric(boolean tls) throws Exception {
         createCryptoMaterial();
         String dockerComposeFile = tls ? DOCKER_COMPOSE_TLS_FILE : DOCKER_COMPOSE_FILE;
-        exec(DOCKER_COMPOSE_DIR, "docker-compose", "-f", dockerComposeFile, "-p", "node", "up", "-d");
+        exec(DOCKER_COMPOSE_DIR, "docker", "compose", "-f", dockerComposeFile, "-p", "node", "up", "-d");
         Thread.sleep(10000);
     }
 
     static void stopFabric(boolean tls) throws Exception {
         String dockerComposeFile = tls ? DOCKER_COMPOSE_TLS_FILE : DOCKER_COMPOSE_FILE;
-        exec(DOCKER_COMPOSE_DIR, "docker-compose", "-f", dockerComposeFile, "-p", "node", "down");
+        exec(DOCKER_COMPOSE_DIR, "docker", "compose", "-f", dockerComposeFile, "-p", "node", "down");
     }
 
     private static void createCryptoMaterial() throws Exception {
