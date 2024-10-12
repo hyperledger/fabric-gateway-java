@@ -18,12 +18,6 @@
 				"orderer.example.com"
 			],
 			"peers": {
-				"badpeer.org1.example.com": {
-					"endorsingPeer": true,
-					"chaincodeQuery": true,
-					"ledgerQuery": true,
-					"eventSource": true
-				},
 				"peer0.org1.example.com": {
 					"endorsingPeer": true,
 					"chaincodeQuery": true,
@@ -35,6 +29,12 @@
 					"chaincodeQuery": false,
 					"ledgerQuery": true,
 					"eventSource": false
+				},
+				"badpeer.org1.example.com": {
+					"endorsingPeer": true,
+					"chaincodeQuery": true,
+					"ledgerQuery": true,
+					"eventSource": true
 				}
 			}
 		}
